@@ -1,11 +1,15 @@
+from collections.abc import Callable, Sequence
+from datetime import date
 from typing import Any
 
 from pydantic import BaseModel
 from sqlalchemy import ColumnElement, Select, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.core.errors import DataInUse, NotFound
-from app.models import Base
+from app.core.clock import Clock
+from app.core.errors import DataInUse, InvalidStatus, NotFound, ValidationFailed
+from app.models import DOCUMENT_NUMBER_SEQUENCE, Base, Lokasi, Produk, User
+from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import ActiveFilter, Page, PageParams
 
 class CrudService[M: Base]:
@@ -93,3 +97,91 @@ class CrudService[M: Base]:
         if aktif == ActiveFilter.ALL:
             return query
         return query.where(column.is_(aktif == ActiveFilter.TRUE))
+
+class DokumenService[M: Base]:
+    # induk service dokumen: kode otomatis, penggantian detail, cek status dan cakupan lokasi
+    model: type[M]
+    label: str
+
+    def __init__(self, db: Session, user: User):
+        self.db = db
+        self.user = user
+        self.policy = LokasiPolicy(user)
+
+    def next_code(self, prefix: str, on_date: date | None = None) -> str:
+        day = on_date or Clock.today()
+        number = self.db.scalar(DOCUMENT_NUMBER_SEQUENCE.next_value())
+        return f"{prefix}-{day:%y%m%d}-{number:04d}"
+
+    def get_or_404(self, item_id: int, for_update: bool = False) -> M:
+        query = select(self.model).where(self.model.id == item_id)
+        if for_update:
+            query = query.with_for_update(of=self.model).execution_options(populate_existing=True)
+        obj = self.db.scalar(query)
+        # BR-14: dokumen lokasi lain dijawab 404 supaya keberadaannya tidak bocor
+        if obj is None or not self.can_access(obj):
+            raise NotFound(f"{self.label} tidak ditemukan")
+        return obj
+
+    def can_access(self, obj: M) -> bool:
+        return self.policy.can_manage(obj.lokasi_id)
+
+    def restrict(self, query: Select, *columns: ColumnElement[int]) -> Select:
+        target = columns or (self.model.lokasi_id,)
+        return self.policy.restrict(query, *target)
+
+    def ensure_status(self, obj: M, *allowed: str) -> None:
+        # BR-03: dokumen final tidak bisa diubah, dihapus atau diproses ulang
+        if obj.status in allowed:
+            return
+        if obj.status == "draf":
+            raise InvalidStatus(f"{self.label} masih berstatus draf")
+        raise InvalidStatus(f"{self.label} sudah {obj.status}")
+
+    def resolve_lokasi(self, lokasi_id: int | None, field: str = "lokasi_id") -> Lokasi:
+        if self.policy.is_admin:
+            if lokasi_id is None:
+                raise ValidationFailed(errors={field: "Wajib diisi untuk admin"})
+            target_id = lokasi_id
+        else:
+            if lokasi_id is not None and not self.policy.can_manage(lokasi_id):
+                raise NotFound(f"{self.label} tidak ditemukan")
+            target_id = self.user.lokasi_id
+        lokasi = self.db.get(Lokasi, target_id) if target_id else None
+        if lokasi is None:
+            raise ValidationFailed(errors={field: "Lokasi tidak ditemukan"})
+        if not lokasi.aktif:
+            raise ValidationFailed(errors={field: "Lokasi sudah tidak aktif"})
+        return lokasi
+
+    def check_products(self, items: Sequence[Any]) -> tuple[dict[int, Produk], dict[str, str]]:
+        ids = {item.produk_id for item in items}
+        rows = self.db.scalars(
+            select(Produk).options(joinedload(Produk.kategori)).where(Produk.id.in_(ids))
+        ).all()
+        products = {produk.id: produk for produk in rows}
+        errors: dict[str, str] = {}
+        for index, item in enumerate(items):
+            produk = products.get(item.produk_id)
+            if produk is None:
+                errors[f"items.{index}.produk_id"] = "Produk tidak ditemukan"
+            elif not produk.aktif:
+                errors[f"items.{index}.produk_id"] = "Produk sudah tidak aktif"
+        return products, errors
+
+    def load_products(self, items: Sequence[Any]) -> dict[int, Produk]:
+        products, errors = self.check_products(items)
+        if errors:
+            raise ValidationFailed(errors=errors)
+        return products
+
+    def replace_details(self, obj: Any, details: list[Any]) -> None:
+        # hapus baris lama lebih dulu supaya UNIQUE (dokumen_id, produk_id) tidak bentrok saat flush
+        obj.detail.clear()
+        self.db.flush()
+        obj.detail.extend(details)
+
+    def paginate(self, query: Select, params: PageParams, convert: Callable) -> Page:
+        total = self.db.scalar(select(func.count()).select_from(query.order_by(None).subquery()))
+        rows = self.db.scalars(query.limit(params.per_page).offset(params.offset)).all()
+        return Page.of([convert(row) for row in rows], total, params)

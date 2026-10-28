@@ -14,6 +14,7 @@ from app.controllers.master_controller import (
 from app.controllers.produk_controller import ProdukController
 from app.controllers.stok_controller import StokController
 from app.controllers.system_controller import SystemController
+from app.controllers.transaksi_controller import TransaksiController
 from app.controllers.user_controller import UserController
 from app.core.config import settings
 from app.core.limiter import rate_limiter
@@ -61,6 +62,7 @@ auth = AuthController()
 users = UserController()
 produk = ProdukController()
 stok = StokController()
+transaksi = TransaksiController()
 
 # list endpoint API
 ROUTES = [
@@ -94,6 +96,10 @@ ROUTES = [
     # manager hanya mengatur lokasinya sendiri, dicek di StokService
     Route("PUT", "/stok/{lokasi_id}/{produk_id}", stok.update, Access.MANAGER,
           "Atur stok minimum dan rak", tag="stok"),
+    *resource("/transaksi", transaksi, "transaksi",
+              read=Access.MANAGER, write=Access.MANAGER, remove=Access.MANAGER),
+    Route("POST", "/transaksi/{id}/posting", transaksi.posting, Access.MANAGER,
+          "Posting draf transaksi dan mutasi stok", tag="transaksi"),
     Route("GET", "/users", users.index, Access.ADMIN, "Daftar user, akun menunggu di atas",
           tag="users"),
     Route("GET", "/users/deliveryman", users.deliveryman, Access.MANAGER,

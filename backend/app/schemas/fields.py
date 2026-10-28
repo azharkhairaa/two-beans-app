@@ -1,9 +1,10 @@
 import re
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
 from pydantic import AfterValidator, BeforeValidator, EmailStr, Field
 
+from app.core.clock import Clock
 from app.core.sanitize import MultiLineText, SingleLineText
 
 class FieldRules:
@@ -62,6 +63,16 @@ class FieldRules:
         # zona sesi database bisa berbeda (lokal WIB, Neon UTC), response selalu UTC berakhiran Z
         return value.astimezone(UTC)
 
+    @staticmethod
+    def document_date(value: date) -> date:
+        # BR-19: tanggal transaksi dan penjualan tidak lewat hari ini WIB dan maksimal 365 hari lalu
+        today = Clock.today()
+        if value > today:
+            raise ValueError("Tanggal tidak boleh melewati hari ini")
+        if value < today - timedelta(days=365):
+            raise ValueError("Tanggal tidak boleh lebih tua dari 365 hari")
+        return value
+
     @classmethod
     def password(cls, value: str) -> str:
         # password tidak dibersihkan, panjang dihitung dalam byte karena batas bcrypt 72 byte
@@ -77,6 +88,7 @@ class FieldRules:
 EmailAddress = Annotated[EmailStr, Field(max_length=254), AfterValidator(FieldRules.lowercase)]
 Password = Annotated[str, AfterValidator(FieldRules.password)]
 UtcDateTime = Annotated[datetime, AfterValidator(FieldRules.utc)]
+DocumentDate = Annotated[date, AfterValidator(FieldRules.document_date)]
 LokasiKode = Annotated[str, AfterValidator(FieldRules.lokasi_kode)]
 Sku = Annotated[str, AfterValidator(FieldRules.sku)]
 # integer ketat: "5" dari JSON ditolak, sesuai Spesifikasi API
