@@ -14,6 +14,10 @@ from app.routes.api import ROUTES, Route, build_router
 OPENAPI_TAGS = [
     {"name": "system", "description": "Status aplikasi dan koneksi database"},
     {"name": "auth", "description": "Registrasi, login, logout dan sesi"},
+    {"name": "lokasi", "description": "Gudang utama, gudang cabang dan outlet beserta ringkasan"},
+    {"name": "kategori", "description": "Kategori produk beserta jumlah produknya"},
+    {"name": "supplier", "description": "Pemasok green bean, peralatan dan bahan habis pakai"},
+    {"name": "customer", "description": "Pembeli di semua jenis lokasi"},
 ]
 
 def create_app(routes: Sequence[Route] = ROUTES) -> FastAPI:

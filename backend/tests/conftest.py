@@ -101,3 +101,13 @@ class ModelFactory:
 @pytest.fixture
 def factory(db):
     return ModelFactory(db)
+
+@pytest.fixture
+def login_as(client):
+    # login lewat API lalu token CSRF dipasang di header bawaan client
+    def login(email: str):
+        response = client.post("/api/auth/login", json={"email": email, "password": PASSWORD})
+        assert response.status_code == 200, response.text
+        client.headers["X-CSRF-Token"] = response.json()["csrf_token"]
+        return client
+    return login
