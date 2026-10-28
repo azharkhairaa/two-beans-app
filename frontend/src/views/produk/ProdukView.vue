@@ -318,6 +318,18 @@ async function onConfirmDelete() {
             <option value="updated_at">Diperbarui</option>
           </select>
         </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="prd-filter-arah">Order</label>
+          <select
+            id="prd-filter-arah"
+            v-model="filters.arah"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
+          </select>
+        </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
     </form>

@@ -243,15 +243,15 @@ function openKartu(row) {
           </select>
         </div>
         <div class="toolbar-field">
-          <label class="toolbar-label" for="stk-filter-arah">Arah</label>
+          <label class="toolbar-label" for="stk-filter-arah">Order</label>
           <select
             id="stk-filter-arah"
             v-model="filters.arah"
             class="input input-sm"
             @change="applyFilters()"
           >
-            <option value="asc">Naik (A-Z / Kecil)</option>
-            <option value="desc">Turun (Z-A / Besar)</option>
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
           </select>
         </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>

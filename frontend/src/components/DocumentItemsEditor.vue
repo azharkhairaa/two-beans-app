@@ -13,6 +13,7 @@ const props = defineProps({
   withPrice: { type: Boolean, default: false },
   defaultPriceField: { type: String, default: '' },
   allowNegative: { type: Boolean, default: false },
+  disableZeroStock: { type: Boolean, default: false },
   errors: { type: Object, default: () => ({}) },
 })
 
@@ -94,6 +95,14 @@ function rowStock(row) {
 }
 
 function fieldError(index, field) {
+  if (field === 'jumlah') {
+    return (
+      props.errors[`items.${index}.jumlah`] ||
+      props.errors[`items.${index}.jumlah_dikirim`] ||
+      props.errors[`items.${index}.jumlah_diminta`] ||
+      ''
+    )
+  }
   return props.errors[`items.${index}.${field}`] || ''
 }
 </script>
@@ -123,8 +132,15 @@ function fieldError(index, field) {
           >
             <option value="">Pilih produk...</option>
             <optgroup v-for="grp in groupedProducts" :key="grp.kategori" :label="grp.kategori">
-              <option v-for="prod in grp.items" :key="prod.id" :value="prod.id">
-                {{ prod.sku }} - {{ prod.nama }} ({{ prod.satuan }})
+              <option
+                v-for="prod in grp.items"
+                :key="prod.id"
+                :value="prod.id"
+                :disabled="disableZeroStock && Number(prod.stok || 0) <= 0"
+              >
+                {{ prod.sku }} - {{ prod.nama }} ({{ prod.satuan }}){{
+                  disableZeroStock && Number(prod.stok || 0) <= 0 ? ' — Stok habis' : ''
+                }}
               </option>
             </optgroup>
           </select>

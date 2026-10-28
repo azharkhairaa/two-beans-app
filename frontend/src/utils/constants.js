@@ -125,3 +125,11 @@ export const DOKUMEN_STATUS_LABELS = Object.freeze({
   selesai: 'Selesai',
   dipesan: 'Dipesan',
 })
+
+export const KENDARAAN_TYPE_LABELS = Object.freeze({
+  motor: 'Motor',
+  mobil_box: 'Mobil Box',
+  pickup: 'Pickup',
+  van: 'Van',
+  lainnya: 'Lainnya',
+})

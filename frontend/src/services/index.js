@@ -4,6 +4,10 @@ import {
   CustomerApi,
   KategoriApi,
   LokasiApi,
+  PembelianApi,
+  PengirimanApi,
+  PenjualanApi,
+  PermintaanApi,
   ProdukApi,
   StokApi,
   SupplierApi,
@@ -22,3 +26,7 @@ export const userApi = new UserApi(apiClient)
 export const produkApi = new ProdukApi(apiClient)
 export const stokApi = new StokApi(apiClient)
 export const transaksiApi = new TransaksiApi(apiClient)
+export const pengirimanApi = new PengirimanApi(apiClient)
+export const permintaanApi = new PermintaanApi(apiClient)
+export const pembelianApi = new PembelianApi(apiClient)
+export const penjualanApi = new PenjualanApi(apiClient)

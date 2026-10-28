@@ -169,15 +169,15 @@ async function onConfirmDelete() {
           </select>
         </div>
         <div class="toolbar-field">
-          <label class="toolbar-label" for="sup-arah">Arah</label>
+          <label class="toolbar-label" for="sup-arah">Order</label>
           <select
             id="sup-arah"
             v-model="filters.arah"
             class="input input-sm"
             @change="applyFilters()"
           >
-            <option value="asc">A - Z / Lama</option>
-            <option value="desc">Z - A / Baru</option>
+            <option value="asc">Ascending</option>
+            <option value="desc">Descending</option>
           </select>
         </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>

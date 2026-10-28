@@ -1192,6 +1192,328 @@ select.input-sm {
   font-size: 14px;
 }
 
+/* tab arah pengiriman, garis waktu riwayat dokumen dan lembar cetak A4 */
+
+.tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+  background: var(--permukaan);
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: var(--radius-kontrol);
+  background: transparent;
+  color: var(--kopi);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab-btn:hover {
+  background: var(--hover);
+}
+
+.tab-btn-active,
+.tab-btn-active:hover {
+  background: var(--kopi);
+  color: #ffffff;
+}
+
+.doc-timeline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kontrol);
+  background: color-mix(in srgb, var(--susu) 45%, white);
+}
+
+.doc-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.doc-timeline-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 4px;
+  border-radius: 50%;
+  border: 2px solid var(--abu);
+  background: var(--permukaan);
+}
+
+.doc-timeline-aman .doc-timeline-dot {
+  border-color: var(--aman-teks);
+  background: var(--aman-teks);
+}
+
+.doc-timeline-selesai .doc-timeline-dot {
+  border-color: var(--kopi);
+  background: var(--kopi);
+}
+
+.doc-timeline-proses .doc-timeline-dot {
+  border-color: var(--proses-teks);
+  background: var(--proses-teks);
+}
+
+.doc-timeline-menunggu .doc-timeline-dot {
+  border-color: var(--menunggu-teks);
+  background: var(--menunggu-latar);
+}
+
+.doc-timeline-bahaya .doc-timeline-dot {
+  border-color: var(--error-teks);
+  background: var(--error-teks);
+}
+
+.doc-timeline-content {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doc-timeline-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--espresso);
+}
+
+.doc-timeline-meta {
+  font-size: 12px;
+  color: var(--abu);
+}
+
+.doc-timeline-note {
+  font-size: 12px;
+  color: var(--kopi);
+}
+
+.print-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.print-sheet {
+  display: grid;
+  gap: 20px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+  background: #ffffff;
+  color: var(--espresso);
+}
+
+.print-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--espresso);
+}
+
+.print-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.print-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-kontrol);
+  background: var(--espresso);
+  color: var(--susu);
+}
+
+.print-company {
+  font-size: 20px;
+  letter-spacing: 0.04em;
+}
+
+.print-tagline {
+  font-size: 13px;
+  color: var(--kopi);
+}
+
+.print-doc-meta {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.print-doc-type {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--kopi);
+}
+
+.print-doc-code {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.print-doc-sub {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.print-doc-ref {
+  font-size: 12px;
+  color: var(--kopi);
+}
+
+.print-parties {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.print-party-box {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kontrol);
+  background: color-mix(in srgb, var(--susu) 35%, white);
+  font-size: 13px;
+}
+
+.print-party-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--kopi);
+}
+
+.print-party-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--espresso);
+}
+
+.print-party-detail {
+  color: var(--espresso);
+}
+
+.print-party-time {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--kopi);
+}
+
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.print-table th,
+.print-table td {
+  padding: 9px 12px;
+  border: 1px solid var(--espresso);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.print-table thead th {
+  background: color-mix(in srgb, var(--susu) 75%, white);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--espresso);
+}
+
+.print-table tfoot td {
+  background: color-mix(in srgb, var(--susu) 50%, white);
+}
+
+.print-table .num {
+  text-align: right;
+}
+
+.print-col-no {
+  width: 44px;
+  text-align: center;
+}
+
+.print-blank-line {
+  color: var(--abu);
+  letter-spacing: 0.08em;
+}
+
+.print-notes {
+  padding: 10px 14px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kontrol);
+  font-size: 13px;
+}
+
+.print-signatures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding-top: 12px;
+}
+
+.print-sign-box {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 12px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kontrol);
+  font-size: 13px;
+}
+
+.print-sign-role {
+  font-weight: 700;
+  color: var(--kopi);
+}
+
+.print-sign-space {
+  height: 56px;
+}
+
+.print-sign-name {
+  width: 100%;
+  padding-top: 6px;
+  border-top: 1px solid var(--espresso);
+  font-weight: 700;
+}
+
+.print-sign-sub {
+  font-size: 12px;
+  color: var(--abu);
+}
+
 /* responsif: 768 sampai 1023 px sidebar ikon, di bawah 768 px laci navigasi */
 
 @media (max-width: 1023px) {
@@ -1345,6 +1667,69 @@ select.input-sm {
 @media (max-width: 479px) {
   .page-header .btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .print-parties,
+  .print-signatures {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .print-doc-meta {
+    text-align: left;
+  }
+
+  .print-doc-sub {
+    justify-content: flex-start;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .skip-link,
+  .app-sidebar,
+  .app-topbar,
+  .app-backdrop,
+  .toast-region,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-shell,
+  .app-main,
+  .app-content,
+  .print-page {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .print-sheet {
+    max-width: none;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .print-parties {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .print-signatures {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    break-inside: avoid;
   }
 }
 

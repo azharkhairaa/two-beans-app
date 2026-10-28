@@ -108,3 +108,63 @@ export class TransaksiApi extends ResourceApi {
     return this.action(id, 'posting')
   }
 }
+
+export class PengirimanApi extends ResourceApi {
+  constructor(client) {
+    super(client, '/pengiriman')
+  }
+
+  kirim(id, body) {
+    return this.action(id, 'kirim', body)
+  }
+
+  terima(id, body) {
+    return this.action(id, 'terima', body)
+  }
+}
+
+export class PermintaanApi extends ResourceApi {
+  constructor(client) {
+    super(client, '/permintaan')
+  }
+
+  batal(id) {
+    return this.action(id, 'batal')
+  }
+
+  setujui(id, body) {
+    return this.action(id, 'setujui', body)
+  }
+
+  tolak(id, body) {
+    return this.action(id, 'tolak', body)
+  }
+}
+
+export class PembelianApi extends ResourceApi {
+  constructor(client) {
+    super(client, '/pembelian')
+  }
+
+  pesan(id) {
+    return this.action(id, 'pesan')
+  }
+
+  terima(id, body) {
+    return this.action(id, 'terima', body)
+  }
+
+  batal(id) {
+    return this.action(id, 'batal')
+  }
+}
+
+export class PenjualanApi extends ResourceApi {
+  constructor(client) {
+    super(client, '/penjualan')
+  }
+
+  posting(id) {
+    return this.action(id, 'posting')
+  }
+}
