@@ -21,7 +21,26 @@ os.environ.update({
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app.core.database import database  # noqa: E402
 from app.main import app  # noqa: E402
+from app.models import Base  # noqa: E402
+
+@pytest.fixture(scope="session", autouse=True)
+def schema():
+    # skema test dari model, isinya sama dengan hasil migration (dicek dengan bandingkan_skema.py)
+    Base.metadata.drop_all(database.engine)
+    Base.metadata.create_all(database.engine)
+    yield
+    Base.metadata.drop_all(database.engine)
+
+@pytest.fixture
+def db():
+    with database.session_factory() as session:
+        yield session
+    # data dihapus sesudah setiap test supaya urutan test tidak berpengaruh
+    with database.engine.begin() as connection:
+        for table in reversed(Base.metadata.sorted_tables):
+            connection.execute(table.delete())
 
 @pytest.fixture
 def client():
