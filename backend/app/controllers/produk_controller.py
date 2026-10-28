@@ -2,10 +2,13 @@ from fastapi import Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import CoffeeType, KategoriType
+from app.models import CoffeeType, KategoriType, User
+from app.policies.access import current_user
 from app.schemas.common import ActiveFilter, Page, PageParams, SortDirection
 from app.schemas.produk import ProdukDetail, ProdukInput, ProdukOption, ProdukResponse
+from app.schemas.stok import KartuStokItem
 from app.services.produk_service import ProdukFilter, ProdukService, ProdukSort
+from app.services.stok_service import StokService
 
 class ProdukController:
     def index(
@@ -46,3 +49,13 @@ class ProdukController:
     def destroy(self, id: int, db: Session = Depends(get_db)) -> None:
         service = ProdukService(db)
         service.delete(service.get_or_404(id))
+
+    def kartu_stok(
+        self, id: int,
+        lokasi_id: int = Query(..., description="Lokasi yang kartu stoknya dibuka"),
+        params: PageParams = Depends(),
+        user: User = Depends(current_user),
+        db: Session = Depends(get_db),
+    ) -> Page[KartuStokItem]:
+        # riwayat mutasi terbaru di atas, setiap baris menyebut dokumen sumber dan user
+        return StokService(db, user).kartu_stok(id, lokasi_id, params)

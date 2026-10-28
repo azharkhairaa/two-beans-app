@@ -19,6 +19,7 @@ OPENAPI_TAGS = [
     {"name": "supplier", "description": "Pemasok green bean, peralatan dan bahan habis pakai"},
     {"name": "customer", "description": "Pembeli di semua jenis lokasi"},
     {"name": "produk", "description": "Produk beserta aturan jenis kategori dan stok per lokasi"},
+    {"name": "stok", "description": "Stok per lokasi, stok minimum dan rak"},
     {"name": "users", "description": "Persetujuan akun, peran, lokasi dan status user"},
 ]
 

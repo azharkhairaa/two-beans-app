@@ -14,6 +14,7 @@ class FieldRules:
     PHONE = re.compile(r"(?:\+62\d{7,13}|0\d{8,14})")
     LOKASI_KODE = re.compile(r"(?:GU|GC|OT)-\d{2}")
     SKU = re.compile(r"[A-Z0-9]+(?:-[A-Z0-9]+)*")
+    RAK = re.compile(r"[A-Z]{1,2}-\d{2}")
 
     @staticmethod
     def lowercase(value: str) -> str:
@@ -49,6 +50,13 @@ class FieldRules:
             raise ValueError("SKU hanya huruf, angka dan tanda hubung, misalnya BK-ARB-GAYO-200")
         return value
 
+    @classmethod
+    def rak(cls, value: str) -> str:
+        value = value.strip().upper()
+        if not cls.RAK.fullmatch(value):
+            raise ValueError("Format rak seperti A-01 atau BC-12")
+        return value
+
     @staticmethod
     def utc(value: datetime) -> datetime:
         # zona sesi database bisa berbeda (lokal WIB, Neon UTC), response selalu UTC berakhiran Z
@@ -81,3 +89,4 @@ OptionalLine = Annotated[Annotated[SingleLineText, Field(max_length=100)] | None
 OptionalAddress = Annotated[Annotated[MultiLineText, Field(max_length=500)] | None, BlankToNone]
 OptionalEmail = Annotated[EmailAddress | None, BlankToNone]
 OptionalPhone = Annotated[Annotated[str, AfterValidator(FieldRules.phone)] | None, BlankToNone]
+OptionalRak = Annotated[Annotated[str, AfterValidator(FieldRules.rak)] | None, BlankToNone]

@@ -12,6 +12,7 @@ from app.controllers.master_controller import (
     SupplierController,
 )
 from app.controllers.produk_controller import ProdukController
+from app.controllers.stok_controller import StokController
 from app.controllers.system_controller import SystemController
 from app.controllers.user_controller import UserController
 from app.core.config import settings
@@ -58,6 +59,8 @@ def resource(
 system = SystemController()
 auth = AuthController()
 users = UserController()
+produk = ProdukController()
+stok = StokController()
 
 # list endpoint API
 ROUTES = [
@@ -82,8 +85,15 @@ ROUTES = [
     # manager boleh menambah dan mengubah customer, menghapus hanya admin
     *resource("/customer", CustomerController(), "customer",
               read=Access.MANAGER, write=Access.MANAGER, remove=Access.ADMIN, options=True),
-    *resource("/produk", ProdukController(), "produk",
+    *resource("/produk", produk, "produk",
               read=Access.MANAGER, write=Access.ADMIN, remove=Access.ADMIN, options=True),
+    Route("GET", "/produk/{id}/kartu-stok", produk.kartu_stok, Access.MANAGER,
+          "Kartu stok satu produk di satu lokasi", tag="produk"),
+    Route("GET", "/stok", stok.index, Access.MANAGER, "Stok satu lokasi dengan status dan nilai",
+          tag="stok"),
+    # manager hanya mengatur lokasinya sendiri, dicek di StokService
+    Route("PUT", "/stok/{lokasi_id}/{produk_id}", stok.update, Access.MANAGER,
+          "Atur stok minimum dan rak", tag="stok"),
     Route("GET", "/users", users.index, Access.ADMIN, "Daftar user, akun menunggu di atas",
           tag="users"),
     Route("GET", "/users/deliveryman", users.deliveryman, Access.MANAGER,
