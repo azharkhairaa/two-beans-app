@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.database import database  # noqa: E402
 from app.core.limiter import rate_limiter  # noqa: E402
+from app.core.security import password_hasher  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import (  # noqa: E402
     Base,
@@ -36,6 +37,8 @@ from app.models import (  # noqa: E402
     UserRole,
     UserStatus,
 )
+
+PASSWORD = "rahasia123"
 
 @pytest.fixture(scope="session", autouse=True)
 def schema():
@@ -54,10 +57,14 @@ def db():
         for table in reversed(Base.metadata.sorted_tables):
             connection.execute(table.delete())
 
+@pytest.fixture(autouse=True)
+def reset_rate_limit():
+    # hitungan rate limit disimpan di memori proses, setiap test mulai dari nol
+    rate_limiter.reset()
+
 @pytest.fixture
 def client():
     # Origin bawaan meniru browser sehingga request pengubah data lolos OriginGuard
-    rate_limiter.reset()
     with TestClient(app, headers={"Origin": "http://testserver"}) as test_client:
         yield test_client
 
@@ -78,6 +85,11 @@ class ModelFactory:
     def manager(self, lokasi: Lokasi) -> User:
         return self.add(User(name="Manager Outlet", email="manager.outlet@example.com", password_hash="x",
                              role=UserRole.MANAGER_OUTLET, status=UserStatus.AKTIF, lokasi=lokasi))
+
+    def user(self, email: str, role: str | None = UserRole.ADMIN, status: str = UserStatus.AKTIF,
+             lokasi: Lokasi | None = None) -> User:
+        return self.add(User(name="User Uji", email=email, password_hash=password_hasher.hash(PASSWORD),
+                             role=role, status=status, lokasi=lokasi))
 
     def produk(self) -> Produk:
         kategori = self.add(Kategori(nama="Arabika Single Origin", jenis=KategoriType.ROASTED_BEAN))

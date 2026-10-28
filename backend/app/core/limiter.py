@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.requests import Request
@@ -9,7 +11,16 @@ class RateLimiter(Limiter):
 
     def __init__(self, serverless: bool):
         self.serverless = serverless
+        self.decorated: dict[tuple[Callable, str], Callable] = {}
         super().__init__(key_func=self.client_address)
+
+    def apply(self, rule: str, action: Callable) -> Callable:
+        # slowapi menambah batas setiap kali dekorasi, jadi method milik satu instance controller
+        # cukup didekorasi sekali walau create_app dipanggil berulang
+        key = (action, rule)
+        if key not in self.decorated:
+            self.decorated[key] = self.limit(rule)(action)
+        return self.decorated[key]
 
     def client_address(self, request: Request) -> str:
         # di Vercel request.client milik proxy, IP asli ada di x-real-ip ditulis Vercel

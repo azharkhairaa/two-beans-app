@@ -8,7 +8,7 @@ from app.core.errors import AppError, Conflict, DataInUse, InsufficientStock, Va
 log = logging.getLogger("uvicorn.error")
 
 class IntegrityErrorMapper:
-    # IntegrityError di-mapping lewat nama constraint yang mengikuti naming convention models/base.py
+    # IntegrityError di-mapping lewat nama constraint (naming convention models/base.py)
     UNIQUE_VIOLATION = "23505"
     FOREIGN_KEY_VIOLATION = "23503"
     CHECK_VIOLATION = "23514"

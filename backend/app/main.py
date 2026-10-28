@@ -13,6 +13,7 @@ from app.routes.api import ROUTES, Route, build_router
 
 OPENAPI_TAGS = [
     {"name": "system", "description": "Status aplikasi dan koneksi database"},
+    {"name": "auth", "description": "Registrasi, login, logout dan sesi"},
 ]
 
 def create_app(routes: Sequence[Route] = ROUTES) -> FastAPI:

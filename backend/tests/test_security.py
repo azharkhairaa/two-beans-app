@@ -5,7 +5,7 @@ import pytest
 from fastapi import Request
 from fastapi.testclient import TestClient
 
-from app.core.limiter import RateLimiter, rate_limiter
+from app.core.limiter import RateLimiter
 from app.main import app, create_app
 from app.routes.api import Access, Route
 
@@ -14,6 +14,9 @@ VERCEL_JSON = Path(__file__).resolve().parents[2] / "vercel.json"
 class LimitedController:
     def ping(self, request: Request) -> dict:
         return {"status": "ok"}
+
+# satu instance seperti controller aplikasi, slowapi menghitung batas per nama fungsi
+limited = LimitedController()
 
 @pytest.fixture
 def bare_client():
@@ -68,9 +71,7 @@ def test_get_not_checked(bare_client):
     assert bare_client.get("/api/health").status_code == 200
 
 def test_rate_limit_returns_429_with_retry_after():
-    limited = LimitedController()
     routes = [Route("GET", "/limited", limited.ping, Access.PUBLIC, "Contoh rate limit", rate_limit="2/minute")]
-    rate_limiter.reset()
     with TestClient(create_app(routes)) as client:
         assert [client.get("/api/limited").status_code for _ in range(2)] == [200, 200]
         response = client.get("/api/limited")
@@ -82,3 +83,10 @@ def test_client_address_uses_x_real_ip_only_on_vercel():
     request = make_request({"X-Real-IP": "203.0.113.7"})
     assert RateLimiter(serverless=True).client_address(request) == "203.0.113.7"
     assert RateLimiter(serverless=False).client_address(request) == "10.0.0.1"
+
+def test_rate_limit_not_doubled_when_app_built_twice():
+    # create_app dipanggil berkali-kali (app utama dan app contoh di test), batasnya tetap sekali hitung
+    routes = [Route("GET", "/limited", limited.ping, Access.PUBLIC, "Contoh rate limit", rate_limit="2/minute")]
+    create_app(routes)
+    with TestClient(create_app(routes)) as client:
+        assert [client.get("/api/limited").status_code for _ in range(3)] == [200, 200, 429]
