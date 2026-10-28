@@ -5,7 +5,9 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import func, select
 
+from app.core.clock import Clock
 from app.core.config import settings
+from app.core.limiter import rate_limiter
 from app.core.security import PasswordHasher, password_hasher
 from app.core.session import SessionManager, session_manager
 from app.models import User, UserRole, UserSession, UserStatus
@@ -193,3 +195,131 @@ def test_password_hasher_limits():
 def test_secret_key_change_invalidates_token():
     other = SessionManager(replace(settings, secret_key="kunci-lain-yang-juga-panjang-sekali-0123456789"))
     assert other.token_hash("token") != session_manager.token_hash("token")
+
+
+def test_account_locked_for_15_minutes_after_five_failed_logins(client, db, factory):
+    user = factory.user("terkunci@example.com")
+    db.commit()
+    now = datetime.now(UTC)
+
+    with Clock.at(now):
+        # 5 kali gagal dari IP berbeda agar menguji kunci akun, bukan rate limit IP
+        for idx in range(5):
+            res = client.post(
+                "/api/auth/login",
+                json={"email": "terkunci@example.com", "password": "salahpassword1"},
+                headers={"x-real-ip": f"10.0.0.{idx + 1}"},
+            )
+            assert res.status_code == 401
+
+        db.expire_all()
+        locked_user = db.get(User, user.id)
+        assert locked_user.failed_logins == 5
+        assert locked_user.locked_until == now + timedelta(minutes=15)
+
+        # reset hitungan rate limit IP agar percobaan ke-6 menguji kunci akun di database
+        rate_limiter.reset()
+        res_locked = client.post(
+            "/api/auth/login",
+            json={"email": "terkunci@example.com", "password": PASSWORD},
+        )
+        assert res_locked.status_code == 429
+        assert "15 menit" in res_locked.json()["detail"]
+        assert res_locked.headers["Retry-After"] == "900"
+
+    # sesudah lewat 15 menit, login dengan password benar berhasil dan mereset failed_logins
+    with Clock.at(now + timedelta(minutes=16)):
+        rate_limiter.reset()
+        res_ok = client.post(
+            "/api/auth/login",
+            json={"email": "terkunci@example.com", "password": PASSWORD},
+        )
+        assert res_ok.status_code == 200
+        db.expire_all()
+        unlocked_user = db.get(User, user.id)
+        assert unlocked_user.failed_logins == 0
+        assert unlocked_user.locked_until is None
+
+
+def test_change_password_updates_hash_and_revokes_other_sessions(client, db, factory):
+    user = factory.user("admin@example.com")
+    now = datetime.now(UTC)
+    # sesi perangkat lain milik user yang sama
+    other_session = factory.add(
+        UserSession(
+            user=user,
+            token_hash="a" * 64,
+            csrf_token="csrf-perangkat-lain",
+            created_at=now - timedelta(minutes=10),
+            last_seen_at=now - timedelta(minutes=2),
+            expires_at=now + timedelta(hours=11),
+        )
+    )
+    db.commit()
+    other_session_id = other_session.id
+
+    csrf = login(client, "admin@example.com").json()["csrf_token"]
+    headers = {"X-CSRF-Token": csrf}
+
+    # 1. password saat ini salah -> 422
+    wrong_curr = client.put(
+        "/api/auth/password",
+        json={
+            "current_password": "salahpassword1",
+            "new_password": "passwordbaru2026",
+            "new_password_confirmation": "passwordbaru2026",
+        },
+        headers=headers,
+    )
+    assert wrong_curr.status_code == 422
+    assert wrong_curr.json()["errors"] == {"current_password": "Password saat ini salah"}
+
+    # 2. konfirmasi tidak sama -> 422
+    mismatch = client.put(
+        "/api/auth/password",
+        json={
+            "current_password": PASSWORD,
+            "new_password": "passwordbaru2026",
+            "new_password_confirmation": "beda2026",
+        },
+        headers=headers,
+    )
+    assert mismatch.status_code == 422
+    assert mismatch.json()["errors"] == {
+        "new_password_confirmation": "Konfirmasi password tidak sama"
+    }
+
+    # 3. password baru sama dengan password saat ini -> 422
+    same_pw = client.put(
+        "/api/auth/password",
+        json={
+            "current_password": PASSWORD,
+            "new_password": PASSWORD,
+            "new_password_confirmation": PASSWORD,
+        },
+        headers=headers,
+    )
+    assert same_pw.status_code == 422
+    assert same_pw.json()["errors"] == {
+        "new_password": "Password baru harus berbeda dari password saat ini"
+    }
+
+    # 4. berhasil ubah password -> 204, sesi aktif tetap jalan, sesi lain tercabut
+    ok = client.put(
+        "/api/auth/password",
+        json={
+            "current_password": PASSWORD,
+            "new_password": "passwordbaru2026",
+            "new_password_confirmation": "passwordbaru2026",
+        },
+        headers=headers,
+    )
+    assert ok.status_code == 204
+    assert client.get("/api/auth/me").status_code == 200
+
+    db.expire_all()
+    assert db.get(UserSession, other_session_id) is None
+    assert db.scalar(select(func.count()).select_from(UserSession)) == 1
+    updated_user = db.get(User, user.id)
+    assert password_hasher.verify("passwordbaru2026", updated_user.password_hash)
+    assert not password_hasher.verify(PASSWORD, updated_user.password_hash)

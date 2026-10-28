@@ -30,6 +30,21 @@ class LoginRequest(BaseModel):
     email: EmailAddress
     password: Annotated[str, Field(min_length=1, max_length=128)]
 
+
+class PasswordChangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: Annotated[str, Field(min_length=1, max_length=128)]
+    new_password: Password
+    new_password_confirmation: str
+
+    @field_validator("new_password_confirmation")
+    @classmethod
+    def same_as_new_password(cls, value: str, info: ValidationInfo) -> str:
+        if "new_password" in info.data and value != info.data["new_password"]:
+            raise ValueError("Konfirmasi password tidak sama")
+        return value
+
 class UserProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

@@ -49,6 +49,10 @@ export const useAuthStore = defineStore('auth', () => {
     return authApi.register(data)
   }
 
+  function changePassword(data) {
+    return authApi.changePassword(data)
+  }
+
   async function logout() {
     try {
       await authApi.logout()
@@ -76,6 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
     ensureChecked,
     login,
     register,
+    changePassword,
     logout,
     sessionExpired,
   }

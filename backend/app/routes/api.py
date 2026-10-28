@@ -88,6 +88,8 @@ ROUTES = [
           status=204, tag="auth"),
     Route("GET", "/auth/me", auth.me, Access.LOGIN,
           "Profil, peran, lokasi dan token CSRF dari sesi", tag="auth"),
+    Route("PUT", "/auth/password", auth.password, Access.LOGIN,
+          "Ubah password dan cabut sesi lain", status=204, tag="auth"),
     Route("GET", "/dashboard", dashboard.index, Access.LOGIN,
           "Ringkasan dashboard sesuai peran dan lokasi", tag="dashboard"),
     Route("GET", "/dashboard/tren", dashboard.tren, Access.MANAGER,

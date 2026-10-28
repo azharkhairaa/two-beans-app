@@ -6,7 +6,13 @@ from app.core.limiter import rate_limiter
 from app.core.session import session_manager
 from app.models import UserSession
 from app.policies.access import active_session
-from app.schemas.auth import AuthResponse, LoginRequest, MessageResponse, RegisterRequest
+from app.schemas.auth import (
+    AuthResponse,
+    LoginRequest,
+    MessageResponse,
+    PasswordChangeRequest,
+    RegisterRequest,
+)
 from app.services.auth_service import AuthService
 
 class AuthController:
@@ -37,3 +43,11 @@ class AuthController:
     def me(self, session: UserSession = Depends(active_session)) -> AuthResponse:
         # dipanggil saat halaman dimuat ulang untuk memulihkan profil dan token CSRF
         return AuthResponse.of(session)
+
+    def password(
+        self,
+        body: PasswordChangeRequest,
+        session: UserSession = Depends(active_session),
+        db: Session = Depends(get_db),
+    ) -> None:
+        AuthService(db).change_password(session, body)

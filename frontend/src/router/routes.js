@@ -73,7 +73,8 @@ export const routes = [
       page('users', 'users', 'User', { roles: ADMIN_ONLY },
         { label: 'User', icon: 'user-check', group: 'master' },
         () => import('@/views/user/UserView.vue')),
-      page('profil', 'profil', 'Profil'),
+      page('profil', 'profil', 'Profil', {}, null,
+        () => import('@/views/auth/ProfilView.vue')),
     ],
   },
   {

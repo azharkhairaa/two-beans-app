@@ -18,4 +18,8 @@ export class AuthApi {
   me() {
     return this.client.get('/auth/me')
   }
+
+  changePassword(data) {
+    return this.client.put('/auth/password', data)
+  }
 }
