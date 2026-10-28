@@ -98,6 +98,6 @@ async function onSubmit() {
         </button>
       </form>
     </template>
-    <p class="auth-footer">Sudah punya akun? <RouterLink :to="{ name: 'login' }">Masuk</RouterLink></p>
+    <p class="auth-footer">Sudah punya akun? <RouterLink :to="{ name: 'login' }">Login</RouterLink></p>
   </AuthLayout>
 </template>

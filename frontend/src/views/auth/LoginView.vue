@@ -22,7 +22,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <AuthLayout title="Masuk">
+  <AuthLayout title="Login">
     <p v-if="auth.sessionEnded" class="alert alert-info">Sesi berakhir, silakan login lagi.</p>
     <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
     <form class="form-stack" novalidate @submit.prevent="onSubmit">
@@ -66,7 +66,7 @@ async function onSubmit() {
         </template>
       </FormField>
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        {{ submitting ? 'Memproses...' : 'Masuk' }}
+        {{ submitting ? 'Memproses...' : 'Login' }}
       </button>
     </form>
     <p class="auth-footer">Belum punya akun? <RouterLink :to="{ name: 'register' }">Daftar</RouterLink></p>

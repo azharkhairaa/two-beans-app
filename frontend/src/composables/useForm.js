@@ -2,9 +2,22 @@ import { reactive, ref } from 'vue'
 
 import { ApiError } from '@/services/ApiClient'
 
-// state formulir: nilai, error per field dari 422, pesan umum dan status menyimpan
+function clone(value) {
+  return Array.isArray(value) ? value.map((item) => ({ ...item })) : value
+}
+
+function copyShape(source) {
+  const result = {}
+  for (const [key, value] of Object.entries(source)) {
+    result[key] = clone(value)
+  }
+  return result
+}
+
+// state formulir: nilai, error per field dari 422/409, pesan umum dan status menyimpan
 export function useForm(initial) {
-  const values = reactive({ ...initial })
+  const defaults = copyShape(initial)
+  const values = reactive(copyShape(initial))
   const errors = ref({})
   const message = ref('')
   const submitting = ref(false)
@@ -26,10 +39,15 @@ export function useForm(initial) {
     }
   }
 
-  function reset() {
-    Object.assign(values, initial)
+  function fill(next = {}) {
+    Object.assign(values, copyShape(defaults), copyShape(next))
     errors.value = {}
+    message.value = ''
   }
 
-  return { values, errors, message, submitting, submit, reset }
+  function reset() {
+    fill()
+  }
+
+  return { values, errors, message, submitting, submit, fill, reset }
 }

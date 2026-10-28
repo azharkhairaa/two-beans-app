@@ -20,3 +20,88 @@ export const ROLE_LABELS = Object.freeze({
   [ROLES.MANAGER_OUTLET]: 'Manager Outlet',
   [ROLES.DELIVERYMAN]: 'Deliveryman',
 })
+
+export const LOKASI_TYPE_LABELS = Object.freeze({
+  gudang_utama: 'Gudang Utama',
+  gudang_cabang: 'Gudang Cabang',
+  outlet: 'Outlet',
+})
+
+export const KATEGORI_TYPE_LABELS = Object.freeze({
+  green_bean: 'Green Bean',
+  roasted_bean: 'Biji Kopi Sangrai',
+  peralatan: 'Peralatan',
+  habis_pakai: 'Bahan Habis Pakai',
+})
+
+export const CUSTOMER_TYPE_LABELS = Object.freeze({
+  kafe: 'Kafe',
+  reseller: 'Reseller',
+  perorangan: 'Perorangan',
+  lainnya: 'Lainnya',
+})
+
+export const USER_STATUS_LABELS = Object.freeze({
+  menunggu: 'Menunggu',
+  aktif: 'Aktif',
+  nonaktif: 'Nonaktif',
+})
+
+export const STOK_STATUS_LABELS = Object.freeze({
+  aman: 'Aman',
+  menipis: 'Menipis',
+  habis: 'Habis',
+})
+
+export const COFFEE_TYPE_LABELS = Object.freeze({
+  arabika: 'Arabika',
+  robusta: 'Robusta',
+  excelsa: 'Excelsa',
+  liberika: 'Liberika',
+  blended: 'Blended',
+})
+
+export const ROAST_LEVEL_LABELS = Object.freeze({
+  light: 'Light',
+  medium: 'Medium',
+  medium_dark: 'Medium Dark',
+  dark: 'Dark',
+})
+
+export const TRANSAKSI_TYPE_LABELS = Object.freeze({
+  masuk: 'Barang Masuk',
+  keluar: 'Barang Keluar',
+  penyesuaian: 'Penyesuaian',
+})
+
+export const TRANSAKSI_REASON_LABELS = Object.freeze({
+  hasil_roasting: 'Hasil Roasting',
+  retur: 'Retur',
+  pemakaian: 'Pemakaian',
+  roasting: 'Roasting',
+  sampel: 'Sampel',
+  opname: 'Stok Opname',
+  rusak: 'Barang Rusak',
+  hilang: 'Barang Hilang',
+  kedaluwarsa: 'Kedaluwarsa',
+  lainnya: 'Lainnya',
+})
+
+export const TRANSAKSI_REASONS = Object.freeze({
+  masuk: ['hasil_roasting', 'retur', 'lainnya'],
+  keluar: ['pemakaian', 'roasting', 'sampel', 'lainnya'],
+  penyesuaian: ['opname', 'rusak', 'hilang', 'kedaluwarsa', 'lainnya'],
+})
+
+export const DOKUMEN_STATUS_LABELS = Object.freeze({
+  draf: 'Draf',
+  diposting: 'Diposting',
+  dikirim: 'Dikirim',
+  diterima: 'Diterima',
+  dibatalkan: 'Dibatalkan',
+  diajukan: 'Diajukan',
+  disetujui: 'Disetujui',
+  ditolak: 'Ditolak',
+  selesai: 'Selesai',
+  dipesan: 'Dipesan',
+})
