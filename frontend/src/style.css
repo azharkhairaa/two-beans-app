@@ -1,0 +1,709 @@
+/* semua gaya aplikasi di satu berkas, selector berprefiks nama komponen (Desain UI 2 sampai 4) */
+
+:root {
+  --espresso: #2c1d1a;
+  --kopi: #4a3b39;
+  --abu: #6c6f73;
+  --pasir: #b7b2aa;
+  --susu: #f2efe9;
+  --permukaan: #ffffff;
+  --garis: var(--pasir);
+  --hover: color-mix(in srgb, var(--kopi) 8%, white);
+
+  --aman-latar: #e6f4ea;
+  --aman-teks: #1e6b34;
+  --menunggu-latar: #fdf1dc;
+  --menunggu-teks: #7a4a00;
+  --proses-latar: #e8f0fb;
+  --proses-teks: #1d4f91;
+  --error-latar: #fde8e8;
+  --error-teks: #a61b1b;
+  --draf-latar: #eceef0;
+  --draf-teks: #43464a;
+  --bahaya: #b42318;
+
+  --radius-kartu: 8px;
+  --radius-kontrol: 6px;
+  --sidebar: 248px;
+  --sidebar-ciut: 72px;
+
+  color-scheme: light;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--espresso);
+  background: var(--susu);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd {
+  margin: 0;
+}
+
+a {
+  color: var(--kopi);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--kopi);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: 300;
+  padding: 8px 16px;
+  border-radius: var(--radius-kontrol);
+  background: var(--kopi);
+  color: #fff;
+}
+
+.skip-link:focus {
+  top: 16px;
+}
+
+.app-icon {
+  flex: none;
+}
+
+/* tombol */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-kontrol);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--kopi);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--espresso);
+}
+
+.btn-secondary {
+  background: var(--permukaan);
+  border-color: var(--abu);
+  color: var(--espresso);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.btn-danger {
+  background: var(--bahaya);
+  color: #fff;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-small {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.btn-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-kontrol);
+  background: transparent;
+  cursor: pointer;
+}
+
+.btn-icon:hover {
+  background: var(--hover);
+}
+
+/* formulir */
+
+.form-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.field-label {
+  font-weight: 600;
+}
+
+.field-hint,
+.form-note {
+  font-size: 14px;
+  color: var(--abu);
+}
+
+.field-error {
+  font-size: 14px;
+  color: var(--error-teks);
+}
+
+.input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--abu);
+  border-radius: var(--radius-kontrol);
+  background: var(--permukaan);
+}
+
+.field-invalid .input {
+  border-color: var(--error-teks);
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group .input {
+  padding-right: 48px;
+}
+
+.input-addon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  color: var(--abu);
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-kontrol);
+  font-size: 14px;
+}
+
+.alert-info {
+  background: var(--proses-latar);
+  color: var(--proses-teks);
+}
+
+.alert-success {
+  background: var(--aman-latar);
+  color: var(--aman-teks);
+}
+
+.alert-error {
+  background: var(--error-latar);
+  color: var(--error-teks);
+}
+
+/* halaman login dan registrasi */
+
+.auth-page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+.auth-card {
+  display: grid;
+  gap: 16px;
+  width: min(420px, 100%);
+  padding: 32px 24px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+  background: var(--permukaan);
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-app-name {
+  font-weight: 700;
+}
+
+.auth-subtitle {
+  font-size: 14px;
+  color: var(--abu);
+}
+
+.auth-title {
+  font-size: 24px;
+}
+
+.auth-footer {
+  font-size: 14px;
+  text-align: center;
+}
+
+/* kerangka aplikasi: sidebar, topbar dan konten */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100vh;
+  padding: 16px 12px;
+  overflow-y: auto;
+  background: var(--espresso);
+  color: var(--pasir);
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  color: var(--susu);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-kontrol);
+  background: var(--susu);
+  color: var(--espresso);
+  flex: none;
+}
+
+.app-nav {
+  display: grid;
+  gap: 16px;
+}
+
+.app-nav-group {
+  display: grid;
+  gap: 2px;
+}
+
+.app-nav-heading {
+  padding: 0 12px 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: var(--radius-kontrol);
+  color: var(--pasir);
+  text-decoration: none;
+}
+
+.app-nav-link:hover {
+  background: color-mix(in srgb, var(--susu) 10%, transparent);
+  color: var(--susu);
+}
+
+.app-nav-link.router-link-active {
+  background: var(--kopi);
+  color: var(--susu);
+  font-weight: 600;
+}
+
+.app-sidebar :focus-visible {
+  outline-color: var(--susu);
+}
+
+.app-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--garis);
+  background: var(--permukaan);
+}
+
+.app-menu-toggle {
+  display: none;
+}
+
+.app-user {
+  display: grid;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.app-user-name,
+.app-user-context {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-user-context {
+  font-size: 14px;
+  color: var(--abu);
+}
+
+.app-content {
+  flex: 1;
+  padding: 24px;
+}
+
+.app-content:focus {
+  outline: none;
+}
+
+.app-backdrop {
+  display: none;
+}
+
+/* isi halaman */
+
+.page {
+  display: grid;
+  gap: 24px;
+  max-width: 1200px;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 24px;
+}
+
+.page-subtitle {
+  color: var(--kopi);
+}
+
+.section-title {
+  font-size: 18px;
+}
+
+.card {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+  background: var(--permukaan);
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.detail-list > div {
+  min-width: 0;
+}
+
+.detail-list dt {
+  font-size: 14px;
+  color: var(--abu);
+}
+
+.detail-list dd {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.shortcut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+  background: var(--permukaan);
+  color: var(--espresso);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.shortcut:hover {
+  background: var(--hover);
+}
+
+.empty-state,
+.status-page {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+  color: var(--kopi);
+}
+
+.empty-state {
+  padding: 48px 24px;
+  border: 1px dashed var(--abu);
+  border-radius: var(--radius-kartu);
+  background: var(--permukaan);
+}
+
+.status-page {
+  align-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+/* toast */
+
+.toast-host {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 200;
+  display: grid;
+  gap: 8px;
+  width: min(380px, calc(100vw - 32px));
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 8px 12px 16px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+  background: var(--permukaan);
+  box-shadow: 0 8px 24px rgb(44 29 26 / 16%);
+  font-size: 14px;
+}
+
+.toast-message {
+  flex: 1;
+  padding-top: 1px;
+}
+
+.toast-icon {
+  margin-top: 1px;
+}
+
+.toast-success .toast-icon {
+  color: var(--aman-teks);
+}
+
+.toast-info .toast-icon {
+  color: var(--proses-teks);
+}
+
+.toast-error {
+  border-color: var(--error-teks);
+}
+
+.toast-error .toast-icon {
+  color: var(--error-teks);
+}
+
+.toast-close {
+  width: 28px;
+  height: 28px;
+  color: var(--abu);
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+/* responsif: 768 sampai 1023 px sidebar ikon, di bawah 768 px laci navigasi */
+
+@media (max-width: 1023px) {
+  .app-shell {
+    grid-template-columns: var(--sidebar-ciut) minmax(0, 1fr);
+  }
+
+  .app-sidebar {
+    padding: 16px 8px;
+  }
+
+  .app-brand-text,
+  .app-nav-label,
+  .app-nav-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .app-brand,
+  .app-nav-link {
+    justify-content: center;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 50;
+    width: min(280px, 85vw);
+    padding: 16px 12px;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+  }
+
+  .app-drawer-open .app-sidebar {
+    transform: none;
+  }
+
+  .app-drawer-open .app-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgb(44 29 26 / 45%);
+  }
+
+  .app-brand-text,
+  .app-nav-label,
+  .app-nav-heading {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .app-brand,
+  .app-nav-link {
+    justify-content: flex-start;
+    padding: 8px 12px;
+  }
+
+  .app-menu-toggle {
+    display: inline-grid;
+  }
+
+  .app-topbar {
+    padding: 8px 16px;
+  }
+
+  .app-topbar-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .app-content {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 479px) {
+  .page-header .btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
