@@ -1,0 +1,411 @@
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+
+import AppIcon from '@/components/AppIcon'
+import BadgeStatus from '@/components/BadgeStatus.vue'
+import BaseModal from '@/components/BaseModal.vue'
+import EmptyState from '@/components/EmptyState.vue'
+import ErrorState from '@/components/ErrorState.vue'
+import FormField from '@/components/FormField.vue'
+import KartuStokModal from '@/components/KartuStokModal.vue'
+import LoadingState from '@/components/LoadingState.vue'
+import PaginationBar from '@/components/PaginationBar.vue'
+import { useForm } from '@/composables/useForm'
+import { useList } from '@/composables/useList'
+import { kategoriApi, lokasiApi, produkApi, stokApi } from '@/services'
+import { useAuthStore } from '@/stores/auth'
+import { useToastStore } from '@/stores/toast'
+import { KATEGORI_TYPE_LABELS, LOKASI_TYPE_LABELS, STOK_STATUS_LABELS } from '@/utils/constants'
+import { formatDate, formatNumber, formatRupiah } from '@/utils/format'
+
+const auth = useAuthStore()
+const toast = useToastStore()
+
+const lokasiList = ref([])
+const kategoriList = ref([])
+const currentLokasi = ref(auth.user?.lokasi || null)
+
+onMounted(async () => {
+  try {
+    const [lokRes, katRes] = await Promise.all([
+      lokasiApi.list({ aktif: 'ya' }),
+      kategoriApi.list(),
+    ])
+    lokasiList.value = lokRes || []
+    kategoriList.value = katRes || []
+  } catch {
+    lokasiList.value = []
+    kategoriList.value = []
+  }
+})
+
+const { items, meta, loading, error, filters, load, setPage, applyFilters, resetFilters } = useList(
+  async (params) => {
+    const res = await stokApi.list(params)
+    if (res?.lokasi) {
+      currentLokasi.value = res.lokasi
+      if (!filters.lokasi_id) {
+        filters.lokasi_id = res.lokasi.id
+      }
+    }
+    return res
+  },
+  {
+    initialFilters: {
+      lokasi_id: auth.user?.lokasi?.id || '',
+      q: '',
+      kategori_id: '',
+      jenis: '',
+      status_stok: '',
+      sort: 'nama',
+      arah: 'asc',
+    },
+  }
+)
+
+const canManageCurrentLokasi = computed(() => {
+  if (auth.isAdmin) return true
+  if (!currentLokasi.value || !auth.user?.lokasi) return false
+  return Number(currentLokasi.value.id) === Number(auth.user.lokasi.id)
+})
+
+const settingModalOpen = ref(false)
+const isNewProductSetting = ref(false)
+const targetProduk = ref(null)
+const produkOptions = ref([])
+
+const { values, errors, message, submitting, submit, fill } = useForm({
+  produk_id: '',
+  stok_minimum: 0,
+  rak: '',
+})
+
+async function openNewSetting() {
+  isNewProductSetting.value = true
+  targetProduk.value = null
+  if (!produkOptions.value.length) {
+    try {
+      produkOptions.value = await produkApi.options()
+    } catch {
+      produkOptions.value = []
+    }
+  }
+  fill({
+    produk_id: produkOptions.value[0]?.id || '',
+    stok_minimum: 5,
+    rak: '',
+  })
+  settingModalOpen.value = true
+}
+
+function openEditSetting(row) {
+  isNewProductSetting.value = false
+  targetProduk.value = row.produk
+  fill({
+    produk_id: row.produk.id,
+    stok_minimum: row.stok_minimum ?? 0,
+    rak: row.rak || '',
+  })
+  settingModalOpen.value = true
+}
+
+async function onSaveSetting() {
+  const lokasiId = currentLokasi.value?.id || filters.lokasi_id
+  const produkId = isNewProductSetting.value ? Number(values.produk_id) : targetProduk.value?.id
+  if (!lokasiId || !produkId) return
+  const payload = {
+    stok_minimum: Number(values.stok_minimum) || 0,
+    rak: values.rak ? values.rak.toUpperCase() : null,
+  }
+  const ok = await submit(() => stokApi.updateSetting(lokasiId, produkId, payload))
+  if (ok) {
+    toast.show('Pengaturan stok minimum dan rak berhasil disimpan.')
+    settingModalOpen.value = false
+    await load()
+  }
+}
+
+const kartuOpen = ref(false)
+const kartuProduk = ref(null)
+
+function openKartu(row) {
+  kartuProduk.value = row.produk
+  kartuOpen.value = true
+}
+</script>
+
+<template>
+  <section class="page-section">
+    <header class="page-header">
+      <div>
+        <h2 class="page-heading">
+          Stok Lokasi
+          <template v-if="currentLokasi">
+            : {{ currentLokasi.kode }} - {{ currentLokasi.nama }}
+          </template>
+        </h2>
+        <p class="page-subtitle">
+          Pemantauan saldo buku besar stok, batas minimum, posisi rak dan kartu stok per produk
+        </p>
+      </div>
+      <button
+        v-if="canManageCurrentLokasi"
+        type="button"
+        class="btn btn-secondary"
+        @click="openNewSetting"
+      >
+        <AppIcon name="plus" :size="16" />
+        <span>Atur batas &amp; rak produk</span>
+      </button>
+    </header>
+
+    <form class="toolbar" @submit.prevent="applyFilters()">
+      <div class="toolbar-search">
+        <AppIcon name="search" :size="16" class="toolbar-search-icon" />
+        <input
+          v-model.trim="filters.q"
+          type="search"
+          class="input input-sm"
+          placeholder="Cari SKU atau nama produk..."
+          aria-label="Cari stok produk"
+        />
+      </div>
+      <div class="toolbar-group">
+        <select
+          v-model="filters.lokasi_id"
+          class="input input-sm"
+          aria-label="Pilih lokasi stok"
+          @change="applyFilters()"
+        >
+          <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
+            {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
+          </option>
+        </select>
+        <select
+          v-model="filters.kategori_id"
+          class="input input-sm"
+          aria-label="Filter kategori"
+          @change="applyFilters()"
+        >
+          <option value="">Semua kategori</option>
+          <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
+            {{ kat.nama }}
+          </option>
+        </select>
+        <select
+          v-model="filters.jenis"
+          class="input input-sm"
+          aria-label="Filter jenis kategori"
+          @change="applyFilters()"
+        >
+          <option value="">Semua jenis</option>
+          <option v-for="(lbl, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
+            {{ lbl }}
+          </option>
+        </select>
+        <select
+          v-model="filters.status_stok"
+          class="input input-sm"
+          aria-label="Filter status stok"
+          @change="applyFilters()"
+        >
+          <option value="">Semua status stok</option>
+          <option v-for="(lbl, key) in STOK_STATUS_LABELS" :key="key" :value="key">
+            {{ lbl }}
+          </option>
+        </select>
+        <select
+          v-model="filters.sort"
+          class="input input-sm"
+          aria-label="Urutkan berdasarkan"
+          @change="applyFilters()"
+        >
+          <option value="nama">Urut: Nama produk</option>
+          <option value="jumlah">Urut: Jumlah stok</option>
+          <option value="nilai">Urut: Nilai stok</option>
+        </select>
+        <select
+          v-model="filters.arah"
+          class="input input-sm"
+          aria-label="Arah urutan"
+          @change="applyFilters()"
+        >
+          <option value="asc">Naik (A-Z / Kecil)</option>
+          <option value="desc">Turun (Z-A / Besar)</option>
+        </select>
+        <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+      </div>
+    </form>
+
+    <LoadingState v-if="loading" :rows="6" />
+    <ErrorState v-else-if="error" :message="error" @retry="load" />
+    <EmptyState
+      v-else-if="!items.length"
+      title="Data stok tidak ditemukan"
+      description="Belum ada baris stok yang cocok dengan filter di lokasi ini."
+    >
+      <button type="button" class="btn btn-secondary btn-sm" @click="resetFilters">
+        Reset filter
+      </button>
+    </EmptyState>
+
+    <div v-else class="table-card">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Produk &amp; Kategori</th>
+            <th>Rak</th>
+            <th class="num">Jumlah</th>
+            <th class="num">Minimum</th>
+            <th>Status</th>
+            <th class="num">Nilai Stok</th>
+            <th>Diperbarui</th>
+            <th class="col-actions">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in items" :key="row.produk.id">
+            <td data-label="SKU" class="mono font-semibold">{{ row.produk.sku }}</td>
+            <td data-label="Produk & Kategori">
+              <div class="cell-primary">{{ row.produk.nama }}</div>
+              <div class="cell-secondary">
+                {{ row.produk.kategori }} ({{ KATEGORI_TYPE_LABELS[row.produk.jenis] }})
+              </div>
+            </td>
+            <td data-label="Rak" class="mono">{{ row.rak || '-' }}</td>
+            <td data-label="Jumlah" class="num mono font-semibold">
+              {{ formatNumber(row.jumlah) }} {{ row.produk.satuan }}
+            </td>
+            <td data-label="Minimum" class="num mono">
+              {{ formatNumber(row.stok_minimum) }} {{ row.produk.satuan }}
+            </td>
+            <td data-label="Status">
+              <BadgeStatus :status="row.status_stok" />
+            </td>
+            <td data-label="Nilai Stok" class="num mono">{{ formatRupiah(row.nilai) }}</td>
+            <td data-label="Diperbarui" class="cell-secondary">{{ formatDate(row.updated_at) }}</td>
+            <td data-label="Aksi" class="col-actions">
+              <div class="action-group">
+                <button type="button" class="btn btn-secondary btn-sm" @click="openKartu(row)">
+                  Kartu stok
+                </button>
+                <button
+                  v-if="canManageCurrentLokasi"
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  @click="openEditSetting(row)"
+                >
+                  Atur
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <PaginationBar :meta="meta" @page="setPage" />
+    </div>
+
+    <BaseModal
+      :open="settingModalOpen"
+      :title="
+        isNewProductSetting
+          ? `Atur Produk di ${currentLokasi?.kode || 'Lokasi'}`
+          : `Atur Batas & Rak: ${targetProduk?.sku || ''}`
+      "
+      size="sm"
+      @close="settingModalOpen = false"
+    >
+      <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
+      <form id="stok-setting-form" class="form-stack" novalidate @submit.prevent="onSaveSetting">
+        <FormField
+          v-if="isNewProductSetting"
+          id="stk-produk"
+          label="Pilih produk"
+          :error="errors.produk_id"
+        >
+          <template #default="{ describedBy }">
+            <select
+              id="stk-produk"
+              v-model="values.produk_id"
+              class="input"
+              required
+              :aria-invalid="Boolean(errors.produk_id)"
+              :aria-describedby="describedBy"
+            >
+              <option v-for="prd in produkOptions" :key="prd.id" :value="prd.id">
+                {{ prd.sku }} - {{ prd.nama }} ({{ prd.satuan }})
+              </option>
+            </select>
+          </template>
+        </FormField>
+        <div v-else-if="targetProduk" class="detail-highlight">
+          <div>
+            <span class="detail-label">{{ targetProduk.sku }}</span>
+            <div class="font-semibold">{{ targetProduk.nama }}</div>
+          </div>
+          <span class="badge badge-draf mono">{{ targetProduk.satuan }}</span>
+        </div>
+
+        <FormField
+          id="stk-min"
+          label="Batas stok minimum"
+          hint="Stok berstatus Menipis bila jumlah berada pada atau di bawah angka ini"
+          :error="errors.stok_minimum"
+        >
+          <template #default="{ describedBy }">
+            <input
+              id="stk-min"
+              v-model.number="values.stok_minimum"
+              type="number"
+              min="0"
+              max="100000"
+              step="1"
+              class="input mono"
+              required
+              :aria-invalid="Boolean(errors.stok_minimum)"
+              :aria-describedby="describedBy"
+            />
+          </template>
+        </FormField>
+
+        <FormField
+          id="stk-rak"
+          label="Kode rak penyimpanan (opsional)"
+          hint="Huruf kapital, angka atau tanda hubung (contoh: A-01, GB-02)"
+          :error="errors.rak"
+        >
+          <template #default="{ describedBy }">
+            <input
+              id="stk-rak"
+              v-model.trim="values.rak"
+              class="input mono"
+              :aria-invalid="Boolean(errors.rak)"
+              :aria-describedby="describedBy"
+            />
+          </template>
+        </FormField>
+      </form>
+      <template #footer>
+        <button type="button" class="btn btn-secondary" @click="settingModalOpen = false">
+          Batal
+        </button>
+        <button
+          type="submit"
+          form="stok-setting-form"
+          class="btn btn-primary"
+          :disabled="submitting"
+        >
+          {{ submitting ? 'Menyimpan...' : 'Simpan' }}
+        </button>
+      </template>
+    </BaseModal>
+
+    <KartuStokModal
+      :open="kartuOpen"
+      :produk="kartuProduk"
+      :lokasi="currentLokasi"
+      @close="kartuOpen = false"
+    />
+  </section>
+</template>

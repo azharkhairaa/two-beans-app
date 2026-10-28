@@ -68,6 +68,26 @@ export const ROAST_LEVEL_LABELS = Object.freeze({
   dark: 'Dark',
 })
 
+export const PRODUK_UNIT_LABELS = Object.freeze({
+  pack: 'Pack',
+  pcs: 'Pcs',
+  box: 'Box',
+  set: 'Set',
+  kg: 'Kg',
+})
+
+export const PRODUK_WEIGHTS = Object.freeze([100, 200, 250, 500, 1000])
+
+export const MUTASI_TYPE_LABELS = Object.freeze({
+  masuk: 'Barang Masuk',
+  keluar: 'Barang Keluar',
+  penyesuaian: 'Penyesuaian',
+  kirim: 'Pengiriman Keluar',
+  terima: 'Penerimaan Masuk',
+  pembelian: 'Pembelian Supplier',
+  penjualan: 'Penjualan Customer',
+})
+
 export const TRANSAKSI_TYPE_LABELS = Object.freeze({
   masuk: 'Barang Masuk',
   keluar: 'Barang Keluar',

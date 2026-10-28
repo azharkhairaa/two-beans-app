@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import AppIcon from '@/components/AppIcon'
+import { KATEGORI_TYPE_LABELS } from '@/utils/constants'
 import { formatNumber, formatRupiah } from '@/utils/format'
 
 const props = defineProps({
@@ -11,6 +12,7 @@ const props = defineProps({
   showStock: { type: Boolean, default: true },
   withPrice: { type: Boolean, default: false },
   defaultPriceField: { type: String, default: '' },
+  allowNegative: { type: Boolean, default: false },
   errors: { type: Object, default: () => ({}) },
 })
 
@@ -19,7 +21,8 @@ const emit = defineEmits(['update:modelValue'])
 const groupedProducts = computed(() => {
   const groups = new Map()
   for (const prod of props.products) {
-    const groupName = prod.kategori?.nama || 'Tanpa kategori'
+    const groupName =
+      prod.kategori?.nama || KATEGORI_TYPE_LABELS[prod.jenis] || 'Tanpa kategori'
     if (!groups.has(groupName)) groups.set(groupName, [])
     groups.get(groupName).push(prod)
   }
@@ -84,7 +87,10 @@ function rowProduct(row) {
 function rowStock(row) {
   if (!row.produk_id) return null
   const val = props.stockMap[Number(row.produk_id)]
-  return val === undefined ? 0 : Number(val)
+  if (val !== undefined) return Number(val)
+  const prod = rowProduct(row)
+  if (prod && prod.stok !== undefined && prod.stok !== null) return Number(prod.stok)
+  return 0
 }
 
 function fieldError(index, field) {
@@ -138,12 +144,14 @@ function fieldError(index, field) {
         </div>
 
         <div class="doc-item-col doc-item-qty">
-          <label class="field-label-sm" :for="`item-qty-${idx}`">Jumlah</label>
+          <label class="field-label-sm" :for="`item-qty-${idx}`">
+            {{ allowNegative ? 'Selisih (+/-)' : 'Jumlah' }}
+          </label>
           <div class="doc-qty-wrap">
             <input
               :id="`item-qty-${idx}`"
               type="number"
-              min="1"
+              :min="allowNegative ? -100000 : 1"
               step="1"
               class="input mono"
               :value="row.jumlah"

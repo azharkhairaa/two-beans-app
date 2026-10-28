@@ -617,6 +617,10 @@ textarea {
   color: var(--error-teks);
 }
 
+.text-success {
+  color: var(--aman-teks);
+}
+
 .btn-sm {
   min-height: 34px;
   padding: 5px 12px;
@@ -655,12 +659,14 @@ textarea {
   color: var(--proses-teks);
 }
 
-.badge-error {
+.badge-error,
+.badge-bahaya {
   background: var(--error-latar);
   color: var(--error-teks);
 }
 
-.badge-draf {
+.badge-draf,
+.badge-netral {
   background: var(--draf-latar);
   color: var(--draf-teks);
 }
@@ -994,6 +1000,21 @@ textarea {
   justify-content: space-between;
   gap: 8px;
   padding: 14px 16px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kontrol);
+  background: color-mix(in srgb, var(--susu) 65%, white);
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
   border: 1px solid var(--garis);
   border-radius: var(--radius-kontrol);
   background: color-mix(in srgb, var(--susu) 65%, white);

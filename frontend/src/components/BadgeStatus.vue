@@ -15,6 +15,7 @@ import {
 } from '@/utils/constants'
 
 const props = defineProps({
+  status: { type: [String, Boolean], default: '' },
   value: { type: [String, Boolean], default: '' },
   label: { type: String, default: '' },
   tone: { type: String, default: '' },
@@ -77,8 +78,9 @@ const TONES = {
 }
 
 const key = computed(() => {
-  if (typeof props.value === 'boolean') return props.value ? 'aktif' : 'nonaktif'
-  return String(props.value || '')
+  const raw = props.status !== '' ? props.status : props.value
+  if (typeof raw === 'boolean') return raw ? 'aktif' : 'nonaktif'
+  return String(raw || '')
 })
 
 const resolvedTone = computed(() => props.tone || TONES[key.value] || 'netral')
