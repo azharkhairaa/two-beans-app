@@ -28,6 +28,27 @@ export function formatRupiah(value) {
   return `Rp ${integerFormat.format(Number(value || 0))}`
 }
 
+export function formatRupiahCompact(value) {
+  const num = Number(value || 0)
+  const abs = Math.abs(num)
+  const sign = num < 0 ? '-' : ''
+  if (abs >= 1_000_000_000) {
+    const scaled = (abs / 1_000_000_000).toLocaleString('id-ID', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })
+    return `${sign}Rp ${scaled} M`
+  }
+  if (abs >= 1_000_000) {
+    const scaled = (abs / 1_000_000).toLocaleString('id-ID', {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })
+    return `${sign}Rp ${scaled} jt`
+  }
+  return formatRupiah(num)
+}
+
 export function formatDate(value) {
   if (!value) return '-'
   const parsed = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)

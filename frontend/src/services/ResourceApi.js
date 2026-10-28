@@ -168,3 +168,21 @@ export class PenjualanApi extends ResourceApi {
     return this.action(id, 'posting')
   }
 }
+
+export class DashboardApi {
+  constructor(client) {
+    this.client = client
+  }
+
+  summary() {
+    return this.client.get('/dashboard')
+  }
+
+  monitoring(params) {
+    return this.client.get('/dashboard/monitoring', params)
+  }
+
+  tren(params) {
+    return this.client.get('/dashboard/tren', params)
+  }
+}

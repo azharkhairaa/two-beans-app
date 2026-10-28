@@ -2,6 +2,7 @@ import { ApiClient } from './ApiClient'
 import { AuthApi } from './AuthApi'
 import {
   CustomerApi,
+  DashboardApi,
   KategoriApi,
   LokasiApi,
   PembelianApi,
@@ -30,3 +31,4 @@ export const pengirimanApi = new PengirimanApi(apiClient)
 export const permintaanApi = new PermintaanApi(apiClient)
 export const pembelianApi = new PembelianApi(apiClient)
 export const penjualanApi = new PenjualanApi(apiClient)
+export const dashboardApi = new DashboardApi(apiClient)

@@ -1,9 +1,11 @@
 import { onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
 import { ApiError } from '@/services/ApiClient'
 
 // state daftar: empat keadaan request (loading, error, empty, data), filter dan paginasi
 export function useList(fetcher, optionsOrFilters = {}, maybeOptions = {}) {
+  const route = useRoute()
   const hasNestedInitial =
     optionsOrFilters &&
     typeof optionsOrFilters === 'object' &&
@@ -18,7 +20,16 @@ export function useList(fetcher, optionsOrFilters = {}, maybeOptions = {}) {
     ...(paginated ? { page: 1, per_page: opts.perPage || 15 } : {}),
     ...rawInitial,
   }
-  const filters = reactive({ ...defaults })
+  const initialFromQuery = {}
+  if (route?.query) {
+    for (const key of Object.keys(defaults)) {
+      const qVal = route.query[key]
+      if (typeof qVal === 'string' && qVal !== '') {
+        initialFromQuery[key] = qVal
+      }
+    }
+  }
+  const filters = reactive({ ...defaults, ...initialFromQuery })
   const items = ref([])
   const meta = ref({ page: 1, per_page: defaults.per_page || 15, total: 0, total_pages: 1 })
   const extra = ref({})
