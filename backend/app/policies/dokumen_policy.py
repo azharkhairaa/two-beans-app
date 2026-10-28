@@ -1,7 +1,7 @@
 from sqlalchemy import Select, false, or_
 
 from app.core.errors import Forbidden
-from app.models import LokasiType, Pengiriman, User, UserRole
+from app.models import Lokasi, LokasiType, Pengiriman, Permintaan, User, UserRole
 
 class PengirimanPolicy:
     # hak akses per objek pengiriman: gudang asal mengirim, lokasi tujuan menerima,
@@ -63,3 +63,57 @@ class PengirimanPolicy:
         ):
             return
         raise Forbidden("Hanya manager lokasi tujuan yang bisa menerima pengiriman ini")
+
+
+class PermintaanPolicy:
+    # hak akses per objek permintaan: gudang cabang dan outlet mengajukan,
+    # gudang utama menyetujui atau menolak (BR-08, BR-09, BR-14)
+    REQUESTER_TYPES = (LokasiType.GUDANG_CABANG, LokasiType.OUTLET)
+
+    def __init__(self, user: User):
+        self.user = user
+
+    @property
+    def is_admin(self) -> bool:
+        return self.user.role == UserRole.ADMIN
+
+    def can_read(self, permintaan: Permintaan) -> bool:
+        if self.is_admin:
+            return True
+        return self.user.lokasi_id in (
+            permintaan.lokasi_peminta_id,
+            permintaan.lokasi_sumber_id,
+        )
+
+    def restrict(self, query: Select) -> Select:
+        if self.is_admin:
+            return query
+        if self.user.lokasi_id is None:
+            return query.where(false())
+        return query.where(
+            or_(
+                Permintaan.lokasi_peminta_id == self.user.lokasi_id,
+                Permintaan.lokasi_sumber_id == self.user.lokasi_id,
+            )
+        )
+
+    def ensure_can_create(self, lokasi_peminta: Lokasi) -> None:
+        if not self.is_admin and lokasi_peminta.jenis not in self.REQUESTER_TYPES:
+            raise Forbidden("Permintaan hanya bisa diajukan dari gudang cabang atau outlet")
+
+    def ensure_can_edit_or_cancel(self, permintaan: Permintaan) -> None:
+        if self.is_admin or self.user.lokasi_id == permintaan.lokasi_peminta_id:
+            return
+        raise Forbidden(
+            "Hanya manager lokasi peminta yang bisa mengubah atau membatalkan permintaan ini"
+        )
+
+    def ensure_can_process(self, permintaan: Permintaan) -> None:
+        if self.is_admin:
+            return
+        if (
+            self.user.role == UserRole.MANAGER_GUDANG
+            and self.user.lokasi_id == permintaan.lokasi_sumber_id
+        ):
+            return
+        raise Forbidden("Hanya manager gudang utama yang bisa memproses permintaan ini")

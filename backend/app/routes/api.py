@@ -12,6 +12,7 @@ from app.controllers.master_controller import (
     SupplierController,
 )
 from app.controllers.pengiriman_controller import PengirimanController
+from app.controllers.permintaan_controller import PermintaanController
 from app.controllers.produk_controller import ProdukController
 from app.controllers.stok_controller import StokController
 from app.controllers.system_controller import SystemController
@@ -65,6 +66,7 @@ produk = ProdukController()
 stok = StokController()
 transaksi = TransaksiController()
 pengiriman = PengirimanController()
+permintaan = PermintaanController()
 
 # list endpoint API
 ROUTES = [
@@ -108,6 +110,20 @@ ROUTES = [
           "Kirim barang dari gudang asal dan kurangi stok", tag="pengiriman"),
     Route("POST", "/pengiriman/{id}/terima", pengiriman.terima, Access.MANAGER,
           "Konfirmasi terima barang di lokasi tujuan dan tambah stok", tag="pengiriman"),
+    Route("GET", "/permintaan", permintaan.index, Access.MANAGER,
+          "Daftar permintaan supply", tag="permintaan"),
+    Route("POST", "/permintaan", permintaan.store, Access.MANAGER,
+          "Ajukan permintaan supply ke gudang utama", status=201, tag="permintaan"),
+    Route("GET", "/permintaan/{id}", permintaan.show, Access.MANAGER,
+          "Detail permintaan supply", tag="permintaan"),
+    Route("PUT", "/permintaan/{id}", permintaan.update, Access.MANAGER,
+          "Ubah permintaan yang masih diajukan", tag="permintaan"),
+    Route("POST", "/permintaan/{id}/batal", permintaan.batal, Access.MANAGER,
+          "Batalkan permintaan yang masih diajukan", tag="permintaan"),
+    Route("POST", "/permintaan/{id}/setujui", permintaan.setujui, Access.MANAGER,
+          "Setujui permintaan dan buat draf pengiriman", tag="permintaan"),
+    Route("POST", "/permintaan/{id}/tolak", permintaan.tolak, Access.MANAGER,
+          "Tolak permintaan dengan alasan", tag="permintaan"),
     Route("GET", "/users", users.index, Access.ADMIN, "Daftar user, akun menunggu di atas",
           tag="users"),
     Route("GET", "/users/deliveryman", users.deliveryman, Access.MANAGER,
