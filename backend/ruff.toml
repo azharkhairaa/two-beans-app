@@ -13,3 +13,5 @@ lines-after-imports = 1
 [lint.per-file-ignores]
 # assert di test dibiarkan satu baris supaya mudah dibaca
 "tests/*" = ["E501"]
+# satu baris data seeder dibiarkan satu baris seperti tabel
+"app/seeders/*_seeder.py" = ["E501"]
