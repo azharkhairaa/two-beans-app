@@ -13,6 +13,7 @@ from app.controllers.master_controller import (
 )
 from app.controllers.produk_controller import ProdukController
 from app.controllers.system_controller import SystemController
+from app.controllers.user_controller import UserController
 from app.core.config import settings
 from app.core.limiter import rate_limiter
 from app.policies.access import current_user, require_admin, require_manager
@@ -56,6 +57,7 @@ def resource(
 
 system = SystemController()
 auth = AuthController()
+users = UserController()
 
 # list endpoint API
 ROUTES = [
@@ -82,6 +84,14 @@ ROUTES = [
               read=Access.MANAGER, write=Access.MANAGER, remove=Access.ADMIN, options=True),
     *resource("/produk", ProdukController(), "produk",
               read=Access.MANAGER, write=Access.ADMIN, remove=Access.ADMIN, options=True),
+    Route("GET", "/users", users.index, Access.ADMIN, "Daftar user, akun menunggu di atas",
+          tag="users"),
+    Route("GET", "/users/deliveryman", users.deliveryman, Access.MANAGER,
+          "Deliveryman aktif untuk formulir kirim", tag="users"),
+    Route("PATCH", "/users/{id}", users.update, Access.ADMIN,
+          "Setujui akun atau ubah peran, lokasi dan status", tag="users"),
+    Route("DELETE", "/users/{id}", users.destroy, Access.ADMIN,
+          "Hapus atau tolak akun yang belum punya riwayat", status=204, tag="users"),
 ]
 
 def build_router(routes: Sequence[Route] = ROUTES) -> APIRouter:

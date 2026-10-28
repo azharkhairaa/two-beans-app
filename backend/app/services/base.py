@@ -45,11 +45,12 @@ class CrudService[M: Base]:
         self.db.commit()
 
     def usage(self, obj: M) -> list[tuple[str, int]]:
-        # jumlah baris tabel lain yang merujuk obj, dibaca dari FK di metadata model
+        # jumlah baris tabel lain yang merujuk obj, dibaca dari FK di metadata model.
+        # FK ON DELETE CASCADE (sesi, baris detail) ikut terhapus sehingga tidak menghalangi
         result = []
         for table in Base.metadata.sorted_tables:
             for fk in table.foreign_keys:
-                if fk.column.table is self.model.__table__:
+                if fk.column.table is self.model.__table__ and fk.ondelete != "CASCADE":
                     count = self.db.scalar(select(func.count()).where(fk.parent == obj.id))
                     if count:
                         result.append((table.name, count))
@@ -61,9 +62,13 @@ class CrudService[M: Base]:
             return
         table, count = max(usage, key=lambda item: item[1])
         message = f"{self.label} masih dipakai {count} {self.table_label(table)}"
-        if hasattr(self.model, "aktif"):
+        if self.can_deactivate:
             message += ". Nonaktifkan saja bila tidak dipakai lagi"
         raise DataInUse(message)
+
+    @property
+    def can_deactivate(self) -> bool:
+        return hasattr(self.model, "aktif")
 
     def table_label(self, table: str) -> str:
         if table in self.TABLE_LABELS:
