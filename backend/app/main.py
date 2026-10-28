@@ -24,6 +24,7 @@ OPENAPI_TAGS = [
     {"name": "pengiriman", "description": "Pengiriman barang antarlokasi dan surat jalan"},
     {"name": "permintaan", "description": "Permintaan supply ke gudang utama"},
     {"name": "pembelian", "description": "Pesanan pembelian ke supplier"},
+    {"name": "penjualan", "description": "Penjualan ke customer dan nota penjualan"},
     {"name": "users", "description": "Persetujuan akun, peran, lokasi dan status user"},
 ]
 

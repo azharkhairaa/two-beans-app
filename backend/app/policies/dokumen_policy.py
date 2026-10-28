@@ -145,3 +145,16 @@ class PembelianPolicy:
             raise Forbidden(
                 "Pembelian ke supplier hanya bisa dikelola oleh manager gudang utama atau admin"
             )
+
+
+class PenjualanPolicy:
+    # hak akses dan aturan lokasi penjualan: manager hanya di lokasinya,
+    # penjualan dari gudang wajib memilih customer aktif (BR-25, BR-26)
+    WAREHOUSE_TYPES = (LokasiType.GUDANG_UTAMA, LokasiType.GUDANG_CABANG)
+
+    def __init__(self, user: User):
+        self.user = user
+
+    @classmethod
+    def requires_customer(cls, lokasi: Lokasi) -> bool:
+        return lokasi.jenis in cls.WAREHOUSE_TYPES

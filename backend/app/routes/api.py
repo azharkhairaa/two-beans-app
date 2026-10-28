@@ -13,6 +13,7 @@ from app.controllers.master_controller import (
 )
 from app.controllers.pembelian_controller import PembelianController
 from app.controllers.pengiriman_controller import PengirimanController
+from app.controllers.penjualan_controller import PenjualanController
 from app.controllers.permintaan_controller import PermintaanController
 from app.controllers.produk_controller import ProdukController
 from app.controllers.stok_controller import StokController
@@ -69,6 +70,7 @@ transaksi = TransaksiController()
 pengiriman = PengirimanController()
 permintaan = PermintaanController()
 pembelian = PembelianController()
+penjualan = PenjualanController()
 
 # list endpoint API
 ROUTES = [
@@ -134,6 +136,10 @@ ROUTES = [
           "Terima barang pembelian dan perbarui harga beli", tag="pembelian"),
     Route("POST", "/pembelian/{id}/batal", pembelian.batal, Access.MANAGER,
           "Batalkan pembelian berstatus draf atau dipesan", tag="pembelian"),
+    *resource("/penjualan", penjualan, "penjualan",
+              read=Access.MANAGER, write=Access.MANAGER, remove=Access.MANAGER),
+    Route("POST", "/penjualan/{id}/posting", penjualan.posting, Access.MANAGER,
+          "Posting draf penjualan dan kurangi stok", tag="penjualan"),
     Route("GET", "/users", users.index, Access.ADMIN, "Daftar user, akun menunggu di atas",
           tag="users"),
     Route("GET", "/users/deliveryman", users.deliveryman, Access.MANAGER,
