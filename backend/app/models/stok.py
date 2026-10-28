@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, CheckConstraint, DateTime, ForeignKey, String, func, text
@@ -9,6 +10,11 @@ from app.models.base import Base
 if TYPE_CHECKING:
     from app.models.lokasi import Lokasi
     from app.models.produk import Produk
+
+class StokStatus(StrEnum):
+    AMAN = "aman"
+    MENIPIS = "menipis"
+    HABIS = "habis"
 
 class Stok(Base):
     # many-to-many lokasi dan produk yang punya data sendiri (jumlah, stok minimum, rak)
@@ -34,3 +40,12 @@ class Stok(Base):
 
     lokasi: Mapped["Lokasi"] = relationship(back_populates="stok")
     produk: Mapped["Produk"] = relationship(back_populates="stok")
+
+    @property
+    def status_stok(self) -> StokStatus:
+        # BR-16, nilai turunan yang tidak disimpan
+        if self.jumlah == 0:
+            return StokStatus.HABIS
+        if self.jumlah <= self.stok_minimum:
+            return StokStatus.MENIPIS
+        return StokStatus.AMAN

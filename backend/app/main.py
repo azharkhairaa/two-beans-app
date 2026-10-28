@@ -18,6 +18,7 @@ OPENAPI_TAGS = [
     {"name": "kategori", "description": "Kategori produk beserta jumlah produknya"},
     {"name": "supplier", "description": "Pemasok green bean, peralatan dan bahan habis pakai"},
     {"name": "customer", "description": "Pembeli di semua jenis lokasi"},
+    {"name": "produk", "description": "Produk beserta aturan jenis kategori dan stok per lokasi"},
 ]
 
 def create_app(routes: Sequence[Route] = ROUTES) -> FastAPI:

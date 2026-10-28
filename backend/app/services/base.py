@@ -13,7 +13,7 @@ class CrudService[M: Base]:
     model: type[M]
     label: str
     # nama tabel anak untuk pesan "masih dipakai", sisanya memakai nama tabel
-    TABLE_LABELS = {"users": "user", "stok_mutasi": "riwayat stok"}
+    TABLE_LABELS = {"users": "user", "stok": "catatan stok lokasi", "stok_mutasi": "riwayat stok"}
 
     def __init__(self, db: Session):
         self.db = db

@@ -13,6 +13,7 @@ class FieldRules:
     # 9 sampai 15 digit, diawali 0 atau +62
     PHONE = re.compile(r"(?:\+62\d{7,13}|0\d{8,14})")
     LOKASI_KODE = re.compile(r"(?:GU|GC|OT)-\d{2}")
+    SKU = re.compile(r"[A-Z0-9]+(?:-[A-Z0-9]+)*")
 
     @staticmethod
     def lowercase(value: str) -> str:
@@ -39,6 +40,15 @@ class FieldRules:
             raise ValueError("Format kode seperti GU-01, GC-01 atau OT-01")
         return value
 
+    @classmethod
+    def sku(cls, value: str) -> str:
+        value = value.strip().upper()
+        if not 3 <= len(value) <= 30:
+            raise ValueError("SKU 3 sampai 30 karakter")
+        if not cls.SKU.fullmatch(value):
+            raise ValueError("SKU hanya huruf, angka dan tanda hubung, misalnya BK-ARB-GAYO-200")
+        return value
+
     @staticmethod
     def utc(value: datetime) -> datetime:
         # zona sesi database bisa berbeda (lokal WIB, Neon UTC), response selalu UTC berakhiran Z
@@ -60,6 +70,10 @@ EmailAddress = Annotated[EmailStr, Field(max_length=254), AfterValidator(FieldRu
 Password = Annotated[str, AfterValidator(FieldRules.password)]
 UtcDateTime = Annotated[datetime, AfterValidator(FieldRules.utc)]
 LokasiKode = Annotated[str, AfterValidator(FieldRules.lokasi_kode)]
+Sku = Annotated[str, AfterValidator(FieldRules.sku)]
+# integer ketat: "5" dari JSON ditolak, sesuai Spesifikasi API
+Rupiah = Annotated[int, Field(ge=0, le=1_000_000_000, strict=True)]
+ForeignId = Annotated[int, Field(gt=0, strict=True)]
 
 # field opsional: string kosong menjadi None lalu panjang dicek sesudah teks dibersihkan
 BlankToNone = BeforeValidator(FieldRules.blank_to_none)

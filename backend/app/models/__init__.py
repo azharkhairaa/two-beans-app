@@ -8,7 +8,7 @@ from app.models.pengiriman import KendaraanType, Pengiriman, PengirimanDetail, P
 from app.models.penjualan import Penjualan, PenjualanDetail, PenjualanStatus
 from app.models.permintaan import Permintaan, PermintaanDetail, PermintaanStatus
 from app.models.produk import CoffeeType, Produk, ProdukUnit, RoastLevel
-from app.models.stok import Stok
+from app.models.stok import Stok, StokStatus
 from app.models.stok_mutasi import StokMutasi, StokMutasiType
 from app.models.supplier import Supplier
 from app.models.transaksi import (
@@ -27,6 +27,7 @@ __all__ = [
     "Pembelian", "PembelianDetail", "PembelianStatus", "Pengiriman", "PengirimanDetail",
     "PengirimanStatus", "Penjualan", "PenjualanDetail", "PenjualanStatus", "Permintaan",
     "PermintaanDetail", "PermintaanStatus", "Produk", "ProdukUnit", "RoastLevel", "Stok",
-    "StokMutasi", "StokMutasiType", "Supplier", "TimestampMixin", "Transaksi", "TransaksiDetail",
-    "TransaksiStatus", "TransaksiType", "User", "UserRole", "UserSession", "UserStatus",
+    "StokMutasi", "StokMutasiType", "StokStatus", "Supplier", "TimestampMixin", "Transaksi",
+    "TransaksiDetail", "TransaksiStatus", "TransaksiType", "User", "UserRole", "UserSession",
+    "UserStatus",
 ]

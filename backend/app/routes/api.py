@@ -11,6 +11,7 @@ from app.controllers.master_controller import (
     KategoriController,
     SupplierController,
 )
+from app.controllers.produk_controller import ProdukController
 from app.controllers.system_controller import SystemController
 from app.core.config import settings
 from app.core.limiter import rate_limiter
@@ -79,6 +80,8 @@ ROUTES = [
     # manager boleh menambah dan mengubah customer, menghapus hanya admin
     *resource("/customer", CustomerController(), "customer",
               read=Access.MANAGER, write=Access.MANAGER, remove=Access.ADMIN, options=True),
+    *resource("/produk", ProdukController(), "produk",
+              read=Access.MANAGER, write=Access.ADMIN, remove=Access.ADMIN, options=True),
 ]
 
 def build_router(routes: Sequence[Route] = ROUTES) -> APIRouter:
