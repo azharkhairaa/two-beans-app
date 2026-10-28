@@ -5,6 +5,7 @@ from enum import Enum
 from fastapi import APIRouter, Depends
 
 from app.controllers.auth_controller import AuthController
+from app.controllers.dashboard_controller import DashboardController
 from app.controllers.lokasi_controller import LokasiController
 from app.controllers.master_controller import (
     CustomerController,
@@ -63,6 +64,7 @@ def resource(
 
 system = SystemController()
 auth = AuthController()
+dashboard = DashboardController()
 users = UserController()
 produk = ProdukController()
 stok = StokController()
@@ -86,6 +88,12 @@ ROUTES = [
           status=204, tag="auth"),
     Route("GET", "/auth/me", auth.me, Access.LOGIN,
           "Profil, peran, lokasi dan token CSRF dari sesi", tag="auth"),
+    Route("GET", "/dashboard", dashboard.index, Access.LOGIN,
+          "Ringkasan dashboard sesuai peran dan lokasi", tag="dashboard"),
+    Route("GET", "/dashboard/tren", dashboard.tren, Access.MANAGER,
+          "Tren mutasi masuk dan keluar per hari", tag="dashboard"),
+    Route("GET", "/dashboard/monitoring", dashboard.monitoring, Access.MANAGER,
+          "Matriks monitoring stok produk lintas lokasi beserta nilai", tag="dashboard"),
     *resource("/lokasi", LokasiController(), "lokasi",
               read=Access.MANAGER, write=Access.ADMIN, remove=Access.ADMIN),
     *resource("/kategori", KategoriController(), "kategori",
