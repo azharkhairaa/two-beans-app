@@ -60,7 +60,7 @@ function onSelectProduct(index, rawValue) {
   const patch = { produk_id: produkId }
   if (props.withPrice && props.defaultPriceField && prod) {
     const defaultPrice = Number(prod[props.defaultPriceField]) || 0
-    if (!props.modelValue[index]?.harga_satuan && defaultPrice > 0) {
+    if (defaultPrice > 0) {
       patch.harga_satuan = defaultPrice
     }
   }
