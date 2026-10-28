@@ -27,6 +27,7 @@ from app.core.security import password_hasher  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import (  # noqa: E402
     Base,
+    CoffeeType,
     Kategori,
     KategoriType,
     Lokasi,
@@ -94,7 +95,8 @@ class ModelFactory:
     def produk(self) -> Produk:
         kategori = self.add(Kategori(nama="Arabika Single Origin", jenis=KategoriType.ROASTED_BEAN))
         return self.add(Produk(sku="BK-ARB-GAYO-200", nama="Arabika Gayo 200 g", kategori=kategori,
-                               satuan=ProdukUnit.PACK, berat_gram=200, harga_beli=65000, harga_jual=95000))
+                               satuan=ProdukUnit.PACK, berat_gram=200, jenis_kopi=CoffeeType.ARABIKA,
+                               harga_beli=65000, harga_jual=95000))
 
 @pytest.fixture
 def factory(db):

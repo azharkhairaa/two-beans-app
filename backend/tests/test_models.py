@@ -72,6 +72,14 @@ def test_stok_mutasi_needs_exactly_one_source(factory):
                                perubahan=5, stok_sebelum=0, stok_sesudah=5, user_id=user.id))
     assert constraint_violated(error) == "ck_stok_mutasi_satu_sumber"
 
+def test_jenis_kopi_limited_to_known_types(factory):
+    produk = factory.produk()
+    assert produk.jenis_kopi == "arabika"
+    produk.jenis_kopi = "luwak"
+    with pytest.raises(IntegrityError) as error:
+        factory.db.flush()
+    assert constraint_violated(error) == "ck_produk_jenis_kopi"
+
 def test_penjualan_customer_optional_and_detail_deleted_with_document(db, factory):
     outlet = factory.outlet()
     manager = factory.manager(outlet)

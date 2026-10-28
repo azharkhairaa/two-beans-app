@@ -23,6 +23,14 @@ class RoastLevel(StrEnum):
     MEDIUM_DARK = "medium_dark"
     DARK = "dark"
 
+class CoffeeType(StrEnum):
+    ARABIKA = "arabika"
+    ROBUSTA = "robusta"
+    EXCELSA = "excelsa"
+    LIBERIKA = "liberika"
+    # campuran beberapa jenis kopi
+    BLENDED = "blended"
+
 class Produk(TimestampMixin, Base):
     __tablename__ = "produk"
     __table_args__ = (
@@ -30,6 +38,7 @@ class Produk(TimestampMixin, Base):
         check_values("satuan", ProdukUnit),
         CheckConstraint("berat_gram IS NULL OR berat_gram > 0", name="berat_gram"),
         check_values("tingkat_sangrai", RoastLevel, nullable=True),
+        check_values("jenis_kopi", CoffeeType, nullable=True),
         CheckConstraint("harga_beli >= 0", name="harga_beli"),
         CheckConstraint("harga_jual >= 0", name="harga_jual"),
     )
@@ -44,6 +53,8 @@ class Produk(TimestampMixin, Base):
     satuan: Mapped[str] = mapped_column(String(10))
     berat_gram: Mapped[int | None]
     tingkat_sangrai: Mapped[str | None] = mapped_column(String(12))
+    # wajib untuk green bean dan roasted bean, kosong untuk jenis lain (dijaga ProdukService)
+    jenis_kopi: Mapped[str | None] = mapped_column(String(10))
     # rupiah per satuan, harga beli diperbarui dari pembelian terakhir
     harga_beli: Mapped[int] = mapped_column(server_default=text("0"))
     harga_jual: Mapped[int] = mapped_column(server_default=text("0"))
