@@ -117,3 +117,31 @@ class PermintaanPolicy:
         ):
             return
         raise Forbidden("Hanya manager gudang utama yang bisa memproses permintaan ini")
+
+
+class PembelianPolicy:
+    # hak akses pembelian ke supplier: hanya manager gudang utama dan admin (BR-11)
+
+    def __init__(self, user: User):
+        self.user = user
+
+    @property
+    def is_admin(self) -> bool:
+        return self.user.role == UserRole.ADMIN
+
+    @property
+    def is_gudang_utama_manager(self) -> bool:
+        return (
+            self.user.role == UserRole.MANAGER_GUDANG
+            and self.user.lokasi is not None
+            and self.user.lokasi.jenis == LokasiType.GUDANG_UTAMA
+        )
+
+    def can_manage(self) -> bool:
+        return self.is_admin or self.is_gudang_utama_manager
+
+    def ensure_can_manage(self) -> None:
+        if not self.can_manage():
+            raise Forbidden(
+                "Pembelian ke supplier hanya bisa dikelola oleh manager gudang utama atau admin"
+            )

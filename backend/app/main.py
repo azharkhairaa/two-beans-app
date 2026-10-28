@@ -23,6 +23,7 @@ OPENAPI_TAGS = [
     {"name": "transaksi", "description": "Transaksi barang masuk, keluar dan penyesuaian stok"},
     {"name": "pengiriman", "description": "Pengiriman barang antarlokasi dan surat jalan"},
     {"name": "permintaan", "description": "Permintaan supply ke gudang utama"},
+    {"name": "pembelian", "description": "Pesanan pembelian ke supplier"},
     {"name": "users", "description": "Persetujuan akun, peran, lokasi dan status user"},
 ]
 
