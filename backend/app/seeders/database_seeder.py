@@ -6,12 +6,19 @@ from app.seeders.base import SeedContext, Seeder
 from app.seeders.lokasi_seeder import LokasiSeeder
 from app.seeders.master_seeder import CustomerSeeder, KategoriSeeder, SupplierSeeder
 from app.seeders.produk_seeder import ProdukSeeder
+from app.seeders.riwayat_seeder import RiwayatSeeder
 from app.seeders.user_seeder import UserSeeder
 
 class DatabaseSeeder:
-    # urutan mengikuti FK, riwayat dokumen 60 hari menyusul di T20
+    # urutan mengikuti FK, termasuk riwayat dokumen 60 hari yang dijalankan lewat service
     SEEDERS: tuple[type[Seeder], ...] = (
-        LokasiSeeder, UserSeeder, KategoriSeeder, SupplierSeeder, CustomerSeeder, ProdukSeeder,
+        LokasiSeeder,
+        UserSeeder,
+        KategoriSeeder,
+        SupplierSeeder,
+        CustomerSeeder,
+        ProdukSeeder,
+        RiwayatSeeder,
     )
 
     def __init__(self, db: Session):

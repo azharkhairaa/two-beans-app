@@ -5,12 +5,45 @@ from sqlalchemy import func, select
 
 from app.core.config import settings
 from app.core.limiter import rate_limiter
-from app.models import CoffeeType, Kategori, Lokasi, Produk, User, UserStatus
+from app.models import (
+    CoffeeType,
+    Kategori,
+    Lokasi,
+    Pembelian,
+    Pengiriman,
+    Penjualan,
+    Permintaan,
+    Produk,
+    Stok,
+    StokMutasi,
+    Transaksi,
+    User,
+    UserStatus,
+)
 from app.seeders.__main__ import SeedCommand
 from app.seeders.base import DEMO_PASSWORD
 from app.seeders.database_seeder import DatabaseSeeder
 
-EXPECTED = {"lokasi": 6, "users": 8, "kategori": 7, "supplier": 6, "customer": 8, "produk": 42}
+EXPECTED = {
+    "customer": 8,
+    "kategori": 7,
+    "lokasi": 6,
+    "supplier": 6,
+    "produk": 42,
+    "users": 8,
+    "pembelian": 12,
+    "penjualan": 60,
+    "permintaan": 15,
+    "stok": 109,
+    "transaksi": 40,
+    "pembelian_detail": 41,
+    "pengiriman": 25,
+    "penjualan_detail": 118,
+    "permintaan_detail": 51,
+    "transaksi_detail": 92,
+    "pengiriman_detail": 77,
+    "stok_mutasi": 385,
+}
 
 @pytest.fixture
 def seeded(db):
@@ -63,3 +96,38 @@ def test_local_database_seeded_without_flag(db, capsys):
     output = capsys.readouterr().out
     assert "produk" in output and DEMO_PASSWORD in output
     assert db.scalar(select(func.count()).select_from(User)) == 8
+
+
+def test_stok_matches_ledger_and_demo_states_exist(db, seeded):
+    stok_rows = db.scalars(select(Stok)).all()
+    statuses = {row.status_stok.value for row in stok_rows}
+    assert statuses == {"aman", "menipis", "habis"}
+
+    for row in stok_rows:
+        last_after = db.scalar(
+            select(StokMutasi.stok_sesudah)
+            .where(
+                StokMutasi.lokasi_id == row.lokasi_id,
+                StokMutasi.produk_id == row.produk_id,
+            )
+            .order_by(StokMutasi.id.desc())
+            .limit(1)
+        )
+        total_delta = db.scalar(
+            select(func.coalesce(func.sum(StokMutasi.perubahan), 0)).where(
+                StokMutasi.lokasi_id == row.lokasi_id,
+                StokMutasi.produk_id == row.produk_id,
+            )
+        )
+        assert row.jumlah == total_delta
+        assert row.jumlah == (last_after or 0)
+
+    assert "dipesan" in set(db.scalars(select(Pembelian.status)).all())
+    assert {"diajukan", "disetujui", "ditolak", "selesai"} <= set(
+        db.scalars(select(Permintaan.status)).all()
+    )
+    assert {"draf", "dikirim", "diterima"} <= set(
+        db.scalars(select(Pengiriman.status)).all()
+    )
+    assert {"draf", "diposting"} == set(db.scalars(select(Transaksi.status)).all())
+    assert {"draf", "diposting"} == set(db.scalars(select(Penjualan.status)).all())

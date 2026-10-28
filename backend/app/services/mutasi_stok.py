@@ -4,6 +4,7 @@ from sqlalchemy import select, tuple_
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.clock import Clock
 from app.core.errors import InsufficientStock
 from app.models import Stok, StokMutasi, StokMutasiType, User
 
@@ -69,11 +70,12 @@ class MutasiStok:
             self.db.rollback()
             raise InsufficientStock(f"Stok tidak cukup untuk {len(shortages)} produk", shortages)
         mutations = []
+        now = Clock.now()
         for change, before, after in plan:
             mutation = StokMutasi(
                 lokasi_id=change.lokasi_id, produk_id=change.produk_id, jenis=source.jenis,
                 perubahan=change.delta, stok_sebelum=before, stok_sesudah=after,
-                user_id=self.user.id,
+                user_id=self.user.id, created_at=now,
                 **source.foreign_key(),
             )
             self.db.add(mutation)
