@@ -22,8 +22,20 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.database import database  # noqa: E402
+from app.core.limiter import rate_limiter  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Base  # noqa: E402
+from app.models import (  # noqa: E402
+    Base,
+    Kategori,
+    KategoriType,
+    Lokasi,
+    LokasiType,
+    Produk,
+    ProdukUnit,
+    User,
+    UserRole,
+    UserStatus,
+)
 
 @pytest.fixture(scope="session", autouse=True)
 def schema():
@@ -44,5 +56,34 @@ def db():
 
 @pytest.fixture
 def client():
-    with TestClient(app) as test_client:
+    # Origin bawaan meniru browser sehingga request pengubah data lolos OriginGuard
+    rate_limiter.reset()
+    with TestClient(app, headers={"Origin": "http://testserver"}) as test_client:
         yield test_client
+
+class ModelFactory:
+    # data contoh untuk test, objek langsung di-flush supaya id terisi
+
+    def __init__(self, db):
+        self.db = db
+
+    def add(self, obj):
+        self.db.add(obj)
+        self.db.flush()
+        return obj
+
+    def outlet(self, kode="OT-01", nama="Outlet Pusat Kota") -> Lokasi:
+        return self.add(Lokasi(kode=kode, nama=nama, jenis=LokasiType.OUTLET))
+
+    def manager(self, lokasi: Lokasi) -> User:
+        return self.add(User(name="Manager Outlet", email="manager.outlet@example.com", password_hash="x",
+                             role=UserRole.MANAGER_OUTLET, status=UserStatus.AKTIF, lokasi=lokasi))
+
+    def produk(self) -> Produk:
+        kategori = self.add(Kategori(nama="Arabika Single Origin", jenis=KategoriType.ROASTED_BEAN))
+        return self.add(Produk(sku="BK-ARB-GAYO-200", nama="Arabika Gayo 200 g", kategori=kategori,
+                               satuan=ProdukUnit.PACK, berat_gram=200, harga_beli=65000, harga_jual=95000))
+
+@pytest.fixture
+def factory(db):
+    return ModelFactory(db)

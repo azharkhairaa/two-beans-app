@@ -32,6 +32,9 @@ class Customer(TimestampMixin, Base):
     alamat: Mapped[str | None] = mapped_column(String(500))
     aktif: Mapped[bool] = mapped_column(server_default=text("true"))
 
-    penjualan: Mapped[list["Penjualan"]] = relationship(back_populates="customer")
+    # FK RESTRICT dijaga database, ORM tidak mengosongkan FK anak saat induk dihapus
+    penjualan: Mapped[list["Penjualan"]] = relationship(
+        back_populates="customer", passive_deletes="all"
+    )
 
 Index("uq_customer_nama_lower", func.lower(Customer.nama), unique=True)

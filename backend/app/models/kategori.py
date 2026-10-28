@@ -24,6 +24,7 @@ class Kategori(TimestampMixin, Base):
     jenis: Mapped[str] = mapped_column(String(12))
     deskripsi: Mapped[str | None] = mapped_column(String(500))
 
-    produk: Mapped[list["Produk"]] = relationship(back_populates="kategori")
+    # FK RESTRICT dijaga database, ORM tidak mengosongkan FK anak saat induk dihapus
+    produk: Mapped[list["Produk"]] = relationship(back_populates="kategori", passive_deletes="all")
 
 Index("uq_kategori_nama_lower", func.lower(Kategori.nama), unique=True)

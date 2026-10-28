@@ -9,37 +9,15 @@ from app.models import (
     Base,
     Customer,
     CustomerType,
-    Kategori,
-    KategoriType,
     Lokasi,
     LokasiType,
     Penjualan,
     PenjualanDetail,
-    Produk,
-    ProdukUnit,
     StokMutasi,
     StokMutasiType,
     User,
-    UserRole,
     UserStatus,
 )
-
-def add(db, obj):
-    db.add(obj)
-    db.flush()
-    return obj
-
-def add_outlet(db, kode="OT-01", nama="Outlet Pusat Kota"):
-    return add(db, Lokasi(kode=kode, nama=nama, jenis=LokasiType.OUTLET))
-
-def add_manager(db, lokasi):
-    return add(db, User(name="Manager Outlet", email="manager.outlet@example.com", password_hash="x",
-                        role=UserRole.MANAGER_OUTLET, status=UserStatus.AKTIF, lokasi=lokasi))
-
-def add_produk(db):
-    kategori = add(db, Kategori(nama="Arabika Single Origin", jenis=KategoriType.ROASTED_BEAN))
-    return add(db, Produk(sku="BK-ARB-GAYO-200", nama="Arabika Gayo 200 g", kategori=kategori,
-                          satuan=ProdukUnit.PACK, berat_gram=200, harga_beli=65000, harga_jual=95000))
 
 def constraint_violated(error) -> str:
     return error.value.orig.diag.constraint_name
@@ -55,56 +33,56 @@ def test_constraint_names_follow_naming_convention():
                  "ix_stok_mutasi_lokasi_produk", "uq_lokasi_satu_gudang_utama"):
         assert name in names
 
-def test_server_defaults_filled_by_database(db):
-    lokasi = add_outlet(db)
-    user = add(db, User(name="Calon User", email="calon@example.com", password_hash="x"))
+def test_server_defaults_filled_by_database(db, factory):
+    lokasi = factory.outlet()
+    user = factory.add(User(name="Calon User", email="calon@example.com", password_hash="x"))
     db.refresh(lokasi)
     db.refresh(user)
     assert lokasi.aktif is True and lokasi.created_at is not None
     assert (user.status, user.role, user.failed_logins) == ("menunggu", None, 0)
 
-def test_only_one_gudang_utama(db):
-    add(db, Lokasi(kode="GU-01", nama="Gudang Utama Roastery", jenis=LokasiType.GUDANG_UTAMA))
+def test_only_one_gudang_utama(factory):
+    factory.add(Lokasi(kode="GU-01", nama="Gudang Utama Roastery", jenis=LokasiType.GUDANG_UTAMA))
     with pytest.raises(IntegrityError) as error:
-        add(db, Lokasi(kode="GU-02", nama="Gudang Utama Kedua", jenis=LokasiType.GUDANG_UTAMA))
+        factory.add(Lokasi(kode="GU-02", nama="Gudang Utama Kedua", jenis=LokasiType.GUDANG_UTAMA))
     assert constraint_violated(error) == "uq_lokasi_satu_gudang_utama"
 
-def test_lokasi_name_unique_ignoring_case(db):
-    add_outlet(db, "OT-01", "Outlet Kampus")
+def test_lokasi_name_unique_ignoring_case(factory):
+    factory.outlet("OT-01", "Outlet Kampus")
     with pytest.raises(IntegrityError) as error:
-        add_outlet(db, "OT-02", "OUTLET KAMPUS")
+        factory.outlet("OT-02", "OUTLET KAMPUS")
     assert constraint_violated(error) == "uq_lokasi_nama_lower"
 
-def test_lokasi_code_prefix_must_match_type(db):
+def test_lokasi_code_prefix_must_match_type(factory):
     with pytest.raises(IntegrityError) as error:
-        add(db, Lokasi(kode="GC-01", nama="Salah Kode", jenis=LokasiType.OUTLET))
+        factory.add(Lokasi(kode="GC-01", nama="Salah Kode", jenis=LokasiType.OUTLET))
     assert constraint_violated(error) == "ck_lokasi_kode_jenis"
 
-def test_active_user_must_have_role(db):
+def test_active_user_must_have_role(factory):
     with pytest.raises(IntegrityError) as error:
-        add(db, User(name="Tanpa Peran", email="x@example.com", password_hash="x", status=UserStatus.AKTIF))
+        factory.add(User(name="Tanpa Peran", email="x@example.com", password_hash="x", status=UserStatus.AKTIF))
     assert constraint_violated(error) == "ck_users_role_wajib"
 
-def test_stok_mutasi_needs_exactly_one_source(db):
-    outlet = add_outlet(db)
-    user = add_manager(db, outlet)
-    produk = add_produk(db)
+def test_stok_mutasi_needs_exactly_one_source(factory):
+    outlet = factory.outlet()
+    user = factory.manager(outlet)
+    produk = factory.produk()
     with pytest.raises(IntegrityError) as error:
-        add(db, StokMutasi(lokasi_id=outlet.id, produk_id=produk.id, jenis=StokMutasiType.MASUK,
-                           perubahan=5, stok_sebelum=0, stok_sesudah=5, user_id=user.id))
+        factory.add(StokMutasi(lokasi_id=outlet.id, produk_id=produk.id, jenis=StokMutasiType.MASUK,
+                               perubahan=5, stok_sebelum=0, stok_sesudah=5, user_id=user.id))
     assert constraint_violated(error) == "ck_stok_mutasi_satu_sumber"
 
-def test_penjualan_customer_optional_and_detail_deleted_with_document(db):
-    outlet = add_outlet(db)
-    manager = add_manager(db, outlet)
-    produk = add_produk(db)
-    kafe = add(db, Customer(nama="Kafe Senja", jenis=CustomerType.KAFE))
-    umum = add(db, Penjualan(kode="PJ-261028-0001", tanggal=date(2026, 10, 28), lokasi=outlet,
-                             dibuat_oleh=manager,
-                             detail=[PenjualanDetail(produk=produk, jumlah=5, harga_satuan=produk.harga_jual)]))
-    langganan = add(db, Penjualan(kode="PJ-261028-0002", tanggal=date(2026, 10, 28), lokasi=outlet,
-                                  customer=kafe, dibuat_oleh=manager,
-                                  detail=[PenjualanDetail(produk=produk, jumlah=10, harga_satuan=85000)]))
+def test_penjualan_customer_optional_and_detail_deleted_with_document(db, factory):
+    outlet = factory.outlet()
+    manager = factory.manager(outlet)
+    produk = factory.produk()
+    kafe = factory.add(Customer(nama="Kafe Senja", jenis=CustomerType.KAFE))
+    umum = factory.add(Penjualan(kode="PJ-261028-0001", tanggal=date(2026, 10, 28), lokasi=outlet,
+                                 dibuat_oleh=manager,
+                                 detail=[PenjualanDetail(produk=produk, jumlah=5, harga_satuan=produk.harga_jual)]))
+    langganan = factory.add(Penjualan(kode="PJ-261028-0002", tanggal=date(2026, 10, 28), lokasi=outlet,
+                                      customer=kafe, dibuat_oleh=manager,
+                                      detail=[PenjualanDetail(produk=produk, jumlah=10, harga_satuan=85000)]))
     db.commit()
     assert umum.customer is None and umum.status == "draf"
     assert [p.kode for p in kafe.penjualan] == [langganan.kode]

@@ -51,4 +51,5 @@ class Produk(TimestampMixin, Base):
     aktif: Mapped[bool] = mapped_column(server_default=text("true"))
 
     kategori: Mapped["Kategori"] = relationship(back_populates="produk")
-    stok: Mapped[list["Stok"]] = relationship(back_populates="produk")
+    # FK RESTRICT dijaga database, ORM tidak mengosongkan FK anak saat induk dihapus
+    stok: Mapped[list["Stok"]] = relationship(back_populates="produk", passive_deletes="all")

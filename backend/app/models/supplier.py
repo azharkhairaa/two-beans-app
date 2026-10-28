@@ -23,6 +23,9 @@ class Supplier(TimestampMixin, Base):
     alamat: Mapped[str | None] = mapped_column(String(500))
     aktif: Mapped[bool] = mapped_column(server_default=text("true"))
 
-    pembelian: Mapped[list["Pembelian"]] = relationship(back_populates="supplier")
+    # FK RESTRICT dijaga database, ORM tidak mengosongkan FK anak saat induk dihapus
+    pembelian: Mapped[list["Pembelian"]] = relationship(
+        back_populates="supplier", passive_deletes="all"
+    )
 
 Index("uq_supplier_nama_lower", func.lower(Supplier.nama), unique=True)

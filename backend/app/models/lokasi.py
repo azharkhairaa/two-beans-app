@@ -41,8 +41,9 @@ class Lokasi(TimestampMixin, Base):
     telepon: Mapped[str | None] = mapped_column(String(20))
     aktif: Mapped[bool] = mapped_column(server_default=text("true"))
 
-    users: Mapped[list["User"]] = relationship(back_populates="lokasi")
-    stok: Mapped[list["Stok"]] = relationship(back_populates="lokasi")
+    # FK RESTRICT dijaga database, ORM tidak mengosongkan FK anak saat induk dihapus
+    users: Mapped[list["User"]] = relationship(back_populates="lokasi", passive_deletes="all")
+    stok: Mapped[list["Stok"]] = relationship(back_populates="lokasi", passive_deletes="all")
 
 # nama lokasi unik tanpa membedakan huruf besar dan kecil
 Index("uq_lokasi_nama_lower", func.lower(Lokasi.nama), unique=True)
