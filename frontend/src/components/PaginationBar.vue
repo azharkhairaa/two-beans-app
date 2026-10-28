@@ -10,7 +10,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:page', 'update:perPage'])
+const emit = defineEmits(['update:page', 'update:perPage', 'page', 'per-page'])
 
 const start = computed(() => {
   if (!props.meta.total) return 0
@@ -18,42 +18,55 @@ const start = computed(() => {
 })
 
 const end = computed(() => Math.min(props.meta.page * props.meta.per_page, props.meta.total))
+
+function changePage(nextPage) {
+  emit('page', nextPage)
+  emit('update:page', nextPage)
+}
+
+function changePerPage(nextPerPage) {
+  const val = Number(nextPerPage)
+  emit('per-page', val)
+  emit('update:perPage', val)
+}
 </script>
 
 <template>
   <div v-if="meta.total > 0" class="pagination-bar">
     <p class="pagination-summary">
-      Menampilkan {{ start }} sampai {{ end }} dari {{ meta.total }}
+      Menampilkan <strong>{{ start }}</strong> sampai <strong>{{ end }}</strong> dari
+      <strong>{{ meta.total }}</strong> data
     </p>
     <div class="pagination-controls">
       <label class="pagination-size">
         <span>Baris</span>
         <select
-          class="input input-small"
+          class="input input-sm"
           :value="meta.per_page"
           aria-label="Jumlah baris per halaman"
-          @change="emit('update:perPage', Number($event.target.value))"
+          @change="changePerPage($event.target.value)"
         >
           <option :value="10">10</option>
+          <option :value="15">15</option>
           <option :value="20">20</option>
           <option :value="50">50</option>
         </select>
       </label>
       <button
         type="button"
-        class="btn btn-secondary btn-small"
+        class="btn btn-secondary btn-sm"
         :disabled="meta.page <= 1"
-        @click="emit('update:page', meta.page - 1)"
+        @click="changePage(meta.page - 1)"
       >
         <AppIcon name="chevron-left" :size="16" />
         <span>Sebelumnya</span>
       </button>
-      <span class="pagination-page">{{ meta.page }} / {{ meta.total_pages || 1 }}</span>
+      <span class="pagination-page mono">{{ meta.page }} / {{ meta.total_pages || 1 }}</span>
       <button
         type="button"
-        class="btn btn-secondary btn-small"
-        :disabled="meta.page >= meta.total_pages"
-        @click="emit('update:page', meta.page + 1)"
+        class="btn btn-secondary btn-sm"
+        :disabled="meta.page >= (meta.total_pages || 1)"
+        @click="changePage(meta.page + 1)"
       >
         <span>Berikutnya</span>
         <AppIcon name="chevron-right" :size="16" />

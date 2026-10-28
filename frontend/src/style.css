@@ -210,6 +210,15 @@ textarea {
   background: var(--permukaan);
 }
 
+select.input {
+  appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234a3b39' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+}
+
 .field-invalid .input {
   border-color: var(--error-teks);
 }
@@ -438,7 +447,7 @@ textarea {
 .page {
   display: grid;
   gap: 24px;
-  max-width: 1200px;
+  width: 100%;
 }
 
 .page-header {
@@ -633,6 +642,11 @@ textarea {
   font-size: 14px;
 }
 
+select.input-sm {
+  padding-right: 34px;
+  background-position: right 10px center;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -681,7 +695,7 @@ textarea {
 .page-section {
   display: grid;
   gap: 16px;
-  max-width: 1240px;
+  width: 100%;
 }
 
 .page-heading {
@@ -692,9 +706,9 @@ textarea {
 .toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 16px;
   border: 1px solid var(--garis);
   border-radius: var(--radius-kartu);
@@ -702,9 +716,14 @@ textarea {
 }
 
 .toolbar-search {
-  position: relative;
+  display: grid;
+  gap: 4px;
   flex: 1 1 240px;
   min-width: 200px;
+}
+
+.toolbar-search-box {
+  position: relative;
 }
 
 .toolbar-search .input {
@@ -723,8 +742,20 @@ textarea {
 .toolbar-group {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.toolbar-field {
+  display: grid;
+  gap: 4px;
+}
+
+.toolbar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--kopi);
+  line-height: 1.2;
 }
 
 .toolbar-group .input {
@@ -793,11 +824,18 @@ textarea {
   color: var(--abu);
 }
 
-.sku-summary,
-.action-group {
+.sku-summary {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 6px;
+}
+
+.action-group {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 
@@ -813,19 +851,43 @@ textarea {
   font-size: 14px;
 }
 
-.pagination-info {
+.pagination-info,
+.pagination-summary {
   color: var(--kopi);
 }
 
+.pagination-controls,
 .pagination-actions,
 .pagination-pages {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+}
+
+.pagination-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--kopi);
+}
+
+.pagination-size .input {
+  width: auto;
+  min-width: 72px;
+}
+
+.pagination-page {
+  padding: 0 6px;
+  font-weight: 600;
+  color: var(--espresso);
 }
 
 /* state pemuatan, kosong dan error */
 
+.loading-state,
 .loading-card,
 .state-card {
   display: grid;
@@ -836,12 +898,18 @@ textarea {
   background: var(--permukaan);
 }
 
+.loading-label {
+  font-size: 14px;
+  color: var(--abu);
+}
+
 .state-card {
   justify-items: center;
   text-align: center;
 }
 
-.state-error {
+.state-error,
+.error-state {
   border-color: var(--error-teks);
   background: color-mix(in srgb, var(--error-latar) 35%, white);
 }
@@ -850,7 +918,8 @@ textarea {
   color: var(--kopi);
 }
 
-.state-error .state-icon {
+.state-error .state-icon,
+.error-state {
   color: var(--error-teks);
 }
 
@@ -859,18 +928,14 @@ textarea {
   font-weight: 700;
 }
 
-.state-desc {
+.state-desc,
+.state-message {
   max-width: 460px;
   font-size: 14px;
   color: var(--abu);
 }
 
-.skeleton-row {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 12px;
-}
-
+.skeleton-row,
 .skeleton-cell {
   height: 18px;
   border-radius: 4px;

@@ -29,7 +29,7 @@ export const LOKASI_TYPE_LABELS = Object.freeze({
 
 export const KATEGORI_TYPE_LABELS = Object.freeze({
   green_bean: 'Green Bean',
-  roasted_bean: 'Biji Kopi Sangrai',
+  roasted_bean: 'Roasted Bean',
   peralatan: 'Peralatan',
   habis_pakai: 'Bahan Habis Pakai',
 })

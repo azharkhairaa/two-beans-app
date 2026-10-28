@@ -16,6 +16,7 @@ class FieldRules:
     LOKASI_KODE = re.compile(r"(?:GU|GC|OT)-\d{2}")
     SKU = re.compile(r"[A-Z0-9]+(?:-[A-Z0-9]+)*")
     RAK = re.compile(r"[A-Z]{1,2}-\d{2}")
+    VEHICLE_NUMBER = re.compile(r"[A-Z]{1,2} [0-9]{1,4}(?: [A-Z]{1,3})?")
 
     @staticmethod
     def lowercase(value: str) -> str:
@@ -58,6 +59,13 @@ class FieldRules:
             raise ValueError("Format rak seperti A-01 atau BC-12")
         return value
 
+    @classmethod
+    def vehicle_number(cls, value: str) -> str:
+        value = " ".join(value.strip().upper().split())
+        if not cls.VEHICLE_NUMBER.fullmatch(value):
+            raise ValueError("Format nomor kendaraan seperti D 1234 ABC atau B 9012")
+        return value
+
     @staticmethod
     def utc(value: datetime) -> datetime:
         # zona sesi database bisa berbeda (lokal WIB, Neon UTC), response selalu UTC berakhiran Z
@@ -71,6 +79,15 @@ class FieldRules:
             raise ValueError("Tanggal tidak boleh melewati hari ini")
         if value < today - timedelta(days=365):
             raise ValueError("Tanggal tidak boleh lebih tua dari 365 hari")
+        return value
+
+    @staticmethod
+    def future_or_today(value: date) -> date:
+        today = Clock.today()
+        if value < today:
+            raise ValueError("Tanggal tidak boleh sebelum hari ini")
+        if value > today + timedelta(days=365):
+            raise ValueError("Tanggal tidak boleh lebih dari 365 hari ke depan")
         return value
 
     @classmethod
@@ -89,8 +106,10 @@ EmailAddress = Annotated[EmailStr, Field(max_length=254), AfterValidator(FieldRu
 Password = Annotated[str, AfterValidator(FieldRules.password)]
 UtcDateTime = Annotated[datetime, AfterValidator(FieldRules.utc)]
 DocumentDate = Annotated[date, AfterValidator(FieldRules.document_date)]
+FutureOrTodayDate = Annotated[date, AfterValidator(FieldRules.future_or_today)]
 LokasiKode = Annotated[str, AfterValidator(FieldRules.lokasi_kode)]
 Sku = Annotated[str, AfterValidator(FieldRules.sku)]
+VehicleNumber = Annotated[str, AfterValidator(FieldRules.vehicle_number)]
 # integer ketat: "5" dari JSON ditolak, sesuai Spesifikasi API
 Rupiah = Annotated[int, Field(ge=0, le=1_000_000_000, strict=True)]
 ForeignId = Annotated[int, Field(gt=0, strict=True)]
@@ -102,3 +121,4 @@ OptionalAddress = Annotated[Annotated[MultiLineText, Field(max_length=500)] | No
 OptionalEmail = Annotated[EmailAddress | None, BlankToNone]
 OptionalPhone = Annotated[Annotated[str, AfterValidator(FieldRules.phone)] | None, BlankToNone]
 OptionalRak = Annotated[Annotated[str, AfterValidator(FieldRules.rak)] | None, BlankToNone]
+OptionalVehicleNumber = Annotated[VehicleNumber | None, BlankToNone]

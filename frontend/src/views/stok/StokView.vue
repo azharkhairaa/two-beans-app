@@ -39,7 +39,7 @@ onMounted(async () => {
   }
 })
 
-const { items, meta, loading, error, filters, load, setPage, applyFilters, resetFilters } = useList(
+const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   async (params) => {
     const res = await stokApi.list(params)
     if (res?.lokasi) {
@@ -161,78 +161,99 @@ function openKartu(row) {
 
     <form class="toolbar" @submit.prevent="applyFilters()">
       <div class="toolbar-search">
-        <AppIcon name="search" :size="16" class="toolbar-search-icon" />
-        <input
-          v-model.trim="filters.q"
-          type="search"
-          class="input input-sm"
-          placeholder="Cari SKU atau nama produk..."
-          aria-label="Cari stok produk"
-        />
+        <label class="toolbar-label" for="stk-search">Pencarian</label>
+        <div class="toolbar-search-box">
+          <AppIcon name="search" :size="16" class="toolbar-search-icon" />
+          <input
+            id="stk-search"
+            v-model.trim="filters.q"
+            type="search"
+            class="input input-sm"
+            placeholder="Cari SKU atau nama produk..."
+          />
+        </div>
       </div>
       <div class="toolbar-group">
-        <select
-          v-model="filters.lokasi_id"
-          class="input input-sm"
-          aria-label="Pilih lokasi stok"
-          @change="applyFilters()"
-        >
-          <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-            {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-          </option>
-        </select>
-        <select
-          v-model="filters.kategori_id"
-          class="input input-sm"
-          aria-label="Filter kategori"
-          @change="applyFilters()"
-        >
-          <option value="">Semua kategori</option>
-          <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
-            {{ kat.nama }}
-          </option>
-        </select>
-        <select
-          v-model="filters.jenis"
-          class="input input-sm"
-          aria-label="Filter jenis kategori"
-          @change="applyFilters()"
-        >
-          <option value="">Semua jenis</option>
-          <option v-for="(lbl, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.status_stok"
-          class="input input-sm"
-          aria-label="Filter status stok"
-          @change="applyFilters()"
-        >
-          <option value="">Semua status stok</option>
-          <option v-for="(lbl, key) in STOK_STATUS_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.sort"
-          class="input input-sm"
-          aria-label="Urutkan berdasarkan"
-          @change="applyFilters()"
-        >
-          <option value="nama">Urut: Nama produk</option>
-          <option value="jumlah">Urut: Jumlah stok</option>
-          <option value="nilai">Urut: Nilai stok</option>
-        </select>
-        <select
-          v-model="filters.arah"
-          class="input input-sm"
-          aria-label="Arah urutan"
-          @change="applyFilters()"
-        >
-          <option value="asc">Naik (A-Z / Kecil)</option>
-          <option value="desc">Turun (Z-A / Besar)</option>
-        </select>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="stk-filter-lokasi">Lokasi</label>
+          <select
+            id="stk-filter-lokasi"
+            v-model="filters.lokasi_id"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
+              {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="stk-filter-kategori">Kategori</label>
+          <select
+            id="stk-filter-kategori"
+            v-model="filters.kategori_id"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua kategori</option>
+            <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
+              {{ kat.nama }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="stk-filter-jenis">Jenis</label>
+          <select
+            id="stk-filter-jenis"
+            v-model="filters.jenis"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua jenis</option>
+            <option v-for="(lbl, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="stk-filter-status">Status Stok</label>
+          <select
+            id="stk-filter-status"
+            v-model="filters.status_stok"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua status</option>
+            <option v-for="(lbl, key) in STOK_STATUS_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="stk-filter-sort">Sort</label>
+          <select
+            id="stk-filter-sort"
+            v-model="filters.sort"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="nama">Nama produk</option>
+            <option value="jumlah">Jumlah stok</option>
+            <option value="nilai">Nilai stok</option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="stk-filter-arah">Arah</label>
+          <select
+            id="stk-filter-arah"
+            v-model="filters.arah"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="asc">Naik (A-Z / Kecil)</option>
+            <option value="desc">Turun (Z-A / Besar)</option>
+          </select>
+        </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
     </form>
@@ -303,7 +324,7 @@ function openKartu(row) {
           </tr>
         </tbody>
       </table>
-      <PaginationBar :meta="meta" @page="setPage" />
+      <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
     <BaseModal

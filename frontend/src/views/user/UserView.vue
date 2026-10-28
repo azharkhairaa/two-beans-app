@@ -31,7 +31,7 @@ onMounted(async () => {
   }
 })
 
-const { items, meta, loading, error, filters, load, setPage, applyFilters, resetFilters } = useList(
+const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   (params) => userApi.list(params),
   {
     initialFilters: {
@@ -196,49 +196,61 @@ function isSelf(row) {
 
     <form class="toolbar" @submit.prevent="applyFilters()">
       <div class="toolbar-search">
-        <AppIcon name="search" :size="16" class="toolbar-search-icon" />
-        <input
-          v-model.trim="filters.q"
-          type="search"
-          class="input input-sm"
-          placeholder="Cari nama atau email..."
-          aria-label="Cari user"
-        />
+        <label class="toolbar-label" for="usr-search">Pencarian</label>
+        <div class="toolbar-search-box">
+          <AppIcon name="search" :size="16" class="toolbar-search-icon" />
+          <input
+            id="usr-search"
+            v-model.trim="filters.q"
+            type="search"
+            class="input input-sm"
+            placeholder="Cari nama atau email..."
+          />
+        </div>
       </div>
       <div class="toolbar-group">
-        <select
-          v-model="filters.status"
-          class="input input-sm"
-          aria-label="Filter status akun"
-          @change="applyFilters()"
-        >
-          <option value="">Semua status</option>
-          <option v-for="(lbl, key) in USER_STATUS_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.role"
-          class="input input-sm"
-          aria-label="Filter peran"
-          @change="applyFilters()"
-        >
-          <option value="">Semua peran</option>
-          <option v-for="(lbl, key) in ROLE_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.lokasi_id"
-          class="input input-sm"
-          aria-label="Filter lokasi"
-          @change="applyFilters()"
-        >
-          <option value="">Semua lokasi</option>
-          <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-            {{ lok.kode }} - {{ lok.nama }}
-          </option>
-        </select>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="usr-filter-status">Status Akun</label>
+          <select
+            id="usr-filter-status"
+            v-model="filters.status"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua status</option>
+            <option v-for="(lbl, key) in USER_STATUS_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="usr-filter-role">Peran</label>
+          <select
+            id="usr-filter-role"
+            v-model="filters.role"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua peran</option>
+            <option v-for="(lbl, key) in ROLE_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="usr-filter-lokasi">Lokasi Tugas</label>
+          <select
+            id="usr-filter-lokasi"
+            v-model="filters.lokasi_id"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua lokasi</option>
+            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
+              {{ lok.kode }} - {{ lok.nama }}
+            </option>
+          </select>
+        </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
     </form>
@@ -340,7 +352,7 @@ function isSelf(row) {
           </tr>
         </tbody>
       </table>
-      <PaginationBar :meta="meta" @page="setPage" />
+      <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
     <BaseModal

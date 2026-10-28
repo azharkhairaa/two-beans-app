@@ -39,7 +39,7 @@ onMounted(async () => {
   }
 })
 
-const { items, meta, loading, error, filters, load, setPage, applyFilters, resetFilters } = useList(
+const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   (params) => transaksiApi.list(params),
   {
     initialFilters: {
@@ -276,74 +276,94 @@ async function onConfirmExecute() {
 
     <form class="toolbar" @submit.prevent="applyFilters()">
       <div class="toolbar-search">
-        <AppIcon name="search" :size="16" class="toolbar-search-icon" />
-        <input
-          v-model.trim="filters.q"
-          type="search"
-          class="input input-sm"
-          placeholder="Cari kode dokumen atau keterangan..."
-          aria-label="Cari transaksi"
-        />
+        <label class="toolbar-label" for="trx-search">Pencarian</label>
+        <div class="toolbar-search-box">
+          <AppIcon name="search" :size="16" class="toolbar-search-icon" />
+          <input
+            id="trx-search"
+            v-model.trim="filters.q"
+            type="search"
+            class="input input-sm"
+            placeholder="Cari kode dokumen atau keterangan..."
+          />
+        </div>
       </div>
       <div class="toolbar-group">
-        <select
-          v-if="auth.isAdmin"
-          v-model="filters.lokasi_id"
-          class="input input-sm"
-          aria-label="Filter lokasi"
-          @change="applyFilters()"
-        >
-          <option value="">Semua lokasi</option>
-          <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-            {{ lok.kode }} - {{ lok.nama }}
-          </option>
-        </select>
-        <select
-          v-model="filters.jenis"
-          class="input input-sm"
-          aria-label="Filter jenis transaksi"
-          @change="applyFilters()"
-        >
-          <option value="">Semua jenis</option>
-          <option v-for="(lbl, key) in TRANSAKSI_TYPE_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.status"
-          class="input input-sm"
-          aria-label="Filter status dokumen"
-          @change="applyFilters()"
-        >
-          <option value="">Semua status</option>
-          <option value="draf">Draf</option>
-          <option value="diposting">Diposting</option>
-        </select>
-        <select
-          v-model="filters.alasan"
-          class="input input-sm"
-          aria-label="Filter alasan"
-          @change="applyFilters()"
-        >
-          <option value="">Semua alasan</option>
-          <option v-for="(lbl, key) in TRANSAKSI_REASON_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <input
-          v-model="filters.dari"
-          type="date"
-          class="input input-sm mono"
-          aria-label="Dari tanggal"
-          @change="applyFilters()"
-        />
-        <input
-          v-model="filters.sampai"
-          type="date"
-          class="input input-sm mono"
-          aria-label="Sampai tanggal"
-          @change="applyFilters()"
-        />
+        <div v-if="auth.isAdmin" class="toolbar-field">
+          <label class="toolbar-label" for="trx-filter-lokasi">Lokasi</label>
+          <select
+            id="trx-filter-lokasi"
+            v-model="filters.lokasi_id"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua lokasi</option>
+            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
+              {{ lok.kode }} - {{ lok.nama }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="trx-filter-jenis">Jenis</label>
+          <select
+            id="trx-filter-jenis"
+            v-model="filters.jenis"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua jenis</option>
+            <option v-for="(lbl, key) in TRANSAKSI_TYPE_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="trx-filter-status">Status</label>
+          <select
+            id="trx-filter-status"
+            v-model="filters.status"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua status</option>
+            <option value="draf">Draf</option>
+            <option value="diposting">Diposting</option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="trx-filter-alasan">Alasan</label>
+          <select
+            id="trx-filter-alasan"
+            v-model="filters.alasan"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua alasan</option>
+            <option v-for="(lbl, key) in TRANSAKSI_REASON_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="trx-filter-dari">Dari Tanggal</label>
+          <input
+            id="trx-filter-dari"
+            v-model="filters.dari"
+            type="date"
+            class="input input-sm mono"
+            @change="applyFilters()"
+          />
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="trx-filter-sampai">Sampai Tanggal</label>
+          <input
+            id="trx-filter-sampai"
+            v-model="filters.sampai"
+            type="date"
+            class="input input-sm mono"
+            @change="applyFilters()"
+          />
+        </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
     </form>
@@ -418,7 +438,7 @@ async function onConfirmExecute() {
           </tr>
         </tbody>
       </table>
-      <PaginationBar :meta="meta" @page="setPage" />
+      <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
     <BaseModal
@@ -502,7 +522,7 @@ async function onConfirmExecute() {
               values.alasan === 'roasting'
                 ? 'Roasting hanya untuk produk kategori Green Bean'
                 : values.alasan === 'hasil_roasting'
-                  ? 'Hasil roasting hanya untuk produk kategori Biji Kopi Sangrai'
+                  ? 'Hasil roasting hanya untuk produk kategori Roasted Bean'
                   : ''
             "
             :error="errors.alasan"

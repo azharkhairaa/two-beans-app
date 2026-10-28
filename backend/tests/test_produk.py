@@ -48,20 +48,20 @@ def test_create_roasted_bean(setup, login_as):
 @pytest.mark.parametrize("jenis, changes, errors", [
     (KategoriType.GREEN_BEAN, {"satuan": "pack", "jenis_kopi": None}, {
         "satuan": "Green bean memakai satuan kg",
-        "berat_gram": "Hanya untuk biji kopi sangrai",
-        "tingkat_sangrai": "Hanya untuk biji kopi sangrai",
-        "jenis_kopi": "Wajib diisi untuk green bean dan biji kopi sangrai",
+        "berat_gram": "Hanya untuk roasted bean",
+        "tingkat_sangrai": "Hanya untuk roasted bean",
+        "jenis_kopi": "Wajib diisi untuk green bean dan roasted bean",
     }),
     (KategoriType.ROASTED_BEAN, {"satuan": "kg", "berat_gram": None, "jenis_kopi": ""}, {
-        "satuan": "Biji kopi sangrai memakai satuan pack",
-        "berat_gram": "Wajib diisi untuk biji kopi sangrai",
-        "jenis_kopi": "Wajib diisi untuk green bean dan biji kopi sangrai",
+        "satuan": "Roasted bean memakai satuan pack",
+        "berat_gram": "Wajib diisi untuk roasted bean",
+        "jenis_kopi": "Wajib diisi untuk green bean dan roasted bean",
     }),
     (KategoriType.ROASTED_BEAN, {"berat_gram": 300}, {"berat_gram": "Pilih 100, 200, 250, 500 atau 1000 gram"}),
     (KategoriType.PERALATAN, {"satuan": "pcs"}, {
-        "berat_gram": "Hanya untuk biji kopi sangrai",
-        "tingkat_sangrai": "Hanya untuk biji kopi sangrai",
-        "jenis_kopi": "Hanya untuk green bean dan biji kopi sangrai",
+        "berat_gram": "Hanya untuk roasted bean",
+        "tingkat_sangrai": "Hanya untuk roasted bean",
+        "jenis_kopi": "Hanya untuk green bean dan roasted bean",
     }),
 ])
 def test_category_rules(setup, login_as, jenis, changes, errors):

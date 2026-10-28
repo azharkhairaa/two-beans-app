@@ -3,38 +3,71 @@ import { onMounted, reactive, ref } from 'vue'
 import { ApiError } from '@/services/ApiClient'
 
 // state daftar: empat keadaan request (loading, error, empty, data), filter dan paginasi
-export function useList(fetcher, initialFilters = {}, { immediate = true } = {}) {
-  const defaults = { ...initialFilters }
+export function useList(fetcher, optionsOrFilters = {}, maybeOptions = {}) {
+  const hasNestedInitial =
+    optionsOrFilters &&
+    typeof optionsOrFilters === 'object' &&
+    ('initialFilters' in optionsOrFilters || 'paginated' in optionsOrFilters || 'immediate' in optionsOrFilters)
+
+  const rawInitial = hasNestedInitial ? optionsOrFilters.initialFilters || {} : optionsOrFilters || {}
+  const opts = hasNestedInitial ? optionsOrFilters : maybeOptions || {}
+  const paginated = opts.paginated !== false
+  const immediate = opts.immediate !== false
+
+  const defaults = {
+    ...(paginated ? { page: 1, per_page: opts.perPage || 15 } : {}),
+    ...rawInitial,
+  }
   const filters = reactive({ ...defaults })
   const items = ref([])
-  const meta = ref({ page: 1, per_page: 10, total: 0, total_pages: 0 })
+  const meta = ref({ page: 1, per_page: defaults.per_page || 15, total: 0, total_pages: 1 })
   const extra = ref({})
   const loading = ref(immediate)
   const error = ref('')
+
+  function buildParams() {
+    const out = {}
+    for (const [key, val] of Object.entries(filters)) {
+      if (val !== '' && val !== null && val !== undefined) {
+        out[key] = val
+      }
+    }
+    return out
+  }
 
   async function load() {
     loading.value = true
     error.value = ''
     try {
-      const response = await fetcher({ ...filters })
+      const response = await fetcher(buildParams())
       if (Array.isArray(response)) {
         items.value = response
-        meta.value = { page: 1, per_page: response.length || 10, total: response.length, total_pages: 1 }
+        meta.value = {
+          page: 1,
+          per_page: response.length || 15,
+          total: response.length,
+          total_pages: 1,
+        }
         extra.value = {}
       } else {
         items.value = response?.data || []
-        meta.value = response?.meta || { page: 1, per_page: 10, total: items.value.length, total_pages: 1 }
+        meta.value = response?.meta || {
+          page: filters.page || 1,
+          per_page: filters.per_page || 15,
+          total: items.value.length,
+          total_pages: 1,
+        }
         extra.value = response || {}
       }
     } catch (err) {
-      error.value = err instanceof ApiError ? err.message : 'Gagal memuat data.'
+      error.value = err instanceof ApiError ? err.message : err?.message || 'Gagal memuat data.'
     } finally {
       loading.value = false
     }
   }
 
   function applyFilters() {
-    if ('page' in filters) filters.page = 1
+    if (paginated) filters.page = 1
     return load()
   }
 

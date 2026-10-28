@@ -85,7 +85,7 @@ class TransaksiRules:
                 and kategori_jenis != KategoriType.ROASTED_BEAN
             ):
                 errors[f"items.{index}.produk_id"] = (
-                    "Alasan hasil roasting hanya untuk produk biji kopi sangrai"
+                    "Alasan hasil roasting hanya untuk produk roasted bean"
                 )
         return errors
 

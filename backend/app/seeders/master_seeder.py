@@ -5,8 +5,8 @@ class KategoriSeeder(Seeder):
     # jenis kopi dicatat di produk, jadi nama kategori tidak menyebut jenisnya
     ROWS = [
         ("Green Bean", KategoriType.GREEN_BEAN, "Biji kopi mentah untuk disangrai di roastery"),
-        ("Single Origin", KategoriType.ROASTED_BEAN, "Biji kopi sangrai dari satu daerah asal"),
-        ("Blend", KategoriType.ROASTED_BEAN, "Campuran beberapa biji kopi sangrai"),
+        ("Single Origin", KategoriType.ROASTED_BEAN, "Roasted bean dari satu daerah asal"),
+        ("Blend", KategoriType.ROASTED_BEAN, "Campuran beberapa roasted bean"),
         ("Alat Seduh Manual", KategoriType.PERALATAN, "Dripper, french press dan alat seduh lain"),
         ("Grinder", KategoriType.PERALATAN, "Penggiling kopi manual dan listrik"),
         ("Mesin Espresso dan Aksesori", KategoriType.PERALATAN, "Mesin espresso beserta perlengkapannya"),

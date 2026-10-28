@@ -21,6 +21,7 @@ OPENAPI_TAGS = [
     {"name": "produk", "description": "Produk beserta aturan jenis kategori dan stok per lokasi"},
     {"name": "stok", "description": "Stok per lokasi, stok minimum dan rak"},
     {"name": "transaksi", "description": "Transaksi barang masuk, keluar dan penyesuaian stok"},
+    {"name": "pengiriman", "description": "Pengiriman barang antarlokasi dan surat jalan"},
     {"name": "users", "description": "Persetujuan akun, peran, lokasi dan status user"},
 ]
 

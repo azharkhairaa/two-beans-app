@@ -168,7 +168,7 @@ def test_final_transaction_rejects_update_delete_and_repost_409(setup, login_as)
         "items.0.produk_id": "Alasan roasting hanya untuk produk green bean",
     }),
     ({"jenis": "masuk", "alasan": "hasil_roasting", "use_green": True}, {
-        "items.0.produk_id": "Alasan hasil roasting hanya untuk produk biji kopi sangrai",
+        "items.0.produk_id": "Alasan hasil roasting hanya untuk produk roasted bean",
     }),
 ])
 def test_reason_and_roasting_category_rules(setup, login_as, changes, expected_errors):

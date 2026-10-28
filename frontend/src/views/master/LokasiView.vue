@@ -135,17 +135,19 @@ async function onConfirmDelete() {
 
     <div class="toolbar">
       <div class="toolbar-group">
-        <label class="sr-only" for="filter-aktif">Filter status aktif</label>
-        <select
-          id="filter-aktif"
-          v-model="filters.aktif"
-          class="input input-sm"
-          @change="applyFilters()"
-        >
-          <option value="semua">Semua status</option>
-          <option value="ya">Aktif saja</option>
-          <option value="tidak">Nonaktif saja</option>
-        </select>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="filter-aktif">Status Lokasi</label>
+          <select
+            id="filter-aktif"
+            v-model="filters.aktif"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="semua">Semua status</option>
+            <option value="ya">Aktif saja</option>
+            <option value="tidak">Nonaktif saja</option>
+          </select>
+        </div>
       </div>
     </div>
 

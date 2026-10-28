@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 
 import AppIcon from '@/components/AppIcon'
+import BadgeStatus from '@/components/BadgeStatus.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -93,7 +94,7 @@ async function onConfirmDelete() {
     <header class="page-header">
       <div>
         <h2 class="page-heading">Kategori Produk</h2>
-        <p class="page-subtitle">Pengelompokan biji kopi, bahan baku, kemasan dan peralatan</p>
+        <p class="page-subtitle">Pengelompokan green bean, roasted bean, peralatan dan bahan habis pakai</p>
       </div>
       <button type="button" class="btn btn-primary" @click="openCreate">
         <AppIcon name="plus" :size="16" />
@@ -127,7 +128,7 @@ async function onConfirmDelete() {
           <tr v-for="row in items" :key="row.id">
             <td data-label="Nama Kategori" class="font-semibold">{{ row.nama }}</td>
             <td data-label="Jenis">
-              <span class="badge badge-draf">{{ KATEGORI_TYPE_LABELS[row.jenis] || row.jenis }}</span>
+              <BadgeStatus :status="row.jenis" />
             </td>
             <td data-label="Deskripsi" class="cell-secondary">{{ row.deskripsi || '-' }}</td>
             <td data-label="Jumlah Produk" class="num mono">{{ formatNumber(row.jumlah_produk) }}</td>

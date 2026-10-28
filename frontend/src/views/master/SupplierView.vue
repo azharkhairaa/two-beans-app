@@ -18,7 +18,7 @@ import { formatDate } from '@/utils/format'
 
 const toast = useToastStore()
 
-const { items, meta, loading, error, filters, load, setPage, applyFilters, resetFilters } = useList(
+const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   (params) => supplierApi.list(params),
   {
     initialFilters: {
@@ -130,44 +130,56 @@ async function onConfirmDelete() {
 
     <form class="toolbar" @submit.prevent="applyFilters()">
       <div class="toolbar-search">
-        <AppIcon name="search" :size="16" class="toolbar-search-icon" />
-        <input
-          v-model.trim="filters.q"
-          type="search"
-          class="input input-sm"
-          placeholder="Cari nama, kontak atau email..."
-          aria-label="Cari supplier"
-        />
+        <label class="toolbar-label" for="sup-search">Pencarian</label>
+        <div class="toolbar-search-box">
+          <AppIcon name="search" :size="16" class="toolbar-search-icon" />
+          <input
+            id="sup-search"
+            v-model.trim="filters.q"
+            type="search"
+            class="input input-sm"
+            placeholder="Cari nama, kontak atau email..."
+          />
+        </div>
       </div>
       <div class="toolbar-group">
-        <select
-          v-model="filters.aktif"
-          class="input input-sm"
-          aria-label="Filter status aktif"
-          @change="applyFilters()"
-        >
-          <option value="semua">Semua status</option>
-          <option value="ya">Aktif saja</option>
-          <option value="tidak">Nonaktif saja</option>
-        </select>
-        <select
-          v-model="filters.sort"
-          class="input input-sm"
-          aria-label="Urutkan berdasarkan"
-          @change="applyFilters()"
-        >
-          <option value="nama">Urut: Nama</option>
-          <option value="updated_at">Urut: Terakhir diubah</option>
-        </select>
-        <select
-          v-model="filters.arah"
-          class="input input-sm"
-          aria-label="Arah urutan"
-          @change="applyFilters()"
-        >
-          <option value="asc">A - Z / Lama</option>
-          <option value="desc">Z - A / Baru</option>
-        </select>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="sup-aktif">Status</label>
+          <select
+            id="sup-aktif"
+            v-model="filters.aktif"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="semua">Semua status</option>
+            <option value="ya">Aktif saja</option>
+            <option value="tidak">Nonaktif saja</option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="sup-sort">Sort</label>
+          <select
+            id="sup-sort"
+            v-model="filters.sort"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="nama">Nama</option>
+            <option value="updated_at">Terakhir diubah</option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="sup-arah">Arah</label>
+          <select
+            id="sup-arah"
+            v-model="filters.arah"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="asc">A - Z / Lama</option>
+            <option value="desc">Z - A / Baru</option>
+          </select>
+        </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
     </form>
@@ -228,7 +240,7 @@ async function onConfirmDelete() {
           </tr>
         </tbody>
       </table>
-      <PaginationBar :meta="meta" @page="setPage" />
+      <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
     <BaseModal

@@ -38,7 +38,7 @@ onMounted(async () => {
   }
 })
 
-const { items, meta, loading, error, filters, load, setPage, applyFilters, resetFilters } = useList(
+const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   (params) => produkApi.list(params),
   {
     initialFilters: {
@@ -225,7 +225,7 @@ async function onConfirmDelete() {
     <header class="page-header">
       <div>
         <h2 class="page-heading">Katalog Produk</h2>
-        <p class="page-subtitle">Green bean, biji kopi sangrai, peralatan seduh dan bahan habis pakai</p>
+        <p class="page-subtitle">Green bean, roasted bean, peralatan seduh dan bahan habis pakai</p>
       </div>
       <button v-if="auth.isAdmin" type="button" class="btn btn-primary" @click="openCreate">
         <AppIcon name="plus" :size="16" />
@@ -235,71 +235,89 @@ async function onConfirmDelete() {
 
     <form class="toolbar" @submit.prevent="applyFilters()">
       <div class="toolbar-search">
-        <AppIcon name="search" :size="16" class="toolbar-search-icon" />
-        <input
-          v-model.trim="filters.q"
-          type="search"
-          class="input input-sm"
-          placeholder="Cari SKU, nama produk atau merek..."
-          aria-label="Cari produk"
-        />
+        <label class="toolbar-label" for="prd-search">Pencarian</label>
+        <div class="toolbar-search-box">
+          <AppIcon name="search" :size="16" class="toolbar-search-icon" />
+          <input
+            id="prd-search"
+            v-model.trim="filters.q"
+            type="search"
+            class="input input-sm"
+            placeholder="Cari SKU, nama produk atau merek..."
+          />
+        </div>
       </div>
       <div class="toolbar-group">
-        <select
-          v-model="filters.kategori_id"
-          class="input input-sm"
-          aria-label="Filter kategori"
-          @change="applyFilters()"
-        >
-          <option value="">Semua kategori</option>
-          <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
-            {{ kat.nama }}
-          </option>
-        </select>
-        <select
-          v-model="filters.jenis"
-          class="input input-sm"
-          aria-label="Filter jenis kategori"
-          @change="applyFilters()"
-        >
-          <option value="">Semua jenis</option>
-          <option v-for="(lbl, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.jenis_kopi"
-          class="input input-sm"
-          aria-label="Filter jenis kopi"
-          @change="applyFilters()"
-        >
-          <option value="">Semua kopi</option>
-          <option v-for="(lbl, key) in COFFEE_TYPE_LABELS" :key="key" :value="key">
-            {{ lbl }}
-          </option>
-        </select>
-        <select
-          v-model="filters.aktif"
-          class="input input-sm"
-          aria-label="Filter status aktif"
-          @change="applyFilters()"
-        >
-          <option value="semua">Semua status</option>
-          <option value="ya">Aktif saja</option>
-          <option value="tidak">Nonaktif saja</option>
-        </select>
-        <select
-          v-model="filters.sort"
-          class="input input-sm"
-          aria-label="Urutkan berdasarkan"
-          @change="applyFilters()"
-        >
-          <option value="nama">Urut: Nama</option>
-          <option value="sku">Urut: SKU</option>
-          <option value="harga_beli">Urut: Harga beli</option>
-          <option value="harga_jual">Urut: Harga jual</option>
-          <option value="updated_at">Urut: Diperbarui</option>
-        </select>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="prd-filter-kategori">Kategori</label>
+          <select
+            id="prd-filter-kategori"
+            v-model="filters.kategori_id"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua kategori</option>
+            <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
+              {{ kat.nama }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="prd-filter-jenis">Jenis</label>
+          <select
+            id="prd-filter-jenis"
+            v-model="filters.jenis"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua jenis</option>
+            <option v-for="(lbl, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="prd-filter-kopi">Jenis Kopi</label>
+          <select
+            id="prd-filter-kopi"
+            v-model="filters.jenis_kopi"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="">Semua kopi</option>
+            <option v-for="(lbl, key) in COFFEE_TYPE_LABELS" :key="key" :value="key">
+              {{ lbl }}
+            </option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="prd-filter-aktif">Status</label>
+          <select
+            id="prd-filter-aktif"
+            v-model="filters.aktif"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="semua">Semua status</option>
+            <option value="ya">Aktif saja</option>
+            <option value="tidak">Nonaktif saja</option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label class="toolbar-label" for="prd-filter-sort">Sort</label>
+          <select
+            id="prd-filter-sort"
+            v-model="filters.sort"
+            class="input input-sm"
+            @change="applyFilters()"
+          >
+            <option value="nama">Nama</option>
+            <option value="sku">SKU</option>
+            <option value="harga_beli">Harga beli</option>
+            <option value="harga_jual">Harga jual</option>
+            <option value="updated_at">Diperbarui</option>
+          </select>
+        </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
     </form>
@@ -338,10 +356,8 @@ async function onConfirmDelete() {
               <div v-if="row.merek" class="cell-secondary">{{ row.merek }}</div>
             </td>
             <td data-label="Kategori">
-              <div>{{ row.kategori?.nama }}</div>
-              <span class="badge badge-draf">
-                {{ KATEGORI_TYPE_LABELS[row.kategori?.jenis] || row.kategori?.jenis }}
-              </span>
+              <div class="cell-primary">{{ row.kategori?.nama }}</div>
+              <BadgeStatus :status="row.kategori?.jenis" />
             </td>
             <td data-label="Spesifikasi">
               <div class="sku-summary">
@@ -388,7 +404,7 @@ async function onConfirmDelete() {
           </tr>
         </tbody>
       </table>
-      <PaginationBar :meta="meta" @page="setPage" />
+      <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
     <BaseModal
@@ -473,7 +489,7 @@ async function onConfirmDelete() {
               isGreenBean
                 ? 'Green bean wajib memakai satuan kg'
                 : isRoastedBean
-                  ? 'Biji kopi sangrai wajib memakai satuan pack'
+                  ? 'Roasted bean wajib memakai satuan pack'
                   : ''
             "
             :error="errors.satuan"

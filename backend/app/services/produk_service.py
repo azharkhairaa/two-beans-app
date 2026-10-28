@@ -37,20 +37,20 @@ class ProdukRules:
             errors["satuan"] = "Green bean memakai satuan kg"
         if jenis == KategoriType.ROASTED_BEAN:
             if data.satuan != ProdukUnit.PACK:
-                errors["satuan"] = "Biji kopi sangrai memakai satuan pack"
+                errors["satuan"] = "Roasted bean memakai satuan pack"
             if data.berat_gram is None:
-                errors["berat_gram"] = "Wajib diisi untuk biji kopi sangrai"
+                errors["berat_gram"] = "Wajib diisi untuk roasted bean"
             elif data.berat_gram not in self.WEIGHTS:
                 errors["berat_gram"] = "Pilih 100, 200, 250, 500 atau 1000 gram"
         else:
             if data.berat_gram is not None:
-                errors["berat_gram"] = "Hanya untuk biji kopi sangrai"
+                errors["berat_gram"] = "Hanya untuk roasted bean"
             if data.tingkat_sangrai is not None:
-                errors["tingkat_sangrai"] = "Hanya untuk biji kopi sangrai"
+                errors["tingkat_sangrai"] = "Hanya untuk roasted bean"
         if jenis in self.COFFEE and data.jenis_kopi is None:
-            errors["jenis_kopi"] = "Wajib diisi untuk green bean dan biji kopi sangrai"
+            errors["jenis_kopi"] = "Wajib diisi untuk green bean dan roasted bean"
         if jenis not in self.COFFEE and data.jenis_kopi is not None:
-            errors["jenis_kopi"] = "Hanya untuk green bean dan biji kopi sangrai"
+            errors["jenis_kopi"] = "Hanya untuk green bean dan roasted bean"
         return errors
 
 class ProdukSort(StrEnum):
