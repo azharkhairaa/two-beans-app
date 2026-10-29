@@ -643,7 +643,7 @@ async function onConfirmBatal() {
               />
             </template>
           </FormField>
-          <div v-else class="form-field">
+          <div v-else class="field">
             <span class="field-label">Lokasi peminta</span>
             <div class="doc-item-readonly">
               <span class="mono font-semibold">{{ auth.user?.lokasi?.kode }}</span>
@@ -651,6 +651,20 @@ async function onConfirmBatal() {
             </div>
           </div>
 
+          <!-- permintaan selalu ke gudang utama (BR-08), ditampilkan agar peminta tahu tujuannya -->
+          <div class="field">
+            <span class="field-label">Tujuan permintaan</span>
+            <div class="doc-item-readonly" aria-readonly="true">
+              <template v-if="gudangUtama">
+                <span class="mono font-semibold">{{ gudangUtama.kode }}</span>
+                <span>&nbsp;- {{ gudangUtama.nama }}</span>
+              </template>
+              <span v-else>Gudang utama</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row-2">
           <FormField
             id="pmt-tanggal-butuh"
             label="Tanggal dibutuhkan (opsional)"
@@ -689,6 +703,7 @@ async function onConfirmBatal() {
           v-model="values.items"
           :products="productOptions"
           :show-stock="true"
+          stock-label="Stock gudang utama"
           :disable-zero-stock="true"
           :errors="errors"
         />

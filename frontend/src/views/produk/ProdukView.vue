@@ -654,7 +654,7 @@ async function onConfirmDelete() {
               {{ formatNumber(detailData.dalam_perjalanan) }} {{ detailData.satuan }}
             </strong>
           </div>
-          <div class="summary-item">
+          <div v-if="detailData.total_nilai !== null" class="summary-item">
             <span class="detail-label">Total Nilai Stock</span>
             <strong class="detail-value mono">{{ formatRupiah(detailData.total_nilai) }}</strong>
           </div>
@@ -731,9 +731,13 @@ async function onConfirmDelete() {
                 <td data-label="Status">
                   <BadgeStatus :status="st.status_stok" />
                 </td>
-                <td data-label="Nilai" class="num mono">{{ formatRupiah(st.nilai) }}</td>
+                <!-- nilai null berarti lokasi lain yang hanya boleh dilihat jumlahnya -->
+                <td data-label="Nilai" class="num mono">
+                  {{ st.nilai === null ? '-' : formatRupiah(st.nilai) }}
+                </td>
                 <td data-label="Aksi" class="col-actions">
                   <button
+                    v-if="st.nilai !== null"
                     type="button"
                     class="btn btn-get btn-sm"
                     @click="openKartuFromDetail(st.lokasi)"

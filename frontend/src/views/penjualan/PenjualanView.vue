@@ -603,7 +603,7 @@ async function onConfirmExecute() {
               />
             </template>
           </FormField>
-          <div v-else class="form-field">
+          <div v-else class="field">
             <span class="field-label">Lokasi penjual</span>
             <div class="doc-item-readonly">
               <span class="mono font-semibold">{{ auth.user?.lokasi?.kode }}</span>

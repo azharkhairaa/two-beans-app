@@ -2400,10 +2400,17 @@ select.input-sm {
 }
 
 .matrix-row-header {
-  display: grid;
-  gap: 3px;
   text-align: left;
   font-weight: 400;
+}
+
+/* sel judul baris tetap table-cell supaya lebarnya ikut kolom header, isinya disusun bertumpuk */
+.matrix-row-header > * {
+  display: block;
+}
+
+.matrix-row-header > * + * {
+  margin-top: 3px;
 }
 
 .matrix-prod-meta {
@@ -2445,7 +2452,12 @@ select.input-sm {
   transition: transform 0.1s, border-color 0.15s;
 }
 
-.matrix-cell:hover {
+/* sel lokasi lain untuk manager cabang dan outlet hanya informasi jumlah, tidak bisa diklik */
+.matrix-cell:disabled {
+  cursor: default;
+}
+
+.matrix-cell:hover:not(:disabled) {
   border-color: var(--espresso);
 }
 

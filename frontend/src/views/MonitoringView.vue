@@ -11,10 +11,12 @@ import MatriksStok from '@/components/MatriksStok.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
 import { useKategoriOptions } from '@/composables/useOptions'
 import { dashboardApi } from '@/services'
+import { useAuthStore } from '@/stores/auth'
 import { KATEGORI_TYPE_LABELS, LOKASI_TYPE_LABELS } from '@/utils/constants'
 import { formatNumber, formatRupiah, formatRupiahCompact } from '@/utils/format'
 
 const route = useRoute()
+const auth = useAuthStore()
 
 const filters = reactive({
   q: typeof route.query.q === 'string' ? route.query.q : '',
@@ -34,9 +36,14 @@ const matrix = ref({
   lokasi: [],
   baris: [],
   total_per_lokasi: [],
-  total_jumlah: 0,
-  total_nilai: 0,
+  total_nilai: null,
+  nilai_terlihat: false,
 })
+
+// kartu stock lokasi lain hanya untuk yang boleh melihat nilai semua lokasi
+function canOpenKartu(lokasiId) {
+  return matrix.value.nilai_terlihat || lokasiId === auth.user?.lokasi?.id
+}
 
 const kartuModal = reactive({
   open: false,
@@ -69,8 +76,8 @@ async function fetchMatrix() {
       lokasi: res?.lokasi || [],
       baris: res?.baris || [],
       total_per_lokasi: res?.total_per_lokasi || [],
-      total_jumlah: Number(res?.total_jumlah || 0),
-      total_nilai: Number(res?.total_nilai || 0),
+      total_nilai: res?.total_nilai ?? null,
+      nilai_terlihat: Boolean(res?.nilai_terlihat),
     }
   } catch (err) {
     error.value = err?.message || 'Gagal memuat matriks monitoring stock.'
@@ -116,7 +123,7 @@ function closeKartuStok() {
 }
 
 function totalLokasi(lokasiId) {
-  return matrix.value.total_per_lokasi.find((item) => item.lokasi_id === lokasiId) || { jumlah: 0, nilai: 0 }
+  return matrix.value.total_per_lokasi.find((item) => item.lokasi_id === lokasiId) || { nilai: 0 }
 }
 
 onMounted(() => {
@@ -204,14 +211,18 @@ onMounted(() => {
     <ErrorState v-else-if="error" :message="error" @retry="fetchMatrix" />
 
     <template v-else>
-      <div class="summary-strip">
+      <p v-if="!matrix.nilai_terlihat" class="alert alert-info">
+        Jumlah stock semua lokasi bisa dilihat untuk menentukan permintaan. Nilai rupiah hanya
+        untuk admin dan gudang utama, nilai lokasi Anda ada di dashboard.
+      </p>
+      <div v-else class="summary-strip">
         <div class="summary-item">
           <span class="detail-label">Total Nilai Persediaan</span>
           <strong class="detail-value num" :title="formatRupiah(matrix.total_nilai)">
             {{ formatRupiahCompact(matrix.total_nilai) }}
           </strong>
           <small class="field-hint num">
-            {{ formatRupiah(matrix.total_nilai) }} · {{ formatNumber(matrix.total_jumlah) }} unit ({{ matrix.baris.length }} SKU)
+            {{ formatRupiah(matrix.total_nilai) }} · {{ formatNumber(matrix.baris.length) }} SKU
           </small>
         </div>
 
@@ -225,7 +236,7 @@ onMounted(() => {
             {{ formatRupiahCompact(totalLokasi(lok.id).nilai) }}
           </strong>
           <small class="field-hint num">
-            {{ LOKASI_TYPE_LABELS[lok.jenis] || lok.jenis }} · {{ formatNumber(totalLokasi(lok.id).jumlah) }} unit
+            {{ LOKASI_TYPE_LABELS[lok.jenis] || lok.jenis }}
           </small>
         </div>
       </div>
@@ -244,8 +255,9 @@ onMounted(() => {
         :lokasi="matrix.lokasi"
         :baris="matrix.baris"
         :total-per-lokasi="matrix.total_per_lokasi"
-        :total-jumlah="matrix.total_jumlah"
         :total-nilai="matrix.total_nilai"
+        :show-values="matrix.nilai_terlihat"
+        :can-open="canOpenKartu"
         @select-cell="openKartuStok"
       />
     </template>
