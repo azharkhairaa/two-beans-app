@@ -92,8 +92,8 @@ class MonitoringService:
             stok_map = {(stok.lokasi_id, stok.produk_id): stok for stok in stok_rows}
 
         baris_list: list[MonitoringBaris] = []
-        jumlah_per_lokasi = {lokasi.id: 0 for lokasi in lokasi_rows}
         nilai_per_lokasi = {lokasi.id: 0 for lokasi in lokasi_rows}
+        show_values = self.lokasi_policy.sees_all_values
 
         for produk in produk_rows:
             sel_list: list[MonitoringSel] = []
@@ -120,7 +120,7 @@ class MonitoringService:
                         stok_minimum=minimum,
                         rak=rak,
                         status_stok=status,
-                        nilai=jumlah * produk.harga_beli,
+                        nilai=jumlah * produk.harga_beli if show_values else None,
                     )
                 )
 
@@ -132,8 +132,7 @@ class MonitoringService:
                 continue
 
             for sel in sel_list:
-                jumlah_per_lokasi[sel.lokasi_id] += sel.jumlah
-                nilai_per_lokasi[sel.lokasi_id] += sel.nilai
+                nilai_per_lokasi[sel.lokasi_id] += sel.nilai or 0
 
             baris_list.append(
                 MonitoringBaris(
@@ -144,21 +143,21 @@ class MonitoringService:
                         satuan=produk.satuan,
                         jenis=produk.kategori.jenis,
                         kategori_nama=produk.kategori.nama,
-                        harga_beli=produk.harga_beli,
+                        harga_beli=produk.harga_beli if show_values else None,
                     ),
                     sel=sel_list,
                     total=total_produk,
-                    nilai=total_produk * produk.harga_beli,
+                    nilai=total_produk * produk.harga_beli if show_values else None,
                 )
             )
 
+        # jumlah unit per lokasi tidak dijumlahkan karena satuannya berbeda (pack, pcs, kg)
         total_per_lokasi = [
             MonitoringTotalLokasi(
                 lokasi_id=lokasi.id,
                 kode=lokasi.kode,
                 nama=lokasi.nama,
-                jumlah=jumlah_per_lokasi[lokasi.id],
-                nilai=nilai_per_lokasi[lokasi.id],
+                nilai=nilai_per_lokasi[lokasi.id] if show_values else None,
             )
             for lokasi in lokasi_rows
         ]
@@ -166,8 +165,8 @@ class MonitoringService:
             lokasi=lokasi_headers,
             baris=baris_list,
             total_per_lokasi=total_per_lokasi,
-            total_jumlah=sum(item.jumlah for item in total_per_lokasi),
-            total_nilai=sum(item.nilai for item in total_per_lokasi),
+            total_nilai=sum(nilai_per_lokasi.values()) if show_values else None,
+            nilai_terlihat=show_values,
         )
 
     def tren(self, hari: int = 30, lokasi_id: int | None = None) -> TrenResponse:

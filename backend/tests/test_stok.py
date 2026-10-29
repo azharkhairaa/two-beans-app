@@ -115,7 +115,8 @@ def test_stok_list_defaults_filters_and_sort(db, factory, setup, login_as, clien
     manager = login_as("manager@example.com")
     own = manager.get("/api/stok").json()
     assert own["lokasi"]["kode"] == "OT-01" and own["data"][0]["status_stok"] == "menipis"
-    assert manager.get("/api/stok", params={"lokasi_id": gudang.id}).json()["meta"]["total"] == 2
+    # stock lokasi lain berisi nilai dan rak, hanya untuk admin dan manager gudang utama
+    assert manager.get("/api/stok", params={"lokasi_id": gudang.id}).status_code == 404
 
 def test_stok_setting_only_own_lokasi(setup, login_as):
     manager = login_as("manager@example.com")
@@ -138,10 +139,13 @@ def test_kartu_stok_lists_ledger_with_document_and_user(db, factory, setup, logi
     apply(db, setup, transaksi(factory, setup, TransaksiType.KELUAR, "sampel", 2), StokMutasiType.KELUAR,
           [(gudang.id, biji.id, -2)])
     manager = login_as("manager@example.com")
-    data = manager.get(f"/api/produk/{biji.id}/kartu-stok", params={"lokasi_id": gudang.id}).json()
+    assert manager.get(f"/api/produk/{biji.id}/kartu-stok", params={"lokasi_id": gudang.id}).status_code == 404
+    manager.cookies.clear()
+    admin = login_as("admin@example.com")
+    data = admin.get(f"/api/produk/{biji.id}/kartu-stok", params={"lokasi_id": gudang.id}).json()
     assert [(k["dokumen"], k["jenis"], k["perubahan"], k["stok_sesudah"], k["oleh"]) for k in data["data"]] == [
         ("BK-261028-0002", "keluar", -2, 10, "User Uji"), ("BM-261028-0001", "masuk", 12, 12, "User Uji")]
-    response = manager.get(f"/api/produk/{biji.id}/kartu-stok")
+    response = admin.get(f"/api/produk/{biji.id}/kartu-stok")
     assert response.json()["errors"] == {"lokasi_id": "Wajib diisi"}
 
 def test_concurrent_mutation_waits_for_row_lock(db, factory, setup):

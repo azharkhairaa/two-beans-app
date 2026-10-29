@@ -67,8 +67,15 @@ class StokService:
             raise NotFound("Lokasi tidak ditemukan")
         return lokasi
 
+    def visible_lokasi(self, lokasi_id: int | None) -> Lokasi:
+        # daftar stock dan kartu stock lokasi lain hanya untuk admin dan manager gudang utama
+        lokasi = self.lokasi(lokasi_id)
+        if not self.policy.can_see_detail(lokasi.id):
+            raise NotFound("Lokasi tidak ditemukan")
+        return lokasi
+
     def search(self, filters: StokFilter, params: PageParams) -> StokPage:
-        lokasi = self.lokasi(filters.lokasi_id)
+        lokasi = self.visible_lokasi(filters.lokasi_id)
         query = (
             select(Stok)
             .join(Stok.produk)
@@ -119,7 +126,7 @@ class StokService:
     def kartu_stok(self, produk_id: int, lokasi_id: int, params: PageParams) -> Page:
         if self.db.get(Produk, produk_id) is None:
             raise NotFound("Produk tidak ditemukan")
-        lokasi = self.lokasi(lokasi_id)
+        lokasi = self.visible_lokasi(lokasi_id)
         dokumen = func.coalesce(Transaksi.kode, Pengiriman.kode, Pembelian.kode, Penjualan.kode)
         query = (
             select(StokMutasi, User.name, dokumen)

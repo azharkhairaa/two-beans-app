@@ -15,6 +15,7 @@ from app.models import (
     ProdukUnit,
     Stok,
 )
+from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import ActiveFilter, Page, PageParams, SortDirection
 from app.schemas.produk import (
     LokasiRef,
@@ -107,7 +108,7 @@ class ProdukService(CrudService[Produk]):
         order = column.desc() if filters.arah == SortDirection.DESC else column.asc()
         return self.paginate(query.order_by(order, Produk.id), params, ProdukResponse)
 
-    def detail(self, item_id: int) -> ProdukDetail:
+    def detail(self, item_id: int, policy: LokasiPolicy) -> ProdukDetail:
         produk = self.get_or_404(item_id)
         rows = self.db.scalars(
             select(Stok).options(joinedload(Stok.lokasi)).where(Stok.produk_id == produk.id)
@@ -116,7 +117,9 @@ class ProdukService(CrudService[Produk]):
             StokLokasi(
                 lokasi=LokasiRef.model_validate(row.lokasi), jumlah=row.jumlah,
                 stok_minimum=row.stok_minimum, rak=row.rak, status_stok=row.status_stok,
-                nilai=row.jumlah * produk.harga_beli,
+                nilai=(
+                    row.jumlah * produk.harga_beli if policy.can_see_detail(row.lokasi_id) else None
+                ),
             )
             for row in sorted(rows, key=lambda row: row.lokasi.kode)
         ]
@@ -131,7 +134,8 @@ class ProdukService(CrudService[Produk]):
         data = ProdukResponse.model_validate(produk).model_dump()
         return ProdukDetail(
             **data, stok=stok, total_stok=sum(s.jumlah for s in stok),
-            total_nilai=sum(s.nilai for s in stok), dalam_perjalanan=dalam_perjalanan,
+            total_nilai=sum(s.nilai for s in stok) if policy.sees_all_values else None,
+            dalam_perjalanan=dalam_perjalanan,
         )
 
     def options(self, lokasi_id: int | None, jenis: KategoriType | None) -> list[ProdukOption]:

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models import CoffeeType, KategoriType, User
 from app.policies.access import current_user
+from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import ActiveFilter, Page, PageParams, SortDirection
 from app.schemas.produk import ProdukDetail, ProdukInput, ProdukOption, ProdukResponse
 from app.schemas.stok import KartuStokItem
@@ -34,17 +35,24 @@ class ProdukController:
     ) -> list[ProdukOption]:
         return ProdukService(db).options(lokasi_id, jenis)
 
-    def show(self, id: int, db: Session = Depends(get_db)) -> ProdukDetail:
-        return ProdukService(db).detail(id)
+    def show(
+        self, id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
+    ) -> ProdukDetail:
+        return ProdukService(db).detail(id, LokasiPolicy(user))
 
-    def store(self, body: ProdukInput, db: Session = Depends(get_db)) -> ProdukDetail:
+    def store(
+        self, body: ProdukInput, user: User = Depends(current_user), db: Session = Depends(get_db)
+    ) -> ProdukDetail:
         service = ProdukService(db)
-        return service.detail(service.create(body).id)
+        return service.detail(service.create(body).id, LokasiPolicy(user))
 
-    def update(self, id: int, body: ProdukInput, db: Session = Depends(get_db)) -> ProdukDetail:
+    def update(
+        self, id: int, body: ProdukInput,
+        user: User = Depends(current_user), db: Session = Depends(get_db),
+    ) -> ProdukDetail:
         service = ProdukService(db)
         service.update(service.get_or_404(id), body)
-        return service.detail(id)
+        return service.detail(id, LokasiPolicy(user))
 
     def destroy(self, id: int, db: Session = Depends(get_db)) -> None:
         service = ProdukService(db)

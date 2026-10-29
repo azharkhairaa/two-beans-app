@@ -112,7 +112,8 @@ class MonitoringProdukInfo(BaseModel):
     satuan: str
     jenis: str
     kategori_nama: str
-    harga_beli: int
+    # nilai rupiah null untuk manager yang hanya boleh melihat jumlah lokasi lain
+    harga_beli: int | None
 
 class MonitoringSel(BaseModel):
     lokasi_id: int
@@ -120,27 +121,27 @@ class MonitoringSel(BaseModel):
     stok_minimum: int
     rak: str | None = None
     status_stok: str
-    nilai: int
+    nilai: int | None
 
 class MonitoringBaris(BaseModel):
     produk: MonitoringProdukInfo
     sel: list[MonitoringSel]
     total: int
-    nilai: int
+    nilai: int | None
 
 class MonitoringTotalLokasi(BaseModel):
     lokasi_id: int
     kode: str
     nama: str
-    jumlah: int
-    nilai: int
+    nilai: int | None
 
 class MonitoringResponse(BaseModel):
     lokasi: list[MonitoringLokasiHeader]
     baris: list[MonitoringBaris]
     total_per_lokasi: list[MonitoringTotalLokasi]
-    total_jumlah: int
-    total_nilai: int
+    total_nilai: int | None
+    # false untuk manager gudang cabang dan outlet, semua nilai rupiah di matriks berisi null
+    nilai_terlihat: bool
 
 class TrenHariItem(BaseModel):
     tanggal: date

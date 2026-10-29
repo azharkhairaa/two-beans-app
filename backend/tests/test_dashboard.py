@@ -356,3 +356,27 @@ def test_large_values_inactive_products_and_unknown_status(client, db, seeded_da
     for path in ("/api/dashboard/monitoring", "/api/stok"):
         res = client.get(path, params={"status_stok": "xyz"})
         assert res.status_code == 422 and "status_stok" in res.json()["errors"]
+
+
+def test_monitoring_values_only_for_admin_and_gudang_utama(client, seeded_dashboard):
+    # manager gudang utama memantau nilai semua lokasi
+    login_as(client, "mgr.gu@twobeans.id")
+    mon_gu = client.get("/api/dashboard/monitoring").json()
+    assert mon_gu["nilai_terlihat"] is True and mon_gu["total_nilai"] > 0
+    assert "total_jumlah" not in mon_gu and "jumlah" not in mon_gu["total_per_lokasi"][0]
+
+    # manager outlet tetap melihat jumlah semua lokasi tetapi semua nilai rupiah null
+    client.cookies.clear()
+    login_as(client, "mgr.ot@twobeans.id")
+    mon_ot = client.get("/api/dashboard/monitoring").json()
+    assert mon_ot["nilai_terlihat"] is False and mon_ot["total_nilai"] is None
+    assert {row["produk"]["harga_beli"] for row in mon_ot["baris"]} == {None}
+    assert {row["nilai"] for row in mon_ot["baris"]} == {None}
+    assert {sel["nilai"] for row in mon_ot["baris"] for sel in row["sel"]} == {None}
+    assert {item["nilai"] for item in mon_ot["total_per_lokasi"]} == {None}
+    jumlah_gu = [
+        sel["jumlah"] for row in mon_ot["baris"] for sel in row["sel"]
+        if sel["lokasi_id"] == seeded_dashboard["gu"].id
+    ]
+    assert sum(jumlah_gu) == 40 + 5
+

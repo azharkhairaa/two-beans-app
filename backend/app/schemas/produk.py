@@ -64,12 +64,13 @@ class StokLokasi(BaseModel):
     stok_minimum: int
     rak: str | None
     status_stok: str
-    nilai: int
+    # null untuk lokasi lain bila manager hanya boleh melihat jumlahnya
+    nilai: int | None
 
 class ProdukDetail(ProdukResponse):
     stok: list[StokLokasi]
     total_stok: int
-    total_nilai: int
+    total_nilai: int | None
     # jumlah yang sedang dibawa pengiriman berstatus dikirim
     dalam_perjalanan: int
 
