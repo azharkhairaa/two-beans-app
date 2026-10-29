@@ -12,6 +12,7 @@ from app.models.stok import Stok, StokStatus
 from app.models.stok_mutasi import StokMutasi, StokMutasiType
 from app.models.supplier import Supplier
 from app.models.transaksi import (
+    REDUCING_REASONS,
     TRANSAKSI_REASONS,
     Transaksi,
     TransaksiDetail,
@@ -22,8 +23,8 @@ from app.models.user import User, UserRole, UserStatus
 from app.models.user_session import UserSession
 
 __all__ = [
-    "DOCUMENT_NUMBER_SEQUENCE", "TRANSAKSI_REASONS", "Base", "CoffeeType", "Customer",
-    "CustomerType", "Kategori", "KategoriType", "KendaraanType", "Lokasi", "LokasiType",
+    "DOCUMENT_NUMBER_SEQUENCE", "REDUCING_REASONS", "TRANSAKSI_REASONS", "Base", "CoffeeType",
+    "Customer", "CustomerType", "Kategori", "KategoriType", "KendaraanType", "Lokasi", "LokasiType",
     "Pembelian", "PembelianDetail", "PembelianStatus", "Pengiriman", "PengirimanDetail",
     "PengirimanStatus", "Penjualan", "PenjualanDetail", "PenjualanStatus", "Permintaan",
     "PermintaanDetail", "PermintaanStatus", "Produk", "ProdukUnit", "RoastLevel", "Stok",

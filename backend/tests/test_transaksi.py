@@ -170,6 +170,12 @@ def test_final_transaction_rejects_update_delete_and_repost_409(setup, login_as)
     ({"jenis": "masuk", "alasan": "hasil_roasting", "use_green": True}, {
         "items.0.produk_id": "Alasan hasil roasting hanya untuk produk roasted bean",
     }),
+    ({"jenis": "penyesuaian", "alasan": "rusak"}, {
+        "items.0.jumlah": "Alasan rusak hanya boleh mengurangi stock (angka negatif)",
+    }),
+    ({"jenis": "penyesuaian", "alasan": "kedaluwarsa"}, {
+        "items.0.jumlah": "Alasan kedaluwarsa hanya boleh mengurangi stock (angka negatif)",
+    }),
 ])
 def test_reason_and_roasting_category_rules(setup, login_as, changes, expected_errors):
     changes = dict(changes)
@@ -279,3 +285,20 @@ def test_location_scope_filters_and_role_access(setup, login_as, client):
     assert admin.get("/api/transaksi").json()["meta"]["total"] == 2
     filtered = admin.get("/api/transaksi", params={"q": "gudang", "sampai": (Clock.today() - timedelta(days=1)).isoformat()}).json()
     assert [row["id"] for row in filtered["data"]] == [tx_gudang["id"]]
+
+@pytest.mark.parametrize("alasan", ["rusak", "hilang", "kedaluwarsa"])
+def test_reducing_adjustment_lowers_stock(db, setup, login_as, alasan):
+    client = login_as("gudang@example.com")
+    masuk = client.post("/api/transaksi", json=payload(setup)).json()
+    client.post(f"/api/transaksi/{masuk['id']}/posting")
+    # angka negatif adalah satu-satunya bentuk yang diterima untuk barang yang berkurang
+    draft = client.post("/api/transaksi", json=payload(
+        setup, jenis="penyesuaian", alasan=alasan,
+        items=[{"produk_id": setup["biji"].id, "jumlah": -3}],
+    ))
+    assert draft.status_code == 201
+    posted = client.post(f"/api/transaksi/{draft.json()['id']}/posting")
+    assert posted.status_code == 200
+    db.expire_all()
+    assert balance(db, setup["gudang"].id, setup["biji"].id) == 5 - 3
+

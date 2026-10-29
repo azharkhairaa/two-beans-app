@@ -40,6 +40,9 @@ TRANSAKSI_REASONS = {
     TransaksiType.PENYESUAIAN: ("opname", "rusak", "hilang", "kedaluwarsa", "lainnya"),
 }
 
+# penyesuaian dengan alasan ini selalu mengurangi stock, opname dan lainnya boleh naik atau turun
+REDUCING_REASONS = ("rusak", "hilang", "kedaluwarsa")
+
 class Transaksi(TimestampMixin, Base):
     __tablename__ = "transaksi"
     __table_args__ = (

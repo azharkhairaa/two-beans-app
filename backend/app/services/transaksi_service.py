@@ -8,6 +8,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from app.core.clock import Clock
 from app.core.errors import Conflict, ValidationFailed
 from app.models import (
+    REDUCING_REASONS,
     TRANSAKSI_REASONS,
     KategoriType,
     Produk,
@@ -65,6 +66,11 @@ class TransaksiRules:
             if jenis == TransaksiType.PENYESUAIAN:
                 if item.jumlah == 0:
                     errors[f"items.{index}.jumlah"] = "Jumlah penyesuaian tidak boleh 0"
+                elif item.jumlah > 0 and data.alasan in REDUCING_REASONS:
+                    # barang rusak, hilang atau kedaluwarsa tidak mungkin menambah stock
+                    errors[f"items.{index}.jumlah"] = (
+                        f"Alasan {data.alasan} hanya boleh mengurangi stock (angka negatif)"
+                    )
             elif item.jumlah < 1:
                 errors[f"items.{index}.jumlah"] = "Minimal 1"
             produk = products.get(item.produk_id)
