@@ -28,6 +28,12 @@ export function formatRupiah(value) {
   return `Rp ${integerFormat.format(Number(value || 0))}`
 }
 
+// margin kotor dalam rupiah beserta persentasenya terhadap nilai jual
+export function formatMargin(margin, revenue) {
+  const percent = revenue > 0 ? Math.round((margin / revenue) * 100) : 0
+  return `${formatRupiah(margin)} (${percent}%)`
+}
+
 export function formatRupiahCompact(value) {
   const num = Number(value || 0)
   const abs = Math.abs(num)

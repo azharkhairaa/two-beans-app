@@ -30,6 +30,7 @@ import {
   DOCUMENT_DATE_RANGE,
   formatDate,
   formatDateTime,
+  formatMargin,
   formatNumber,
   formatRupiah,
   todayIso,
@@ -71,10 +72,14 @@ onMounted(async () => {
   }
 })
 
+const postedRows = computed(() => items.value.filter((row) => row.status === 'diposting'))
+
 const omzetHalamanDiposting = computed(() =>
-  items.value
-    .filter((row) => row.status === 'diposting')
-    .reduce((sum, row) => sum + (Number(row.total) || 0), 0)
+  postedRows.value.reduce((sum, row) => sum + (Number(row.total) || 0), 0)
+)
+
+const marginHalamanDiposting = computed(() =>
+  postedRows.value.reduce((sum, row) => sum + (Number(row.margin) || 0), 0)
 )
 
 const totalHalamanSemua = computed(() =>
@@ -381,6 +386,12 @@ async function onConfirmExecute() {
         <strong class="detail-value mono">{{ formatRupiah(omzetHalamanDiposting) }}</strong>
       </div>
       <div class="summary-item">
+        <span class="detail-label">Margin Diposting (Halaman Ini)</span>
+        <strong class="detail-value mono" :class="{ 'text-danger': marginHalamanDiposting < 0 }">
+          {{ formatMargin(marginHalamanDiposting, omzetHalamanDiposting) }}
+        </strong>
+      </div>
+      <div class="summary-item">
         <span class="detail-label">Total Nilai Termasuk Draf (Halaman Ini)</span>
         <strong class="detail-value mono">{{ formatRupiah(totalHalamanSemua) }}</strong>
       </div>
@@ -532,8 +543,11 @@ async function onConfirmExecute() {
               <div v-else class="cell-secondary">Pembeli eceran outlet</div>
             </td>
             <td data-label="Baris" class="num mono">{{ row.jumlah_item }} item</td>
-            <td data-label="Total" class="num mono font-semibold">
-              {{ formatRupiah(row.total) }}
+            <td data-label="Total" class="num mono">
+              <div class="font-semibold">{{ formatRupiah(row.total) }}</div>
+              <div class="cell-secondary" :class="{ 'text-danger': row.margin < 0 }">
+                Margin {{ formatMargin(row.margin, row.total) }}
+              </div>
             </td>
             <td data-label="Status">
               <BadgeStatus :status="row.status" />
@@ -579,7 +593,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Penjualan: ${editingKode}` : 'Buat Penjualan Baru'"
-      size="lg"
+      size="xl"
       @close="modalOpen = false"
     >
       <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
@@ -824,7 +838,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Penjualan: ${detailData.kode}` : 'Detail Penjualan'"
-      size="lg"
+      size="xl"
       @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
@@ -886,9 +900,11 @@ async function onConfirmExecute() {
               <tr>
                 <th>SKU</th>
                 <th>Produk</th>
+                <th class="num">HPP</th>
                 <th class="num">Harga Satuan</th>
                 <th class="num">Jumlah</th>
                 <th class="num">Subtotal</th>
+                <th class="num">Margin</th>
               </tr>
             </thead>
             <tbody>
@@ -898,8 +914,10 @@ async function onConfirmExecute() {
                   <div class="cell-primary">{{ item.produk.nama }}</div>
                   <BadgeStatus :status="item.produk.jenis" />
                 </td>
+                <td data-label="HPP" class="num mono">{{ formatRupiah(item.harga_beli) }}</td>
                 <td data-label="Harga Satuan" class="num mono">
-                  {{ formatRupiah(item.harga_satuan) }}
+                  <div>{{ formatRupiah(item.harga_satuan) }}</div>
+                  <div class="cell-secondary">Standar {{ formatRupiah(item.produk.harga_jual) }}</div>
                 </td>
                 <td data-label="Jumlah" class="num mono font-semibold">
                   {{ formatNumber(item.jumlah) }} {{ item.produk.satuan }}
@@ -907,8 +925,30 @@ async function onConfirmExecute() {
                 <td data-label="Subtotal" class="num mono font-semibold">
                   {{ formatRupiah(item.subtotal) }}
                 </td>
+                <td
+                  data-label="Margin"
+                  class="num mono"
+                  :class="{ 'text-danger': item.margin < 0 }"
+                >
+                  {{ formatMargin(item.margin, item.subtotal) }}
+                </td>
               </tr>
             </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="5" class="num">Total</th>
+                <td data-label="Total" class="num mono font-semibold">
+                  {{ formatRupiah(detailData.total) }}
+                </td>
+                <td
+                  data-label="Margin"
+                  class="num mono font-semibold"
+                  :class="{ 'text-danger': detailData.margin < 0 }"
+                >
+                  {{ formatMargin(detailData.margin, detailData.total) }}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

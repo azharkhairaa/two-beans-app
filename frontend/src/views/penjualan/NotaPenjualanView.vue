@@ -166,16 +166,8 @@ function goBack() {
         <p>{{ data.catatan }}</p>
       </div>
 
-      <footer class="print-signatures">
-        <div class="print-sign-box">
-          <p class="print-sign-role">Customer / Penerima</p>
-          <div class="print-sign-space"></div>
-          <p class="print-sign-name">
-            {{ data.customer?.nama || '( ................................. )' }}
-          </p>
-          <p class="print-sign-sub">{{ data.customer ? 'Pelanggan Terdaftar' : 'Pembeli Umum' }}</p>
-        </div>
-
+      <!-- nota berfungsi sebagai invoice, jadi tanpa tanda tangan customer -->
+      <footer class="print-signatures print-signatures-invoice">
         <div class="print-sign-box">
           <p class="print-sign-role">Pemeriksa Barang</p>
           <div class="print-sign-space"></div>

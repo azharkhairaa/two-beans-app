@@ -619,7 +619,7 @@ async function onConfirmBatal() {
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Permintaan: ${editingKode}` : 'Ajukan Permintaan Supply ke Gudang Utama'"
-      size="lg"
+      size="xl"
       @close="modalOpen = false"
     >
       <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
@@ -737,7 +737,7 @@ async function onConfirmBatal() {
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Permintaan: ${detailData.kode}` : 'Detail Permintaan'"
-      size="lg"
+      size="xl"
       @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
@@ -873,7 +873,7 @@ async function onConfirmBatal() {
     <BaseModal
       :open="setujuiModalOpen"
       :title="setujuiTarget ? `Setujui Permintaan: ${setujuiTarget.kode}` : 'Setujui Permintaan'"
-      size="lg"
+      size="xl"
       @close="setujuiModalOpen = false"
     >
       <LoadingState v-if="setujuiLoadingDetail" :rows="3" />

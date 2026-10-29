@@ -748,7 +748,7 @@ async function onConfirmDelete() {
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Pengiriman: ${editingKode}` : 'Buat Pengiriman Antarlokasi'"
-      size="lg"
+      size="xl"
       @close="modalOpen = false"
     >
       <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
@@ -928,7 +928,7 @@ async function onConfirmDelete() {
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Pengiriman: ${detailData.kode}` : 'Detail Pengiriman'"
-      size="lg"
+      size="xl"
       @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
@@ -1190,7 +1190,7 @@ async function onConfirmDelete() {
     <BaseModal
       :open="terimaModalOpen"
       :title="terimaTarget ? `Terima Pengiriman: ${terimaTarget.kode}` : 'Terima Pengiriman'"
-      size="lg"
+      size="xl"
       @close="closeTerima"
     >
       <LoadingState v-if="terimaLoadingDetail" :rows="3" />

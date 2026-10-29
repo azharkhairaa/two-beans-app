@@ -586,7 +586,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Pembelian: ${editingKode}` : 'Buat Pesanan Pembelian (PO)'"
-      size="lg"
+      size="xl"
       @close="modalOpen = false"
     >
       <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
@@ -684,7 +684,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Pembelian: ${detailData.kode}` : 'Detail Pembelian'"
-      size="lg"
+      size="xl"
       @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
@@ -901,7 +901,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="terimaModalOpen"
       :title="terimaTarget ? `Terima Barang PO: ${terimaTarget.kode}` : 'Terima Barang Pembelian'"
-      size="lg"
+      size="xl"
       @close="closeTerima"
     >
       <LoadingState v-if="terimaLoadingDetail" :rows="3" />

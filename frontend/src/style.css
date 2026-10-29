@@ -1283,12 +1283,13 @@ select.input-sm {
   max-width: 560px;
 }
 
+/* formulir dan detail dokumen berisi banyak isian dan tabel item, jadi diberi ruang lebar */
 .modal-lg {
-  max-width: 760px;
+  max-width: 960px;
 }
 
 .modal-xl {
-  max-width: 960px;
+  max-width: 1160px;
 }
 
 .modal-header {
@@ -1330,6 +1331,23 @@ select.input-sm {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+/* kelompok isian dalam formulir, misalnya spesifikasi produk */
+.form-section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px 16px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kartu);
+}
+
+.form-section-title {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .checkbox-field {
@@ -1785,6 +1803,11 @@ select.input-sm {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   padding-top: 12px;
+}
+
+/* tanda tangan invoice hanya pihak penjual, diletakkan rata kanan */
+.print-signatures-invoice > :first-child {
+  grid-column: 2;
 }
 
 .print-sign-box {
@@ -2733,6 +2756,10 @@ select.input-sm {
   .print-parties,
   .print-signatures {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .print-signatures-invoice > :first-child {
+    grid-column: auto;
   }
 
   .print-doc-meta {

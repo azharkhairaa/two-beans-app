@@ -77,6 +77,13 @@ const isGreenBean = computed(() => selectedJenis.value === 'green_bean')
 const isRoastedBean = computed(() => selectedJenis.value === 'roasted_bean')
 const isCoffee = computed(() => isGreenBean.value || isRoastedBean.value)
 
+const specHint = computed(() => {
+  if (isRoastedBean.value) return 'Satuan pack, jenis kopi, berat kemasan dan tingkat sangrai'
+  if (isGreenBean.value) return 'Satuan kg dan jenis kopi'
+  return 'Peralatan dan bahan habis pakai cukup satuan. Jenis kopi, berat dan tingkat sangrai ' +
+    'muncul bila kategorinya Green Bean atau Roasted Bean'
+})
+
 function onKategoriChange(rawId) {
   values.kategori_id = rawId ? Number(rawId) : ''
   const kat = kategoriList.value.find((k) => Number(k.id) === Number(rawId))
@@ -473,96 +480,101 @@ async function onConfirmDelete() {
           </FormField>
         </div>
 
-        <div class="form-row-2">
-          <FormField
-            id="prd-satuan"
-            label="Satuan"
-            :hint="
-              isGreenBean
-                ? 'Green bean wajib memakai satuan kg'
-                : isRoastedBean
-                  ? 'Roasted bean wajib memakai satuan pack'
-                  : ''
-            "
-            :error="errors.satuan"
-          >
-            <template #default="{ describedBy }">
-              <select
-                id="prd-satuan"
-                v-model="values.satuan"
-                class="input"
-                :disabled="isGreenBean || isRoastedBean"
-                :aria-invalid="Boolean(errors.satuan)"
-                :aria-describedby="describedBy"
-              >
-                <option v-for="(lbl, key) in PRODUK_UNIT_LABELS" :key="key" :value="key">
-                  {{ lbl }} ({{ key }})
-                </option>
-              </select>
-            </template>
-          </FormField>
+        <!-- isian ini yang tampil di kolom Spesifikasi katalog -->
+        <fieldset class="form-section">
+          <legend class="form-section-title">Spesifikasi</legend>
+          <p class="field-hint">{{ specHint }}</p>
+          <div class="form-row-2">
+            <FormField
+              id="prd-satuan"
+              label="Satuan"
+              :hint="
+                isGreenBean
+                  ? 'Green bean wajib memakai satuan kg'
+                  : isRoastedBean
+                    ? 'Roasted bean wajib memakai satuan pack'
+                    : ''
+              "
+              :error="errors.satuan"
+            >
+              <template #default="{ describedBy }">
+                <select
+                  id="prd-satuan"
+                  v-model="values.satuan"
+                  class="input"
+                  :disabled="isGreenBean || isRoastedBean"
+                  :aria-invalid="Boolean(errors.satuan)"
+                  :aria-describedby="describedBy"
+                >
+                  <option v-for="(lbl, key) in PRODUK_UNIT_LABELS" :key="key" :value="key">
+                    {{ lbl }} ({{ key }})
+                  </option>
+                </select>
+              </template>
+            </FormField>
 
-          <FormField
-            v-if="isCoffee"
-            id="prd-jenis-kopi"
-            label="Jenis kopi"
-            :error="errors.jenis_kopi"
-          >
-            <template #default="{ describedBy }">
-              <select
-                id="prd-jenis-kopi"
-                v-model="values.jenis_kopi"
-                class="input"
-                required
-                :aria-invalid="Boolean(errors.jenis_kopi)"
-                :aria-describedby="describedBy"
-              >
-                <option value="">Pilih jenis kopi...</option>
-                <option v-for="(lbl, key) in COFFEE_TYPE_LABELS" :key="key" :value="key">
-                  {{ lbl }}
-                </option>
-              </select>
-            </template>
-          </FormField>
-        </div>
+            <FormField
+              v-if="isCoffee"
+              id="prd-jenis-kopi"
+              label="Jenis kopi"
+              :error="errors.jenis_kopi"
+            >
+              <template #default="{ describedBy }">
+                <select
+                  id="prd-jenis-kopi"
+                  v-model="values.jenis_kopi"
+                  class="input"
+                  required
+                  :aria-invalid="Boolean(errors.jenis_kopi)"
+                  :aria-describedby="describedBy"
+                >
+                  <option value="">Pilih jenis kopi...</option>
+                  <option v-for="(lbl, key) in COFFEE_TYPE_LABELS" :key="key" :value="key">
+                    {{ lbl }}
+                  </option>
+                </select>
+              </template>
+            </FormField>
+          </div>
 
-        <div v-if="isRoastedBean" class="form-row-2">
-          <FormField id="prd-berat" label="Berat kemasan (gram)" :error="errors.berat_gram">
-            <template #default="{ describedBy }">
-              <select
-                id="prd-berat"
-                v-model.number="values.berat_gram"
-                class="input mono"
-                required
-                :aria-invalid="Boolean(errors.berat_gram)"
-                :aria-describedby="describedBy"
-              >
-                <option v-for="w in PRODUK_WEIGHTS" :key="w" :value="w">{{ w }} gram</option>
-              </select>
-            </template>
-          </FormField>
+          <div v-if="isRoastedBean" class="form-row-2">
+            <FormField id="prd-berat" label="Berat kemasan (gram)" :error="errors.berat_gram">
+              <template #default="{ describedBy }">
+                <select
+                  id="prd-berat"
+                  v-model.number="values.berat_gram"
+                  class="input mono"
+                  required
+                  :aria-invalid="Boolean(errors.berat_gram)"
+                  :aria-describedby="describedBy"
+                >
+                  <option v-for="w in PRODUK_WEIGHTS" :key="w" :value="w">{{ w }} gram</option>
+                </select>
+              </template>
+            </FormField>
 
-          <FormField
-            id="prd-sangrai"
-            label="Tingkat sangrai (opsional)"
-            :error="errors.tingkat_sangrai"
-          >
-            <template #default="{ describedBy }">
-              <select
-                id="prd-sangrai"
-                v-model="values.tingkat_sangrai"
-                class="input"
-                :aria-invalid="Boolean(errors.tingkat_sangrai)"
-                :aria-describedby="describedBy"
-              >
-                <option value="">Tanpa tingkat sangrai</option>
-                <option v-for="(lbl, key) in ROAST_LEVEL_LABELS" :key="key" :value="key">
-                  {{ lbl }}
-                </option>
-              </select>
-            </template>
-          </FormField>
-        </div>
+            <FormField
+              id="prd-sangrai"
+              label="Tingkat sangrai (opsional)"
+              :error="errors.tingkat_sangrai"
+            >
+              <template #default="{ describedBy }">
+                <select
+                  id="prd-sangrai"
+                  v-model="values.tingkat_sangrai"
+                  class="input"
+                  :aria-invalid="Boolean(errors.tingkat_sangrai)"
+                  :aria-describedby="describedBy"
+                >
+                  <option value="">Tanpa tingkat sangrai</option>
+                  <option v-for="(lbl, key) in ROAST_LEVEL_LABELS" :key="key" :value="key">
+                    {{ lbl }}
+                  </option>
+                </select>
+              </template>
+            </FormField>
+          </div>
+        </fieldset>
 
         <div class="form-row-2">
           <FormField

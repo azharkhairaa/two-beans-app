@@ -469,7 +469,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Transaksi: ${editingKode}` : 'Buat Draf Transaksi Stok'"
-      size="lg"
+      size="xl"
       @close="modalOpen = false"
     >
       <p v-if="message" class="alert alert-error" role="alert">{{ message }}</p>
@@ -609,7 +609,7 @@ async function onConfirmExecute() {
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Transaksi ${detailData.kode}` : 'Detail Transaksi'"
-      size="lg"
+      size="xl"
       @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />

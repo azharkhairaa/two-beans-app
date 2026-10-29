@@ -4,7 +4,7 @@ import { computed, watch } from 'vue'
 import AppIcon from '@/components/AppIcon'
 import SearchSelect from '@/components/SearchSelect.vue'
 import { KATEGORI_TYPE_LABELS } from '@/utils/constants'
-import { formatNumber, formatRupiah } from '@/utils/format'
+import { formatMargin, formatNumber, formatRupiah } from '@/utils/format'
 
 const props = defineProps({
   modelValue: { type: Array, required: true },
@@ -178,13 +178,39 @@ function qtyNote(row) {
   return { warn: false, text: `Selisih ${delta > 0 ? '+' : ''}${formatNumber(delta)}` }
 }
 
-// harga jual di bawah harga beli tetap boleh (BR-27), cukup diberi peringatan
-function priceNote(row) {
+const isSale = computed(() => props.defaultPriceField === 'harga_jual')
+
+// harga acuan tetap tampil sebagai label, juga saat draf diubah dan harga sudah terisi
+function priceRef(row) {
   const product = rowProduct(row)
-  if (props.defaultPriceField !== 'harga_jual' || !product || row.harga_satuan === '') return ''
-  const cost = Number(product.harga_beli) || 0
-  return Number(row.harga_satuan) < cost ? `Di bawah harga beli (${formatRupiah(cost)})` : ''
+  if (!product) return ''
+  if (isSale.value) {
+    return `Standar ${formatRupiah(product.harga_jual)} · HPP ${formatRupiah(product.harga_beli)}`
+  }
+  if (props.defaultPriceField === 'harga_beli') {
+    return `Harga beli terakhir ${formatRupiah(product.harga_beli)}`
+  }
+  return ''
 }
+
+function rowMargin(row) {
+  const product = rowProduct(row)
+  if (!isSale.value || !product || row.harga_satuan === '') return null
+  const unitMargin = Number(row.harga_satuan) - (Number(product.harga_beli) || 0)
+  return unitMargin * (Number(row.jumlah) || 0)
+}
+
+// harga di bawah HPP tetap boleh (BR-27), marginnya ditandai sebagai peringatan
+function marginNote(row) {
+  const margin = rowMargin(row)
+  if (margin === null) return null
+  const revenue = Number(row.harga_satuan) * (Number(row.jumlah) || 0)
+  return { warn: margin < 0, text: `Margin ${formatMargin(margin, revenue)}` }
+}
+
+const totalMargin = computed(() =>
+  props.modelValue.reduce((sum, row) => sum + (rowMargin(row) ?? 0), 0)
+)
 
 function fieldError(index, field) {
   if (field === 'jumlah') {
@@ -287,8 +313,13 @@ function fieldError(index, field) {
           <p v-if="fieldError(idx, 'harga_satuan')" class="field-error">
             {{ fieldError(idx, 'harga_satuan') }}
           </p>
-          <p v-else-if="priceNote(row)" class="doc-item-note doc-item-note-warn">
-            {{ priceNote(row) }}
+          <p v-if="priceRef(row)" class="doc-item-note">{{ priceRef(row) }}</p>
+          <p
+            v-if="marginNote(row)"
+            class="doc-item-note"
+            :class="{ 'doc-item-note-warn': marginNote(row).warn }"
+          >
+            {{ marginNote(row).text }}
           </p>
         </div>
 
@@ -324,6 +355,12 @@ function fieldError(index, field) {
       </span>
       <span v-if="withPrice">
         Total nilai: <strong class="mono">{{ formatRupiah(totalAmount) }}</strong>
+      </span>
+      <span v-if="isSale">
+        Margin:
+        <strong class="mono" :class="{ 'text-danger': totalMargin < 0 }">
+          {{ formatRupiah(totalMargin) }}
+        </strong>
       </span>
     </div>
   </div>
