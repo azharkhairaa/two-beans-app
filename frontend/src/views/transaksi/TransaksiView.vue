@@ -11,6 +11,7 @@ import ErrorState from '@/components/ErrorState.vue'
 import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { lokasiApi, produkApi, transaksiApi } from '@/services'
@@ -32,7 +33,7 @@ const lokasiList = ref([])
 onMounted(async () => {
   if (auth.isAdmin) {
     try {
-      lokasiList.value = await lokasiApi.list({ aktif: 'ya' })
+      lokasiList.value = await lokasiApi.list({ aktif: 'true' })
     } catch {
       lokasiList.value = []
     }
@@ -268,7 +269,7 @@ async function onConfirmExecute() {
           Pencatatan barang masuk, pemakaian keluar, roasting dan penyesuaian stok opname
         </p>
       </div>
-      <button type="button" class="btn btn-primary" @click="openCreate">
+      <button type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Buat transaksi</span>
       </button>
@@ -291,17 +292,14 @@ async function onConfirmExecute() {
       <div class="toolbar-group">
         <div v-if="auth.isAdmin" class="toolbar-field">
           <label class="toolbar-label" for="trx-filter-lokasi">Lokasi</label>
-          <select
+          <SearchSelect
             id="trx-filter-lokasi"
             v-model="filters.lokasi_id"
-            class="input input-sm"
+            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+            empty-label="Semua lokasi"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua lokasi</option>
-            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="trx-filter-jenis">Jenis</label>
@@ -375,7 +373,7 @@ async function onConfirmExecute() {
       title="Belum ada dokumen transaksi"
       description="Buat draf transaksi masuk, keluar atau penyesuaian stok untuk lokasi Anda."
     >
-      <button type="button" class="btn btn-primary btn-sm" @click="openCreate">
+      <button type="button" class="btn btn-post btn-sm" @click="openCreate">
         Buat transaksi
       </button>
     </EmptyState>
@@ -415,19 +413,19 @@ async function onConfirmExecute() {
             </td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openDetail(row)">
+                <button type="button" class="btn btn-get-outline btn-sm" @click="openDetail(row)">
                   Detail
                 </button>
                 <template v-if="row.status === 'draf'">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(row)">
+                  <button type="button" class="btn btn-put btn-sm" @click="openEdit(row)">
                     Ubah
                   </button>
-                  <button type="button" class="btn btn-primary btn-sm" @click="openPosting(row)">
+                  <button type="button" class="btn btn-post btn-sm" @click="openPosting(row)">
                     Posting
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openDelete(row)"
                   >
                     Hapus
@@ -491,20 +489,16 @@ async function onConfirmExecute() {
             :error="errors.lokasi_id"
           >
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="trx-lokasi"
-                :value="values.lokasi_id"
-                class="input"
+                :model-value="values.lokasi_id"
+                :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+                placeholder="Pilih lokasi..."
                 required
-                :aria-invalid="Boolean(errors.lokasi_id)"
-                :aria-describedby="describedBy"
-                @change="onLokasiChange($event.target.value)"
-              >
-                <option value="">Pilih lokasi...</option>
-                <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-                  {{ lok.kode }} - {{ lok.nama }}
-                </option>
-              </select>
+                :invalid="Boolean(errors.lokasi_id)"
+                :described-by="describedBy"
+                @change="onLokasiChange($event)"
+              />
             </template>
           </FormField>
           <div v-else class="field">
@@ -580,7 +574,7 @@ async function onConfirmExecute() {
       </form>
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
-        <button type="submit" form="transaksi-form" class="btn btn-primary" :disabled="submitting">
+        <button type="submit" form="transaksi-form" class="btn btn-post" :disabled="submitting">
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
           <span>{{ submitting ? 'Menyimpan...' : 'Simpan Draf' }}</span>
         </button>
@@ -671,15 +665,15 @@ async function onConfirmExecute() {
         <template v-if="detailData?.status === 'draf'">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openDelete(detailData)"
           >
             Hapus Draf
           </button>
-          <button type="button" class="btn btn-secondary" @click="openEdit(detailData)">
+          <button type="button" class="btn btn-put" @click="openEdit(detailData)">
             Ubah Draf
           </button>
-          <button type="button" class="btn btn-primary" @click="openPosting(detailData)">
+          <button type="button" class="btn btn-post" @click="openPosting(detailData)">
             Posting Transaksi
           </button>
         </template>

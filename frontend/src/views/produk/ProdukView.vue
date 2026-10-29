@@ -11,6 +11,7 @@ import FormField from '@/components/FormField.vue'
 import KartuStokModal from '@/components/KartuStokModal.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { kategoriApi, produkApi } from '@/services'
@@ -46,7 +47,7 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
       kategori_id: '',
       jenis: '',
       jenis_kopi: '',
-      aktif: auth.isAdmin ? 'semua' : 'ya',
+      aktif: auth.isAdmin ? 'semua' : 'true',
       sort: 'nama',
       arah: 'asc',
     },
@@ -227,7 +228,7 @@ async function onConfirmDelete() {
         <h2 class="page-heading">Katalog Produk</h2>
         <p class="page-subtitle">Green bean, roasted bean, peralatan seduh dan bahan habis pakai</p>
       </div>
-      <button v-if="auth.isAdmin" type="button" class="btn btn-primary" @click="openCreate">
+      <button v-if="auth.isAdmin" type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Tambah produk</span>
       </button>
@@ -250,17 +251,14 @@ async function onConfirmDelete() {
       <div class="toolbar-group">
         <div class="toolbar-field">
           <label class="toolbar-label" for="prd-filter-kategori">Kategori</label>
-          <select
+          <SearchSelect
             id="prd-filter-kategori"
             v-model="filters.kategori_id"
-            class="input input-sm"
+            :options="kategoriList.map((kat) => ({ value: kat.id, label: `${kat.nama}` }))"
+            empty-label="Semua kategori"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua kategori</option>
-            <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
-              {{ kat.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="prd-filter-jenis">Jenis</label>
@@ -299,8 +297,8 @@ async function onConfirmDelete() {
             @change="applyFilters()"
           >
             <option value="semua">Semua status</option>
-            <option value="ya">Aktif saja</option>
-            <option value="tidak">Nonaktif saja</option>
+            <option value="true">Aktif saja</option>
+            <option value="false">Nonaktif saja</option>
           </select>
         </div>
         <div class="toolbar-field">
@@ -392,13 +390,13 @@ async function onConfirmDelete() {
             </td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openDetail(row)">
+                <button type="button" class="btn btn-get-outline btn-sm" @click="openDetail(row)">
                   Detail
                 </button>
                 <button
                   v-if="auth.isAdmin"
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-put btn-sm"
                   @click="openEdit(row)"
                 >
                   Ubah
@@ -406,7 +404,7 @@ async function onConfirmDelete() {
                 <button
                   v-if="auth.isAdmin"
                   type="button"
-                  class="btn btn-secondary btn-sm text-danger"
+                  class="btn btn-delete btn-sm"
                   @click="openDelete(row)"
                 >
                   Hapus
@@ -430,20 +428,16 @@ async function onConfirmDelete() {
         <div class="form-row-2">
           <FormField id="prd-kategori" label="Kategori produk" :error="errors.kategori_id">
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="prd-kategori"
-                :value="values.kategori_id"
-                class="input"
+                :model-value="values.kategori_id"
+                :options="kategoriList.map((kat) => ({ value: kat.id, label: `${kat.nama} (${KATEGORI_TYPE_LABELS[kat.jenis] || kat.jenis})` }))"
+                placeholder="Pilih kategori..."
                 required
-                :aria-invalid="Boolean(errors.kategori_id)"
-                :aria-describedby="describedBy"
-                @change="onKategoriChange($event.target.value)"
-              >
-                <option value="">Pilih kategori...</option>
-                <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
-                  {{ kat.nama }} ({{ KATEGORI_TYPE_LABELS[kat.jenis] || kat.jenis }})
-                </option>
-              </select>
+                :invalid="Boolean(errors.kategori_id)"
+                :described-by="describedBy"
+                @change="onKategoriChange($event)"
+              />
             </template>
           </FormField>
 
@@ -646,7 +640,7 @@ async function onConfirmDelete() {
       </form>
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
-        <button type="submit" form="produk-form" class="btn btn-primary" :disabled="submitting">
+        <button type="submit" form="produk-form" class="btn btn-post" :disabled="submitting">
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
           <span>{{ submitting ? 'Menyimpan...' : 'Simpan' }}</span>
         </button>
@@ -755,7 +749,7 @@ async function onConfirmDelete() {
                 <td data-label="Aksi" class="col-actions">
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm"
+                    class="btn btn-get btn-sm"
                     @click="openKartuFromDetail(st.lokasi)"
                   >
                     Stock Card

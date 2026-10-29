@@ -59,7 +59,7 @@ function goBack() {
       <button
         v-if="data"
         type="button"
-        class="btn btn-primary"
+        class="btn btn-get"
         @click="onPrint"
       >
         <AppIcon name="printer" :size="16" />

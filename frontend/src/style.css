@@ -24,6 +24,12 @@
   --selesai-teks: #2c1d1a;
   --bahaya: #b42318;
 
+  /* warna aksi sama dengan UTS, mengikuti warna metode di Swagger /docs */
+  --aksi-post: #49cc90;
+  --aksi-get: #61affe;
+  --aksi-put: #fca130;
+  --aksi-delete: #f93e3e;
+
   --radius-kartu: 8px;
   --radius-kontrol: 6px;
   --sidebar: 248px;
@@ -164,9 +170,57 @@ textarea {
   background: var(--hover);
 }
 
-.btn-danger {
-  background: var(--bahaya);
+/* tombol aksi: post = buat, simpan dan lanjutkan proses, get = lihat, put = ubah, delete = hapus, batalkan, tolak */
+.btn-post,
+.btn-get,
+.btn-put {
   color: #fff;
+}
+
+.btn-post {
+  background: var(--aksi-post);
+}
+
+.btn-get {
+  background: var(--aksi-get);
+}
+
+.btn-put {
+  background: var(--aksi-put);
+}
+
+.btn-delete,
+.btn-danger {
+  background: var(--aksi-delete);
+  color: #fff;
+}
+
+/* detail memakai garis biru tanpa isi supaya beda dari tombol biru lain di baris yang sama */
+.btn-get-outline {
+  background: transparent;
+  border: 1.5px solid var(--aksi-get);
+  color: color-mix(in srgb, var(--aksi-get) 55%, #000);
+}
+
+.btn-post:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aksi-post) 82%, #000);
+}
+
+.btn-get:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aksi-get) 82%, #000);
+}
+
+.btn-get-outline:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aksi-get) 14%, transparent);
+}
+
+.btn-put:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aksi-put) 82%, #000);
+}
+
+.btn-delete:hover:not(:disabled),
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aksi-delete) 82%, #000);
 }
 
 .btn-block {
@@ -204,6 +258,7 @@ textarea {
 
 .field {
   display: grid;
+  align-content: start;
   gap: 4px;
   min-width: 0;
 }
@@ -258,6 +313,99 @@ select.input {
   top: 0;
   right: 0;
   color: var(--abu);
+}
+
+/* dropdown yang bisa dicari (SearchSelect) */
+
+.search-select {
+  position: relative;
+}
+
+.search-select-input {
+  padding-right: 36px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.search-select-open .search-select-input {
+  cursor: text;
+}
+
+.search-select-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.search-select-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--kopi);
+  cursor: pointer;
+}
+
+.search-select-list {
+  position: fixed;
+  z-index: 500;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--abu);
+  border-radius: var(--radius-kontrol);
+  background: var(--permukaan);
+  box-shadow: 0 8px 24px rgba(44, 29, 26, 0.18);
+}
+
+.search-select-group {
+  padding: 8px 10px 4px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--kopi);
+}
+
+.search-select-option {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.search-select-option-active {
+  background: var(--hover);
+}
+
+.search-select-option-selected {
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--kopi);
+}
+
+.search-select-option[aria-disabled='true'] {
+  color: var(--abu);
+  cursor: not-allowed;
+}
+
+.search-select-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--kopi);
+}
+
+.search-select-empty {
+  padding: 10px;
+  font-size: 14px;
+  color: var(--kopi);
 }
 
 .alert {
@@ -456,9 +604,12 @@ select.input {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .app-user-role-chip {
+  flex: none;
+  white-space: nowrap;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.03em;
@@ -830,7 +981,8 @@ select.input-sm {
   border: 1px solid var(--garis);
   border-radius: var(--radius-kartu);
   background: var(--permukaan);
-  overflow: hidden;
+  overflow-x: auto;
+  container-type: inline-size;
 }
 
 .data-table {
@@ -841,7 +993,7 @@ select.input-sm {
 
 .data-table th,
 .data-table td {
-  padding: 12px 16px;
+  padding: 12px;
   text-align: left;
   vertical-align: middle;
   border-bottom: 1px solid color-mix(in srgb, var(--garis) 55%, white);
@@ -870,8 +1022,17 @@ select.input-sm {
 
 .data-table .col-actions {
   width: 1%;
-  white-space: nowrap;
   text-align: right;
+}
+
+/* kode dokumen dan tanggal tidak dipatah di tanda hubung */
+.data-table td[data-label='Kode'],
+.data-table td[data-label='Tanggal'] {
+  white-space: nowrap;
+}
+
+.data-table td[data-label='Kode'] .cell-secondary {
+  white-space: normal;
 }
 
 .row-highlight {
@@ -897,10 +1058,26 @@ select.input-sm {
 
 .action-group {
   display: inline-flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
+}
+
+.action-group .btn {
+  white-space: nowrap;
+}
+
+/* tombol aksi tabel satu baris, baru dipecah dua per baris bila tabel lebih sempit dari 1120 px */
+.col-actions .action-group {
+  flex-wrap: nowrap;
+}
+
+@container (max-width: 1120px) {
+  .col-actions .action-group {
+    flex-wrap: wrap;
+    width: 186px;
+  }
 }
 
 .pagination-bar {
@@ -1770,11 +1947,6 @@ select.input-sm {
   color: #065f46;
 }
 
-.welcome-banner-subtitle {
-  font-size: 12px;
-  color: #047857;
-}
-
 .section-header-row {
   display: flex;
   flex-wrap: wrap;
@@ -2558,11 +2730,21 @@ select.input-sm {
   .data-table .col-actions::before {
     display: none;
   }
+
+  .data-table .col-actions .action-group {
+    flex-wrap: wrap;
+    width: auto;
+  }
 }
 
 @media (max-width: 479px) {
   .page-header .btn {
     width: 100%;
+  }
+
+  /* peran sudah tertulis di baris konteks, chip disembunyikan supaya tidak menabrak tombol */
+  .app-user-role-chip {
+    display: none;
   }
 
   .dash-tile-grid {

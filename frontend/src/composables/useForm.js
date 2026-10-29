@@ -22,13 +22,12 @@ export function useForm(initial) {
   const message = ref('')
   const submitting = ref(false)
 
+  // hasil action dikembalikan (misalnya dokumen yang tersimpan), false bila API menolak
   async function submit(action) {
     submitting.value = true
-    errors.value = {}
-    message.value = ''
+    clearErrors()
     try {
-      await action(values)
-      return true
+      return (await action(values)) ?? true
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       errors.value = error.errors
@@ -39,15 +38,19 @@ export function useForm(initial) {
     }
   }
 
-  function fill(next = {}) {
-    Object.assign(values, copyShape(defaults), copyShape(next))
+  function clearErrors() {
     errors.value = {}
     message.value = ''
+  }
+
+  function fill(next = {}) {
+    Object.assign(values, copyShape(defaults), copyShape(next))
+    clearErrors()
   }
 
   function reset() {
     fill()
   }
 
-  return { values, errors, message, submitting, submit, fill, reset }
+  return { values, errors, message, submitting, submit, fill, reset, clearErrors }
 }

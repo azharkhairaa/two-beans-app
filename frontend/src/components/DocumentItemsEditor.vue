@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import AppIcon from '@/components/AppIcon'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { KATEGORI_TYPE_LABELS } from '@/utils/constants'
 import { formatNumber, formatRupiah } from '@/utils/format'
 
@@ -19,7 +20,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const groupedProducts = computed(() => {
+// opsi produk dikelompokkan per kategori, stok tampil sebagai keterangan supaya mudah dipilih
+const productOptions = computed(() => {
   const groups = new Map()
   for (const prod of props.products) {
     const groupName =
@@ -27,7 +29,19 @@ const groupedProducts = computed(() => {
     if (!groups.has(groupName)) groups.set(groupName, [])
     groups.get(groupName).push(prod)
   }
-  return Array.from(groups.entries()).map(([kategori, items]) => ({ kategori, items }))
+  return Array.from(groups.entries()).flatMap(([group, items]) =>
+    items.map((prod) => {
+      const blocked = props.disableZeroStock && Number(prod.stok || 0) <= 0
+      const known = prod.stok !== undefined && prod.stok !== null
+      return {
+        value: prod.id,
+        label: `${prod.sku} - ${prod.nama} (${prod.satuan})`,
+        hint: blocked ? 'Stok habis' : known ? `Stok ${formatNumber(prod.stok)} ${prod.satuan}` : '',
+        group,
+        disabled: blocked,
+      }
+    })
+  )
 })
 
 const productById = computed(() => {
@@ -111,7 +125,7 @@ function fieldError(index, field) {
   <div class="doc-items-editor">
     <div class="doc-items-header">
       <span class="field-label">Daftar item produk</span>
-      <button type="button" class="btn btn-secondary btn-sm" @click="addRow">
+      <button type="button" class="btn btn-post btn-sm" @click="addRow">
         <AppIcon name="plus" :size="15" />
         <span>Tambah baris</span>
       </button>
@@ -123,27 +137,14 @@ function fieldError(index, field) {
       <div v-for="(row, idx) in modelValue" :key="idx" class="doc-item-row">
         <div class="doc-item-col doc-item-product">
           <label class="field-label-sm" :for="`item-prod-${idx}`">Produk</label>
-          <select
+          <SearchSelect
             :id="`item-prod-${idx}`"
-            class="input"
-            :value="row.produk_id"
-            :aria-invalid="Boolean(fieldError(idx, 'produk_id'))"
-            @change="onSelectProduct(idx, $event.target.value)"
-          >
-            <option value="">Pilih produk...</option>
-            <optgroup v-for="grp in groupedProducts" :key="grp.kategori" :label="grp.kategori">
-              <option
-                v-for="prod in grp.items"
-                :key="prod.id"
-                :value="prod.id"
-                :disabled="disableZeroStock && Number(prod.stok || 0) <= 0"
-              >
-                {{ prod.sku }} - {{ prod.nama }} ({{ prod.satuan }}){{
-                  disableZeroStock && Number(prod.stok || 0) <= 0 ? ' — Stok habis' : ''
-                }}
-              </option>
-            </optgroup>
-          </select>
+            :model-value="row.produk_id"
+            :options="productOptions"
+            placeholder="Ketik SKU atau nama produk..."
+            :invalid="Boolean(fieldError(idx, 'produk_id'))"
+            @change="onSelectProduct(idx, $event)"
+          />
           <p v-if="fieldError(idx, 'produk_id')" class="field-error">
             {{ fieldError(idx, 'produk_id') }}
           </p>

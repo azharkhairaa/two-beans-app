@@ -51,7 +51,7 @@ function goBack() {
         <AppIcon name="arrow-left" :size="16" />
         <span>Kembali ke Penjualan</span>
       </button>
-      <button v-if="data" type="button" class="btn btn-primary" @click="onPrint">
+      <button v-if="data" type="button" class="btn btn-get" @click="onPrint">
         <AppIcon name="printer" :size="16" />
         <span>Cetak Nota Penjualan</span>
       </button>

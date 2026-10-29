@@ -122,7 +122,7 @@ async function onConfirmDelete() {
         <h2 class="page-heading">Supplier</h2>
         <p class="page-subtitle">Mitra pemasok biji kopi, bahan baku, kemasan dan peralatan</p>
       </div>
-      <button type="button" class="btn btn-primary" @click="openCreate">
+      <button type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Tambah supplier</span>
       </button>
@@ -152,8 +152,8 @@ async function onConfirmDelete() {
             @change="applyFilters()"
           >
             <option value="semua">Semua status</option>
-            <option value="ya">Aktif saja</option>
-            <option value="tidak">Nonaktif saja</option>
+            <option value="true">Aktif saja</option>
+            <option value="false">Nonaktif saja</option>
           </select>
         </div>
         <div class="toolbar-field">
@@ -225,12 +225,12 @@ async function onConfirmDelete() {
             <td data-label="Diperbarui" class="cell-secondary">{{ formatDate(row.updated_at) }}</td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(row)">
+                <button type="button" class="btn btn-put btn-sm" @click="openEdit(row)">
                   Ubah
                 </button>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm text-danger"
+                  class="btn btn-delete btn-sm"
                   @click="openDelete(row)"
                 >
                   Hapus
@@ -322,7 +322,7 @@ async function onConfirmDelete() {
       </form>
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
-        <button type="submit" form="supplier-form" class="btn btn-primary" :disabled="submitting">
+        <button type="submit" form="supplier-form" class="btn btn-post" :disabled="submitting">
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
           <span>{{ submitting ? 'Menyimpan...' : 'Simpan' }}</span>
         </button>

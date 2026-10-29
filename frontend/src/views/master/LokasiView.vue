@@ -127,7 +127,7 @@ async function onConfirmDelete() {
         <h2 class="page-heading">Lokasi Operasional</h2>
         <p class="page-subtitle">Gudang utama, gudang cabang dan outlet Two Beans</p>
       </div>
-      <button type="button" class="btn btn-primary" @click="openCreate">
+      <button type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Tambah lokasi</span>
       </button>
@@ -144,8 +144,8 @@ async function onConfirmDelete() {
             @change="applyFilters()"
           >
             <option value="semua">Semua status</option>
-            <option value="ya">Aktif saja</option>
-            <option value="tidak">Nonaktif saja</option>
+            <option value="true">Aktif saja</option>
+            <option value="false">Nonaktif saja</option>
           </select>
         </div>
       </div>
@@ -158,7 +158,7 @@ async function onConfirmDelete() {
       title="Belum ada lokasi"
       description="Tambahkan lokasi gudang atau outlet untuk mulai mencatat stok."
     >
-      <button type="button" class="btn btn-primary" @click="openCreate">Tambah lokasi</button>
+      <button type="button" class="btn btn-post" @click="openCreate">Tambah lokasi</button>
     </EmptyState>
 
     <div v-else class="table-card">
@@ -203,14 +203,14 @@ async function onConfirmDelete() {
               <div class="action-group">
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-put btn-sm"
                   @click="openEdit(row)"
                 >
                   Ubah
                 </button>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm text-danger"
+                  class="btn btn-delete btn-sm"
                   @click="openDelete(row)"
                 >
                   Hapus
@@ -311,7 +311,7 @@ async function onConfirmDelete() {
       </form>
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
-        <button type="submit" form="lokasi-form" class="btn btn-primary" :disabled="submitting">
+        <button type="submit" form="lokasi-form" class="btn btn-post" :disabled="submitting">
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
           <span>{{ submitting ? 'Menyimpan...' : 'Simpan' }}</span>
         </button>

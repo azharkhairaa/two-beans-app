@@ -35,6 +35,7 @@ export function useList(fetcher, optionsOrFilters = {}, maybeOptions = {}) {
   const extra = ref({})
   const loading = ref(immediate)
   const error = ref('')
+  let latestRequest = 0
 
   function buildParams() {
     const out = {}
@@ -47,10 +48,13 @@ export function useList(fetcher, optionsOrFilters = {}, maybeOptions = {}) {
   }
 
   async function load() {
+    // hanya respons request terakhir yang dipakai supaya hasil lama tidak menimpa filter baru
+    const requestId = ++latestRequest
     loading.value = true
     error.value = ''
     try {
       const response = await fetcher(buildParams())
+      if (requestId !== latestRequest) return
       if (Array.isArray(response)) {
         items.value = response
         meta.value = {
@@ -69,11 +73,18 @@ export function useList(fetcher, optionsOrFilters = {}, maybeOptions = {}) {
           total_pages: 1,
         }
         extra.value = response || {}
+        // halaman terakhir kosong sesudah hapus, pindah ke halaman terakhir yang masih ada isinya
+        const lastPage = meta.value.total_pages || 1
+        if (paginated && !items.value.length && filters.page > lastPage) {
+          filters.page = lastPage
+          return load()
+        }
       }
     } catch (err) {
+      if (requestId !== latestRequest) return
       error.value = err instanceof ApiError ? err.message : err?.message || 'Gagal memuat data.'
     } finally {
-      loading.value = false
+      if (requestId === latestRequest) loading.value = false
     }
   }
 

@@ -6,30 +6,26 @@ import { formatNumber, formatRupiah } from '@/utils/format'
 const props = defineProps({
   lokasi: { type: Array, default: () => [] },
   baris: { type: Array, default: () => [] },
-  totalPerLokasi: { type: Object, default: () => ({}) },
+  totalPerLokasi: { type: Array, default: () => [] },
   totalJumlah: { type: Number, default: 0 },
   totalNilai: { type: Number, default: 0 },
 })
 
 const emit = defineEmits(['select-cell'])
 
-function getSel(row, lokasiKode) {
+// sel dan total per lokasi dikirim backend sebagai list berkunci lokasi_id
+function getSel(row, lokasiId) {
   return (
-    row.sel?.[lokasiKode] || {
+    row.sel?.find((sel) => sel.lokasi_id === lokasiId) || {
       jumlah: 0,
       stok_minimum: 0,
-      status: 'aman',
+      status_stok: 'habis',
     }
   )
 }
 
-function getTotalLokasi(lokasiKode) {
-  return (
-    props.totalPerLokasi?.[lokasiKode] || {
-      total_jumlah: 0,
-      total_nilai: 0,
-    }
-  )
+function getTotalLokasi(lokasiId) {
+  return props.totalPerLokasi.find((item) => item.lokasi_id === lokasiId) || { jumlah: 0, nilai: 0 }
 }
 
 function cellClass(status) {
@@ -90,7 +86,7 @@ function handleSelect(produk, lok) {
             <th scope="row" class="matrix-sticky-col matrix-row-header">
               <div class="matrix-prod-meta">
                 <span class="mono matrix-prod-sku">{{ row.produk.sku }}</span>
-                <BadgeStatus :value="row.produk.kategori_jenis" />
+                <BadgeStatus :value="row.produk.jenis" />
               </div>
               <strong class="matrix-prod-name">{{ row.produk.nama }}</strong>
               <span class="matrix-prod-sub">
@@ -105,24 +101,24 @@ function handleSelect(produk, lok) {
             >
               <button
                 type="button"
-                :class="cellClass(getSel(row, lok.kode).status)"
-                :aria-label="`${row.produk.nama} di ${lok.nama}: stock ${getSel(row, lok.kode).jumlah} ${row.produk.satuan}, minimum ${getSel(row, lok.kode).stok_minimum}, status ${STOK_STATUS_LABELS[getSel(row, lok.kode).status] || getSel(row, lok.kode).status}. Klik untuk Stock Card`"
+                :class="cellClass(getSel(row, lok.id).status_stok)"
+                :aria-label="`${row.produk.nama} di ${lok.nama}: stock ${getSel(row, lok.id).jumlah} ${row.produk.satuan}, minimum ${getSel(row, lok.id).stok_minimum}, status ${STOK_STATUS_LABELS[getSel(row, lok.id).status_stok] || getSel(row, lok.id).status_stok}. Klik untuk Stock Card`"
                 @click="handleSelect(row.produk, lok)"
               >
                 <span class="matrix-cell-qty num">
-                  {{ formatNumber(getSel(row, lok.kode).jumlah) }}
+                  {{ formatNumber(getSel(row, lok.id).jumlah) }}
                   <small>{{ row.produk.satuan }}</small>
                 </span>
                 <span class="matrix-cell-meta">
-                  <span>{{ STOK_STATUS_LABELS[getSel(row, lok.kode).status] || getSel(row, lok.kode).status }}</span>
-                  <span class="num">min {{ formatNumber(getSel(row, lok.kode).stok_minimum) }}</span>
+                  <span>{{ STOK_STATUS_LABELS[getSel(row, lok.id).status_stok] || getSel(row, lok.id).status_stok }}</span>
+                  <span class="num">min {{ formatNumber(getSel(row, lok.id).stok_minimum) }}</span>
                 </span>
               </button>
             </td>
 
             <td class="matrix-row-total">
-              <strong class="num">{{ formatNumber(row.total_jumlah) }} {{ row.produk.satuan }}</strong>
-              <span class="matrix-total-val num">{{ formatRupiah(row.total_nilai) }}</span>
+              <strong class="num">{{ formatNumber(row.total) }} {{ row.produk.satuan }}</strong>
+              <span class="matrix-total-val num">{{ formatRupiah(row.nilai) }}</span>
             </td>
           </tr>
         </tbody>
@@ -136,8 +132,8 @@ function handleSelect(produk, lok) {
               :key="lok.id"
               class="matrix-foot-cell"
             >
-              <strong class="num">{{ formatNumber(getTotalLokasi(lok.kode).total_jumlah) }} unit</strong>
-              <span class="matrix-total-val num">{{ formatRupiah(getTotalLokasi(lok.kode).total_nilai) }}</span>
+              <strong class="num">{{ formatNumber(getTotalLokasi(lok.id).jumlah) }} unit</strong>
+              <span class="matrix-total-val num">{{ formatRupiah(getTotalLokasi(lok.id).nilai) }}</span>
             </td>
             <td class="matrix-foot-cell matrix-grand-total">
               <strong class="num">{{ formatNumber(totalJumlah) }} unit</strong>

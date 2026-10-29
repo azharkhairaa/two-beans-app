@@ -10,6 +10,7 @@ import FormField from '@/components/FormField.vue'
 import KartuStokModal from '@/components/KartuStokModal.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { kategoriApi, lokasiApi, produkApi, stokApi } from '@/services'
@@ -28,7 +29,7 @@ const currentLokasi = ref(auth.user?.lokasi || null)
 onMounted(async () => {
   try {
     const [lokRes, katRes] = await Promise.all([
-      lokasiApi.list({ aktif: 'ya' }),
+      lokasiApi.list({ aktif: 'true' }),
       kategoriApi.list(),
     ])
     lokasiList.value = lokRes || []
@@ -151,7 +152,7 @@ function openKartu(row) {
       <button
         v-if="canManageCurrentLokasi"
         type="button"
-        class="btn btn-secondary"
+        class="btn btn-put"
         @click="openNewSetting"
       >
         <AppIcon name="plus" :size="16" />
@@ -176,30 +177,24 @@ function openKartu(row) {
       <div class="toolbar-group">
         <div class="toolbar-field">
           <label class="toolbar-label" for="stk-filter-lokasi">Lokasi</label>
-          <select
+          <SearchSelect
             id="stk-filter-lokasi"
             v-model="filters.lokasi_id"
-            class="input input-sm"
+            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
+            small
             @change="applyFilters()"
-          >
-            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="stk-filter-kategori">Kategori</label>
-          <select
+          <SearchSelect
             id="stk-filter-kategori"
             v-model="filters.kategori_id"
-            class="input input-sm"
+            :options="kategoriList.map((kat) => ({ value: kat.id, label: `${kat.nama}` }))"
+            empty-label="Semua kategori"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua kategori</option>
-            <option v-for="kat in kategoriList" :key="kat.id" :value="kat.id">
-              {{ kat.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="stk-filter-jenis">Jenis</label>
@@ -310,13 +305,13 @@ function openKartu(row) {
             <td data-label="Diperbarui" class="cell-secondary">{{ formatDate(row.updated_at) }}</td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openKartu(row)">
+                <button type="button" class="btn btn-get btn-sm" @click="openKartu(row)">
                   Stock Card
                 </button>
                 <button
                   v-if="canManageCurrentLokasi"
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-put btn-sm"
                   @click="openEditSetting(row)"
                 >
                   Atur
@@ -348,18 +343,14 @@ function openKartu(row) {
           :error="errors.produk_id"
         >
           <template #default="{ describedBy }">
-            <select
+            <SearchSelect
               id="stk-produk"
               v-model="values.produk_id"
-              class="input"
+              :options="produkOptions.map((prd) => ({ value: prd.id, label: `${prd.sku} - ${prd.nama} (${prd.satuan})` }))"
               required
-              :aria-invalid="Boolean(errors.produk_id)"
-              :aria-describedby="describedBy"
-            >
-              <option v-for="prd in produkOptions" :key="prd.id" :value="prd.id">
-                {{ prd.sku }} - {{ prd.nama }} ({{ prd.satuan }})
-              </option>
-            </select>
+              :invalid="Boolean(errors.produk_id)"
+              :described-by="describedBy"
+            />
           </template>
         </FormField>
         <div v-else-if="targetProduk" class="detail-highlight">
@@ -416,7 +407,7 @@ function openKartu(row) {
         <button
           type="submit"
           form="stok-setting-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="submitting"
         >
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>

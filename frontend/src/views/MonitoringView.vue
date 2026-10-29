@@ -8,6 +8,7 @@ import ErrorState from '@/components/ErrorState.vue'
 import KartuStokModal from '@/components/KartuStokModal.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import MatriksStok from '@/components/MatriksStok.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { dashboardApi, kategoriApi } from '@/services'
 import { KATEGORI_TYPE_LABELS, LOKASI_TYPE_LABELS } from '@/utils/constants'
 import { formatNumber, formatRupiah, formatRupiahCompact } from '@/utils/format'
@@ -31,7 +32,7 @@ const error = ref('')
 const matrix = ref({
   lokasi: [],
   baris: [],
-  total_per_lokasi: {},
+  total_per_lokasi: [],
   total_jumlah: 0,
   total_nilai: 0,
 })
@@ -52,7 +53,7 @@ const hasActiveFilter = computed(
 
 async function loadKategoriOptions() {
   try {
-    const res = await kategoriApi.options()
+    const res = await kategoriApi.list()
     kategoriOptions.value = Array.isArray(res) ? res : res?.data || []
   } catch {
     kategoriOptions.value = []
@@ -75,7 +76,7 @@ async function fetchMatrix() {
     matrix.value = {
       lokasi: res?.lokasi || [],
       baris: res?.baris || [],
-      total_per_lokasi: res?.total_per_lokasi || {},
+      total_per_lokasi: res?.total_per_lokasi || [],
       total_jumlah: Number(res?.total_jumlah || 0),
       total_nilai: Number(res?.total_nilai || 0),
     }
@@ -122,13 +123,8 @@ function closeKartuStok() {
   kartuModal.open = false
 }
 
-function totalLokasi(kode) {
-  return (
-    matrix.value.total_per_lokasi?.[kode] || {
-      total_jumlah: 0,
-      total_nilai: 0,
-    }
-  )
+function totalLokasi(lokasiId) {
+  return matrix.value.total_per_lokasi.find((item) => item.lokasi_id === lokasiId) || { jumlah: 0, nilai: 0 }
 }
 
 onMounted(() => {
@@ -173,12 +169,13 @@ onMounted(() => {
       <div class="toolbar-group">
         <div class="toolbar-field">
           <label for="mon-kategori" class="toolbar-label">Kategori</label>
-          <select id="mon-kategori" v-model="filters.kategori_id" class="input input-sm">
-            <option value="">Semua kategori</option>
-            <option v-for="kat in kategoriOptions" :key="kat.id" :value="String(kat.id)">
-              {{ kat.nama }}
-            </option>
-          </select>
+          <SearchSelect
+            id="mon-kategori"
+            v-model="filters.kategori_id"
+            :options="kategoriOptions.map((kat) => ({ value: String(kat.id), label: `${kat.nama}` }))"
+            empty-label="Semua kategori"
+            small
+          />
         </div>
 
         <div class="toolbar-field">
@@ -232,11 +229,11 @@ onMounted(() => {
           class="summary-item"
         >
           <span class="detail-label">{{ lok.kode }} · {{ lok.nama }}</span>
-          <strong class="detail-value num" :title="formatRupiah(totalLokasi(lok.kode).total_nilai)">
-            {{ formatRupiahCompact(totalLokasi(lok.kode).total_nilai) }}
+          <strong class="detail-value num" :title="formatRupiah(totalLokasi(lok.id).nilai)">
+            {{ formatRupiahCompact(totalLokasi(lok.id).nilai) }}
           </strong>
           <small class="field-hint num">
-            {{ LOKASI_TYPE_LABELS[lok.jenis] || lok.jenis }} · {{ formatNumber(totalLokasi(lok.kode).total_jumlah) }} unit
+            {{ LOKASI_TYPE_LABELS[lok.jenis] || lok.jenis }} · {{ formatNumber(totalLokasi(lok.id).jumlah) }} unit
           </small>
         </div>
       </div>

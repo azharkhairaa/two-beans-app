@@ -1,3 +1,8 @@
+<script>
+// urutan modal yang sedang terbuka, hanya modal paling atas yang menanggapi Escape dan Tab
+const openModals = []
+</script>
+
 <script setup>
 import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
@@ -29,7 +34,7 @@ function getFocusableElements() {
 }
 
 function handleKeydown(event) {
-  if (!props.open) return
+  if (!props.open || openModals.at(-1) !== titleId) return
   if (event.key === 'Escape') {
     event.stopPropagation()
     emit('close')
@@ -57,6 +62,7 @@ watch(
   () => props.open,
   async (isOpen) => {
     if (isOpen) {
+      openModals.push(titleId)
       previousFocus = document.activeElement
       document.body.style.overflow = 'hidden'
       document.addEventListener('keydown', handleKeydown)
@@ -67,7 +73,8 @@ watch(
         getFocusableElements()[0]
       initial?.focus?.()
     } else {
-      document.body.style.overflow = ''
+      forget()
+      document.body.style.overflow = openModals.length ? 'hidden' : ''
       document.removeEventListener('keydown', handleKeydown)
       previousFocus?.focus?.()
       previousFocus = null
@@ -75,8 +82,14 @@ watch(
   }
 )
 
+function forget() {
+  const index = openModals.indexOf(titleId)
+  if (index >= 0) openModals.splice(index, 1)
+}
+
 onBeforeUnmount(() => {
-  document.body.style.overflow = ''
+  forget()
+  document.body.style.overflow = openModals.length ? 'hidden' : ''
   document.removeEventListener('keydown', handleKeydown)
 })
 </script>

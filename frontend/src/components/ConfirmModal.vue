@@ -33,7 +33,7 @@ const emit = defineEmits(['confirm', 'close'])
       <button
         type="button"
         class="btn"
-        :class="variant === 'danger' ? 'btn-danger' : 'btn-primary'"
+        :class="variant === 'danger' ? 'btn-delete' : 'btn-post'"
         :disabled="loading"
         @click="emit('confirm')"
       >

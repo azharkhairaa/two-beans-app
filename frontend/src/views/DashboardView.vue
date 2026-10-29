@@ -7,10 +7,12 @@ import EmptyState from '@/components/EmptyState.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import KartuStokModal from '@/components/KartuStokModal.vue'
 import LoadingState from '@/components/LoadingState.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { dashboardApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import {
   CUSTOMER_TYPE_LABELS,
+  KENDARAAN_TYPE_LABELS,
   LOKASI_TYPE_LABELS,
   LOKASI_TYPES,
   MUTASI_TYPE_LABELS,
@@ -55,6 +57,7 @@ const subtitleText = computed(() => {
   const roleLabel = ROLE_LABELS[auth.user?.role] || 'User'
   const lok = auth.user?.lokasi
   if (lok) return `Halo, ${auth.user?.name} · ${roleLabel} (${lok.kode} · ${lok.nama})`
+  if (auth.user?.role === ROLES.DELIVERYMAN) return `Halo, ${auth.user?.name} · ${roleLabel}`
   return `Halo, ${auth.user?.name} · ${roleLabel} (Semua lokasi aktif)`
 })
 
@@ -108,7 +111,7 @@ const barChartModel = computed(() => {
 
   const rawMax = Math.max(
     1,
-    ...rows.flatMap((r) => [Number(r.nilai_persediaan || 0), Number(r.omzet_30_hari || 0)]),
+    ...rows.flatMap((r) => [Number(r.nilai || 0), Number(r.omzet_30_hari || 0)]),
   )
   const magnitude = 10 ** Math.floor(Math.log10(rawMax))
   const niceMax = Math.ceil(rawMax / magnitude) * magnitude || 1
@@ -126,7 +129,7 @@ const barChartModel = computed(() => {
 
   const bars = rows.map((row, idx) => {
     const centerX = chartLeft + groupWidth * idx + groupWidth / 2
-    const nilai = Number(row.nilai_persediaan || 0)
+    const nilai = Number(row.nilai || 0)
     const omzet = Number(row.omzet_30_hari || 0)
     const nilaiHeight = Math.max(nilai > 0 ? 3 : 0, Math.round((nilai / niceMax) * plotHeight))
     const omzetHeight = Math.max(omzet > 0 ? 3 : 0, Math.round((omzet / niceMax) * plotHeight))
@@ -245,7 +248,7 @@ function tugasRoute(tugas) {
   if (tugas.jenis === 'terima_pengiriman' || tugas.jenis === 'kirim_pengiriman') {
     return { name: 'pengiriman' }
   }
-  if (tugas.jenis === 'setujui_permintaan') {
+  if (tugas.jenis === 'proses_permintaan') {
     return { name: 'permintaan' }
   }
   if (tugas.jenis === 'terima_pembelian') {
@@ -257,7 +260,7 @@ function tugasRoute(tugas) {
 function tugasActionLabel(jenis) {
   if (jenis === 'terima_pengiriman') return 'Konfirmasi terima'
   if (jenis === 'kirim_pengiriman') return 'Kirim sekarang'
-  if (jenis === 'setujui_permintaan') return 'Proses permintaan'
+  if (jenis === 'proses_permintaan') return 'Proses permintaan'
   if (jenis === 'terima_pembelian') return 'Terima barang PO'
   return 'Buka dokumen'
 }
@@ -266,12 +269,12 @@ function openKartuFromKritis(item) {
   kartuModal.produk = {
     id: item.produk_id,
     sku: item.sku,
-    nama: item.nama_produk,
+    nama: item.nama,
     satuan: item.satuan,
   }
   kartuModal.lokasi = {
     id: item.lokasi_id,
-    kode: item.lokasi_kode,
+    kode: item.lokasi,
     nama: item.lokasi_nama,
   }
   kartuModal.open = true
@@ -296,14 +299,14 @@ onMounted(() => {
 
       <div class="action-group">
         <template v-if="!isDeliveryman && !isAdmin">
-          <RouterLink :to="{ name: 'penjualan' }" class="btn btn-primary">
+          <RouterLink :to="{ name: 'penjualan' }" class="btn btn-post">
             <AppIcon name="receipt" :size="18" />
             <span>Penjualan baru</span>
           </RouterLink>
           <RouterLink
             v-if="isGudangUtama"
             :to="{ name: 'pengiriman' }"
-            class="btn btn-secondary"
+            class="btn btn-get"
           >
             <AppIcon name="truck" :size="18" />
             <span>Pengiriman</span>
@@ -311,7 +314,7 @@ onMounted(() => {
           <RouterLink
             v-else
             :to="{ name: 'permintaan' }"
-            class="btn btn-secondary"
+            class="btn btn-post"
           >
             <AppIcon name="clipboard" :size="18" />
             <span>Ajukan permintaan</span>
@@ -338,7 +341,6 @@ onMounted(() => {
         </span>
         <div class="welcome-banner-content">
           <strong class="welcome-banner-title">Selamat datang kembali, {{ auth.user?.name }}!</strong>
-          <span class="welcome-banner-subtitle">{{ subtitleText }}</span>
         </div>
       </div>
 
@@ -506,7 +508,7 @@ onMounted(() => {
                   </text>
                 </g>
 
-                <g v-for="bar in barChartModel.bars" :key="bar.lokasi_id">
+                <g v-for="bar in barChartModel.bars" :key="bar.id">
                   <rect
                     :x="bar.nilaiX"
                     :y="bar.nilaiY"
@@ -515,7 +517,7 @@ onMounted(() => {
                     rx="3"
                     class="chart-bar-kopi"
                   >
-                    <title>{{ bar.kode }} ({{ bar.nama }}) - Nilai Persediaan: {{ formatRupiah(bar.nilai_persediaan) }}</title>
+                    <title>{{ bar.kode }} ({{ bar.nama }}) - Nilai Persediaan: {{ formatRupiah(bar.nilai) }}</title>
                   </rect>
                   <rect
                     :x="bar.omzetX"
@@ -553,7 +555,7 @@ onMounted(() => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="lok in dashboard.per_lokasi" :key="lok.lokasi_id">
+                    <tr v-for="lok in dashboard.per_lokasi" :key="lok.id">
                       <td data-label="Lokasi">
                         <strong>{{ lok.kode }}</strong> · {{ lok.nama }}
                       </td>
@@ -561,7 +563,7 @@ onMounted(() => {
                       <td data-label="SKU Ada" class="num">{{ formatNumber(lok.sku_ada) }}</td>
                       <td data-label="Menipis" class="num">{{ formatNumber(lok.menipis) }}</td>
                       <td data-label="Habis" class="num">{{ formatNumber(lok.habis) }}</td>
-                      <td data-label="Nilai Persediaan" class="num">{{ formatRupiah(lok.nilai_persediaan) }}</td>
+                      <td data-label="Nilai Persediaan" class="num">{{ formatRupiah(lok.nilai) }}</td>
                       <td data-label="Omzet 30 Hari" class="num">{{ formatRupiah(lok.omzet_30_hari) }}</td>
                     </tr>
                   </tbody>
@@ -582,16 +584,13 @@ onMounted(() => {
               </div>
               <div class="chart-controls">
                 <label for="adm-tren-lokasi" class="sr-only">Filter Lokasi Tren</label>
-                <select id="adm-tren-lokasi" v-model="trenFilter.lokasi_id" class="input input-sm">
-                  <option value="">Semua lokasi</option>
-                  <option
-                    v-for="lok in dashboard.per_lokasi"
-                    :key="lok.lokasi_id"
-                    :value="String(lok.lokasi_id)"
-                  >
-                    {{ lok.kode }} · {{ lok.nama }}
-                  </option>
-                </select>
+                <SearchSelect
+                  id="adm-tren-lokasi"
+                  v-model="trenFilter.lokasi_id"
+                  :options="dashboard.per_lokasi.map((lok) => ({ value: String(lok.id), label: `${lok.kode} · ${lok.nama}` }))"
+                  empty-label="Semua lokasi"
+                  small
+                />
                 <label for="adm-tren-hari" class="sr-only">Rentang Hari Tren</label>
                 <select id="adm-tren-hari" v-model="trenFilter.hari" class="input input-sm">
                   <option :value="7">7 hari</option>
@@ -708,7 +707,7 @@ onMounted(() => {
                 {{ formatRupiahCompact(dashboard.ringkasan.nilai_persediaan) }}
               </strong>
               <span class="dash-tile-meta num">
-                {{ formatNumber(dashboard.ringkasan.sku_ada) }} SKU tersedia di {{ dashboard.lokasi.kode }}
+                {{ formatNumber(dashboard.ringkasan.sku_aktif) }} SKU tersedia di {{ dashboard.lokasi.kode }}
               </span>
             </div>
           </RouterLink>
@@ -772,17 +771,17 @@ onMounted(() => {
           <RouterLink
             :to="{ name: 'pengiriman', query: { status: 'dikirim' } }"
             class="dash-tile"
-            :class="{ 'dash-tile-proses': dashboard.ringkasan.pengiriman_masuk_menunggu > 0 }"
+            :class="{ 'dash-tile-proses': dashboard.ringkasan.pengiriman_dalam_perjalanan > 0 }"
           >
             <div class="dash-tile-icon-box dash-icon-biru">
               <AppIcon name="truck" :size="22" />
             </div>
             <div class="dash-tile-body">
-              <span class="dash-tile-label">Pengiriman Masuk</span>
+              <span class="dash-tile-label">Pengiriman Berjalan</span>
               <strong class="dash-tile-value num">
-                {{ formatNumber(dashboard.ringkasan.pengiriman_masuk_menunggu) }}
+                {{ formatNumber(dashboard.ringkasan.pengiriman_dalam_perjalanan) }}
               </strong>
-              <span class="dash-tile-meta">Dalam perjalanan ke {{ dashboard.lokasi.kode }}</span>
+              <span class="dash-tile-meta">Dikirim dari atau ke {{ dashboard.lokasi.kode }}</span>
             </div>
           </RouterLink>
 
@@ -812,8 +811,8 @@ onMounted(() => {
             </div>
             <div class="dash-tile-body">
               <span class="dash-tile-label">Permintaan Supply Saya</span>
-              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_saya_aktif) }}</strong>
-              <span class="dash-tile-meta">Berstatus diajukan atau disetujui</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_menunggu) }}</strong>
+              <span class="dash-tile-meta">Diajukan dan menunggu gudang utama</span>
             </div>
           </RouterLink>
 
@@ -1028,7 +1027,7 @@ onMounted(() => {
                 <tbody>
                   <tr
                     v-for="(cust, idx) in dashboard.customer_teratas"
-                    :key="cust.customer_id ?? `umum-${idx}`"
+                    :key="cust.id ?? `umum-${idx}`"
                   >
                     <td data-label="Customer">
                       <strong>{{ cust.nama }}</strong>
@@ -1036,9 +1035,9 @@ onMounted(() => {
                     <td data-label="Jenis">
                       {{ cust.jenis ? CUSTOMER_TYPE_LABELS[cust.jenis] || cust.jenis : 'Eceran Outlet' }}
                     </td>
-                    <td data-label="Nota" class="num">{{ formatNumber(cust.jumlah_nota) }}</td>
+                    <td data-label="Nota" class="num">{{ formatNumber(cust.nota) }}</td>
                     <td data-label="Omzet 30 Hari" class="num">
-                      <strong>{{ formatRupiah(cust.omzet) }}</strong>
+                      <strong>{{ formatRupiah(cust.total) }}</strong>
                     </td>
                   </tr>
                 </tbody>
@@ -1087,11 +1086,11 @@ onMounted(() => {
                     :key="`${item.lokasi_id}-${item.produk_id}`"
                   >
                     <td data-label="Lokasi">
-                      <strong>{{ item.lokasi_kode }}</strong>
+                      <strong>{{ item.lokasi }}</strong>
                       <div class="field-hint">{{ item.lokasi_nama }}</div>
                     </td>
                     <td data-label="Produk">
-                      <div><strong>{{ item.nama_produk }}</strong></div>
+                      <div><strong>{{ item.nama }}</strong></div>
                       <div class="field-hint mono">SKU: {{ item.sku }} | Batas Min: {{ formatNumber(item.stok_minimum) }} {{ item.satuan }}</div>
                     </td>
                     <td data-label="Sisa Stock" class="num">
@@ -1108,7 +1107,7 @@ onMounted(() => {
                     <td class="col-actions">
                       <button
                         type="button"
-                        class="btn btn-secondary btn-small"
+                        class="btn btn-get btn-small"
                         @click="openKartuFromKritis(item)"
                       >
                         Stock Card
@@ -1200,12 +1199,12 @@ onMounted(() => {
         <div class="summary-strip">
           <div class="summary-item">
             <span class="detail-label">Pengiriman Sedang Diantar</span>
-            <strong class="detail-value num">{{ formatNumber(dashboard.ringkasan.sedang_dikirim) }}</strong>
+            <strong class="detail-value num">{{ formatNumber(dashboard.pengiriman_aktif.length) }}</strong>
             <small class="field-hint">Tugas pengantaran aktif dalam perjalanan</small>
           </div>
           <div class="summary-item">
             <span class="detail-label">Riwayat Selesai Diantar</span>
-            <strong class="detail-value num">{{ formatNumber(dashboard.ringkasan.selesai_diterima) }}</strong>
+            <strong class="detail-value num">{{ formatNumber(dashboard.riwayat.length) }}</strong>
             <small class="field-hint">Pengiriman yang sudah dikonfirmasi lokasi tujuan</small>
           </div>
         </div>
@@ -1253,26 +1252,26 @@ onMounted(() => {
                   </td>
                   <td data-label="Tanggal Kirim">{{ formatDate(item.tanggal_kirim) }}</td>
                   <td data-label="Asal">
-                    <strong>{{ item.lokasi_asal_kode }} · {{ item.lokasi_asal_nama }}</strong>
+                    <strong>{{ item.lokasi_asal.kode }} · {{ item.lokasi_asal.nama }}</strong>
                     <div class="field-hint">{{ item.lokasi_asal_alamat }}</div>
                   </td>
                   <td data-label="Tujuan">
-                    <strong>{{ item.lokasi_tujuan_kode }} · {{ item.lokasi_tujuan_nama }}</strong>
+                    <strong>{{ item.lokasi_tujuan.kode }} · {{ item.lokasi_tujuan.nama }}</strong>
                     <div class="field-hint">{{ item.lokasi_tujuan_alamat }}</div>
                   </td>
                   <td data-label="Kendaraan">
-                    {{ item.jenis_kendaraan || '-' }}
-                    <div class="mono field-hint">{{ item.nomor_kendaraan || '' }}</div>
+                    {{ KENDARAAN_TYPE_LABELS[item.kendaraan_jenis] || item.kendaraan_jenis || '-' }}
+                    <div class="mono field-hint">{{ item.kendaraan_nomor || '' }}</div>
                   </td>
                   <td data-label="Muatan" class="num">
-                    <strong>{{ formatNumber(item.total_jumlah) }} unit</strong>
+                    <strong>{{ formatNumber(item.total_unit) }} unit</strong>
                     <div class="field-hint">{{ formatNumber(item.jumlah_item) }} SKU</div>
                   </td>
                   <td class="col-actions">
                     <div class="action-group">
                       <RouterLink
                         :to="{ name: 'pengiriman-surat-jalan', params: { id: item.id } }"
-                        class="btn btn-primary btn-small"
+                        class="btn btn-get btn-small"
                       >
                         <AppIcon name="printer" :size="16" />
                         <span>Surat jalan</span>
@@ -1289,12 +1288,12 @@ onMounted(() => {
           <div class="section-header-row">
             <div>
               <h2 class="section-title">Riwayat Pengiriman Selesai</h2>
-              <p class="field-hint">10 pengiriman terakhir yang sudah diterima lokasi tujuan</p>
+              <p class="field-hint">20 pengiriman terakhir yang sudah diterima lokasi tujuan</p>
             </div>
           </div>
 
           <EmptyState
-            v-if="!dashboard.pengiriman_selesai?.length"
+            v-if="!dashboard.riwayat?.length"
             icon="clipboard"
             title="Belum ada riwayat pengiriman selesai"
             description="Pengiriman yang sudah dikonfirmasi penerima akan tercatat di daftar ini."
@@ -1314,16 +1313,16 @@ onMounted(() => {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="item in dashboard.pengiriman_selesai" :key="item.id">
+                <tr v-for="item in dashboard.riwayat" :key="item.id">
                   <td data-label="Kode"><strong class="mono">{{ item.kode }}</strong></td>
                   <td data-label="Tanggal Kirim">{{ formatDate(item.tanggal_kirim) }}</td>
                   <td data-label="Diterima Pada">{{ formatDateTime(item.diterima_pada) }}</td>
                   <td data-label="Rute">
-                    {{ item.lokasi_asal_kode }} ({{ item.lokasi_asal_nama }}) &rarr;
-                    {{ item.lokasi_tujuan_kode }} ({{ item.lokasi_tujuan_nama }})
+                    {{ item.lokasi_asal.kode }} ({{ item.lokasi_asal.nama }}) &rarr;
+                    {{ item.lokasi_tujuan.kode }} ({{ item.lokasi_tujuan.nama }})
                   </td>
                   <td data-label="Muatan" class="num">
-                    {{ formatNumber(item.total_jumlah) }} unit ({{ formatNumber(item.jumlah_item) }} SKU)
+                    {{ formatNumber(item.total_unit) }} unit ({{ formatNumber(item.jumlah_item) }} SKU)
                   </td>
                   <td data-label="Status">
                     <BadgeStatus :value="item.status" />
@@ -1331,7 +1330,7 @@ onMounted(() => {
                   <td class="col-actions">
                     <RouterLink
                       :to="{ name: 'pengiriman-surat-jalan', params: { id: item.id } }"
-                      class="btn btn-secondary btn-small"
+                      class="btn btn-get btn-small"
                     >
                       Surat jalan
                     </RouterLink>

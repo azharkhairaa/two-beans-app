@@ -146,8 +146,8 @@ export class PembelianApi extends ResourceApi {
     super(client, '/pembelian')
   }
 
-  pesan(id) {
-    return this.action(id, 'pesan')
+  pesan(id, body) {
+    return this.action(id, 'pesan', body)
   }
 
   terima(id, body) {

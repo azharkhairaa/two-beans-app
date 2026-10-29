@@ -13,6 +13,7 @@ import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { lokasiApi, pembelianApi, produkApi, supplierApi } from '@/services'
@@ -47,7 +48,7 @@ onMounted(async () => {
   try {
     const [suppliers, lokasis] = await Promise.all([
       supplierApi.options(),
-      lokasiApi.list({ aktif: 'ya' }),
+      lokasiApi.list({ aktif: 'true' }),
     ])
     supplierList.value = suppliers
     gudangUtama.value = lokasis.find((l) => l.jenis === LOKASI_TYPES.GUDANG_UTAMA) || null
@@ -418,7 +419,7 @@ async function onConfirmExecute() {
           Pesanan pembelian (PO) green bean, peralatan dan bahan habis pakai untuk Gudang Utama
         </p>
       </div>
-      <button type="button" class="btn btn-primary" @click="openCreate">
+      <button type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Buat pesanan (PO)</span>
       </button>
@@ -441,17 +442,14 @@ async function onConfirmExecute() {
       <div class="toolbar-group">
         <div class="toolbar-field">
           <label class="toolbar-label" for="po-filter-supplier">Supplier</label>
-          <select
+          <SearchSelect
             id="po-filter-supplier"
             v-model="filters.supplier_id"
-            class="input input-sm"
+            :options="supplierList.map((sup) => ({ value: sup.id, label: `${sup.nama}` }))"
+            empty-label="Semua supplier"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua supplier</option>
-            <option v-for="sup in supplierList" :key="sup.id" :value="sup.id">
-              {{ sup.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="po-filter-status">Status</label>
@@ -579,31 +577,31 @@ async function onConfirmExecute() {
             </td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openDetail(row)">
+                <button type="button" class="btn btn-get-outline btn-sm" @click="openDetail(row)">
                   Detail
                 </button>
                 <template v-if="row.status === 'draf'">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(row)">
+                  <button type="button" class="btn btn-put btn-sm" @click="openEdit(row)">
                     Ubah
                   </button>
-                  <button type="button" class="btn btn-primary btn-sm" @click="openPesan(row)">
+                  <button type="button" class="btn btn-post btn-sm" @click="openPesan(row)">
                     Pesan
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openDelete(row)"
                   >
                     Hapus
                   </button>
                 </template>
                 <template v-else-if="row.status === 'dipesan'">
-                  <button type="button" class="btn btn-primary btn-sm" @click="openTerima(row)">
+                  <button type="button" class="btn btn-post btn-sm" @click="openTerima(row)">
                     Terima
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openBatal(row)"
                   >
                     Batal
@@ -629,19 +627,15 @@ async function onConfirmExecute() {
         <div class="form-row-2">
           <FormField id="po-supplier" label="Supplier pemasok" :error="errors.supplier_id">
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="po-supplier"
                 v-model="values.supplier_id"
-                class="input"
+                :options="supplierList.map((sup) => ({ value: sup.id, label: `${sup.nama}` }))"
+                placeholder="Pilih supplier..."
                 required
-                :aria-invalid="Boolean(errors.supplier_id)"
-                :aria-describedby="describedBy"
-              >
-                <option value="">Pilih supplier...</option>
-                <option v-for="sup in supplierList" :key="sup.id" :value="sup.id">
-                  {{ sup.nama }}
-                </option>
-              </select>
+                :invalid="Boolean(errors.supplier_id)"
+                :described-by="describedBy"
+              />
             </template>
           </FormField>
 
@@ -707,7 +701,7 @@ async function onConfirmExecute() {
         </button>
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="submitting"
           @click="onSave('pesan')"
         >
@@ -821,34 +815,34 @@ async function onConfirmExecute() {
         <template v-if="detailData?.status === 'draf'">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openDelete(detailData)"
           >
             Hapus draf
           </button>
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openBatal(detailData)"
           >
             Batalkan
           </button>
-          <button type="button" class="btn btn-secondary" @click="openEdit(detailData)">
+          <button type="button" class="btn btn-put" @click="openEdit(detailData)">
             Ubah draf
           </button>
-          <button type="button" class="btn btn-primary" @click="openPesan(detailData)">
+          <button type="button" class="btn btn-post" @click="openPesan(detailData)">
             Kirim pesanan ke supplier
           </button>
         </template>
         <template v-else-if="detailData?.status === 'dipesan'">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openBatal(detailData)"
           >
             Batalkan PO
           </button>
-          <button type="button" class="btn btn-primary" @click="openTerima(detailData)">
+          <button type="button" class="btn btn-post" @click="openTerima(detailData)">
             Konfirmasi terima barang
           </button>
         </template>
@@ -876,7 +870,7 @@ async function onConfirmExecute() {
           <FormField
             id="pesan-tanggal"
             label="Tanggal pesan"
-            :error="pesanForm.errors.tanggal_pesan"
+            :error="pesanForm.errors.value.tanggal_pesan"
           >
             <template #default="{ describedBy }">
               <input
@@ -885,7 +879,7 @@ async function onConfirmExecute() {
                 type="date"
                 class="input mono"
                 required
-                :aria-invalid="Boolean(pesanForm.errors.tanggal_pesan)"
+                :aria-invalid="Boolean(pesanForm.errors.value.tanggal_pesan)"
                 :aria-describedby="describedBy"
               />
             </template>
@@ -894,7 +888,7 @@ async function onConfirmExecute() {
           <FormField
             id="pesan-perkiraan"
             label="Perkiraan tiba"
-            :error="pesanForm.errors.tanggal_perkiraan"
+            :error="pesanForm.errors.value.tanggal_perkiraan"
           >
             <template #default="{ describedBy }">
               <input
@@ -902,7 +896,7 @@ async function onConfirmExecute() {
                 v-model="pesanForm.values.tanggal_perkiraan"
                 type="date"
                 class="input mono"
-                :aria-invalid="Boolean(pesanForm.errors.tanggal_perkiraan)"
+                :aria-invalid="Boolean(pesanForm.errors.value.tanggal_perkiraan)"
                 :aria-describedby="describedBy"
               />
             </template>
@@ -922,7 +916,7 @@ async function onConfirmExecute() {
         <button
           type="submit"
           form="pesan-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="pesanForm.submitting.value"
         >
           {{ pesanForm.submitting.value ? 'Mengirim...' : 'Kirim pesanan' }}
@@ -1045,7 +1039,7 @@ async function onConfirmExecute() {
         <button
           type="submit"
           form="terima-po-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="terimaSubmitting || terimaLoadingDetail"
         >
           {{ terimaSubmitting ? 'Menyimpan...' : 'Konfirmasi terima barang' }}

@@ -10,6 +10,7 @@ import ErrorState from '@/components/ErrorState.vue'
 import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { lokasiApi, userApi } from '@/services'
@@ -25,7 +26,7 @@ const lokasiList = ref([])
 
 onMounted(async () => {
   try {
-    lokasiList.value = await lokasiApi.list({ aktif: 'ya' })
+    lokasiList.value = await lokasiApi.list({ aktif: 'true' })
   } catch {
     lokasiList.value = []
   }
@@ -239,17 +240,14 @@ function isSelf(row) {
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="usr-filter-lokasi">Lokasi Tugas</label>
-          <select
+          <SearchSelect
             id="usr-filter-lokasi"
             v-model="filters.lokasi_id"
-            class="input input-sm"
+            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+            empty-label="Semua lokasi"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua lokasi</option>
-            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }}
-            </option>
-          </select>
+          />
         </div>
         <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
       </div>
@@ -311,12 +309,12 @@ function isSelf(row) {
             </td>
             <td data-label="Aksi" class="col-actions">
               <div v-if="row.status === 'menunggu'" class="action-group">
-                <button type="button" class="btn btn-primary btn-sm" @click="openApprove(row)">
+                <button type="button" class="btn btn-post btn-sm" @click="openApprove(row)">
                   Setujui
                 </button>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm text-danger"
+                  class="btn btn-delete btn-sm"
                   @click="openDelete(row, true)"
                 >
                   Tolak
@@ -325,7 +323,7 @@ function isSelf(row) {
               <div v-else class="action-group">
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-put btn-sm"
                   :disabled="isSelf(row)"
                   @click="openEditRole(row)"
                 >
@@ -333,7 +331,7 @@ function isSelf(row) {
                 </button>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-put btn-sm"
                   :disabled="isSelf(row)"
                   @click="openToggleStatus(row)"
                 >
@@ -341,7 +339,7 @@ function isSelf(row) {
                 </button>
                 <button
                   type="button"
-                  class="btn btn-secondary btn-sm text-danger"
+                  class="btn btn-delete btn-sm"
                   :disabled="isSelf(row)"
                   @click="openDelete(row, false)"
                 >
@@ -395,19 +393,15 @@ function isSelf(row) {
           :error="errors.lokasi_id"
         >
           <template #default="{ describedBy }">
-            <select
+            <SearchSelect
               id="usr-lokasi"
               v-model="values.lokasi_id"
-              class="input"
+              :options="matchingLokasi.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
+              placeholder="Pilih lokasi..."
               required
-              :aria-invalid="Boolean(errors.lokasi_id)"
-              :aria-describedby="describedBy"
-            >
-              <option value="">Pilih lokasi...</option>
-              <option v-for="lok in matchingLokasi" :key="lok.id" :value="lok.id">
-                {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-              </option>
-            </select>
+              :invalid="Boolean(errors.lokasi_id)"
+              :described-by="describedBy"
+            />
           </template>
         </FormField>
 
@@ -437,7 +431,7 @@ function isSelf(row) {
       </form>
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
-        <button type="submit" form="user-role-form" class="btn btn-primary" :disabled="submitting">
+        <button type="submit" form="user-role-form" class="btn btn-post" :disabled="submitting">
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
           <span>{{ submitting ? 'Menyimpan...' : isApprovalMode ? 'Setujui & Aktifkan' : 'Simpan' }}</span>
         </button>

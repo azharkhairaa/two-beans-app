@@ -65,6 +65,7 @@ const ICONS = {
   ],
   'chevron-left': [p('M15 18l-6-6 6-6')],
   'chevron-right': [p('M9 18l6-6-6-6')],
+  'chevron-down': [p('M6 9l6 6 6-6')],
   refresh: [p('M21 12a9 9 0 1 1-2.6-6.4L21 8'), p('M21 3v5h-5')],
   printer: [
     p('M6 9V3h12v6'),

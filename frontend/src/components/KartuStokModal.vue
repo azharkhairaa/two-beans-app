@@ -21,6 +21,7 @@ const emit = defineEmits(['close'])
 
 const items = ref([])
 const meta = ref({ page: 1, per_page: 15, total: 0, total_pages: 1 })
+const perPage = ref(15)
 const loading = ref(false)
 const error = ref('')
 
@@ -32,15 +33,20 @@ async function loadKartu(page = 1) {
     const res = await produkApi.kartuStok(props.produk.id, {
       lokasi_id: props.lokasi.id,
       page,
-      per_page: 15,
+      per_page: perPage.value,
     })
     items.value = res?.data || []
-    meta.value = res?.meta || { page, per_page: 15, total: items.value.length, total_pages: 1 }
+    meta.value = res?.meta || { page, per_page: perPage.value, total: items.value.length, total_pages: 1 }
   } catch (err) {
     error.value = err?.message || 'Gagal memuat Stock Card.'
   } finally {
     loading.value = false
   }
+}
+
+function changePerPage(value) {
+  perPage.value = value
+  loadKartu(1)
 }
 
 watch(
@@ -119,7 +125,7 @@ watch(
           </tr>
         </tbody>
       </table>
-      <PaginationBar :meta="meta" @page="loadKartu" />
+      <PaginationBar :meta="meta" @page="loadKartu" @per-page="changePerPage" />
     </div>
 
     <template #footer>

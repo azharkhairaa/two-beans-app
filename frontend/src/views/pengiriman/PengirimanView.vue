@@ -13,6 +13,7 @@ import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { lokasiApi, pengirimanApi, produkApi, userApi } from '@/services'
@@ -89,7 +90,7 @@ onMounted(async () => {
   if (!isDeliveryman.value) {
     try {
       const [lok, kurir] = await Promise.all([
-        lokasiApi.list({ aktif: 'ya' }),
+        lokasiApi.list({ aktif: 'true' }),
         userApi.deliveryman(),
       ])
       lokasiList.value = lok
@@ -232,7 +233,7 @@ async function onSave(mode = 'draf') {
     if (!values.kendaraan_jenis) missing.kendaraan_jenis = 'Wajib diisi saat mengirim'
     if (!values.kendaraan_nomor?.trim()) missing.kendaraan_nomor = 'Wajib diisi saat mengirim'
     if (Object.keys(missing).length) {
-      Object.assign(errors, missing)
+      errors.value = missing
       message.value = 'Lengkapi deliveryman serta jenis dan nomor kendaraan sebelum mengirim.'
       return
     }
@@ -532,7 +533,7 @@ async function onConfirmDelete() {
           </template>
         </p>
       </div>
-      <button v-if="canCreate" type="button" class="btn btn-primary" @click="openCreate">
+      <button v-if="canCreate" type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Buat pengiriman</span>
       </button>
@@ -588,31 +589,25 @@ async function onConfirmDelete() {
       <div class="toolbar-group">
         <div v-if="auth.isAdmin" class="toolbar-field">
           <label class="toolbar-label" for="krm-filter-asal">Lokasi Asal</label>
-          <select
+          <SearchSelect
             id="krm-filter-asal"
             v-model="filters.lokasi_asal_id"
-            class="input input-sm"
+            :options="gudangAsalOptions.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+            empty-label="Semua asal"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua asal</option>
-            <option v-for="lok in gudangAsalOptions" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div v-if="auth.isAdmin" class="toolbar-field">
           <label class="toolbar-label" for="krm-filter-tujuan">Lokasi Tujuan</label>
-          <select
+          <SearchSelect
             id="krm-filter-tujuan"
             v-model="filters.lokasi_tujuan_id"
-            class="input input-sm"
+            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+            empty-label="Semua tujuan"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua tujuan</option>
-            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="krm-filter-status">Status</label>
@@ -700,7 +695,7 @@ async function onConfirmDelete() {
             <th>Lokasi Tujuan</th>
             <th>Pengantaran</th>
             <th>Status</th>
-            <th class="num">Nilai</th>
+            <th class="num">{{ isDeliveryman ? 'Barang' : 'Nilai' }}</th>
             <th class="col-actions">Aksi</th>
           </tr>
         </thead>
@@ -745,34 +740,34 @@ async function onConfirmDelete() {
                 />
               </div>
             </td>
-            <td data-label="Nilai" class="num">
-              <div class="mono font-semibold">{{ formatRupiah(row.nilai_dikirim) }}</div>
+            <td :data-label="isDeliveryman ? 'Barang' : 'Nilai'" class="num">
+              <div v-if="!isDeliveryman" class="mono font-semibold">{{ formatRupiah(row.nilai_dikirim) }}</div>
               <div class="cell-secondary mono">{{ row.jumlah_item }} item</div>
             </td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openDetail(row)">
+                <button type="button" class="btn btn-get-outline btn-sm" @click="openDetail(row)">
                   Detail
                 </button>
                 <button
                   v-if="row.status === 'dikirim' || row.status === 'diterima'"
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-get btn-sm"
                   @click="goSuratJalan(row)"
                 >
                   <AppIcon name="printer" :size="14" />
                   <span>Surat jalan</span>
                 </button>
                 <template v-if="canSendRow(row)">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(row)">
+                  <button type="button" class="btn btn-put btn-sm" @click="openEdit(row)">
                     Ubah
                   </button>
-                  <button type="button" class="btn btn-primary btn-sm" @click="openKirim(row)">
+                  <button type="button" class="btn btn-post btn-sm" @click="openKirim(row)">
                     Kirim
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openDelete(row)"
                   >
                     {{ row.permintaan ? 'Batalkan' : 'Hapus' }}
@@ -781,7 +776,7 @@ async function onConfirmDelete() {
                 <button
                   v-if="canReceiveRow(row)"
                   type="button"
-                  class="btn btn-primary btn-sm"
+                  class="btn btn-post btn-sm"
                   @click="openTerima(row)"
                 >
                   Terima
@@ -811,19 +806,15 @@ async function onConfirmDelete() {
             :error="errors.lokasi_asal_id"
           >
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="krm-asal"
-                :value="values.lokasi_asal_id"
-                class="input"
+                :model-value="values.lokasi_asal_id"
+                :options="gudangAsalOptions.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
                 required
-                :aria-invalid="Boolean(errors.lokasi_asal_id)"
-                :aria-describedby="describedBy"
-                @change="onAsalChange($event.target.value)"
-              >
-                <option v-for="lok in gudangAsalOptions" :key="lok.id" :value="lok.id">
-                  {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-                </option>
-              </select>
+                :invalid="Boolean(errors.lokasi_asal_id)"
+                :described-by="describedBy"
+                @change="onAsalChange($event)"
+              />
             </template>
           </FormField>
           <div v-else class="form-field">
@@ -836,19 +827,15 @@ async function onConfirmDelete() {
 
           <FormField id="krm-tujuan" label="Lokasi tujuan" :error="errors.lokasi_tujuan_id">
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="krm-tujuan"
                 v-model="values.lokasi_tujuan_id"
-                class="input"
+                :options="tujuanOptions.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
+                placeholder="Pilih lokasi tujuan..."
                 required
-                :aria-invalid="Boolean(errors.lokasi_tujuan_id)"
-                :aria-describedby="describedBy"
-              >
-                <option value="">Pilih lokasi tujuan...</option>
-                <option v-for="lok in tujuanOptions" :key="lok.id" :value="lok.id">
-                  {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-                </option>
-              </select>
+                :invalid="Boolean(errors.lokasi_tujuan_id)"
+                :described-by="describedBy"
+              />
             </template>
           </FormField>
         </div>
@@ -874,18 +861,14 @@ async function onConfirmDelete() {
             :error="errors.deliveryman_id"
           >
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="krm-deliveryman"
                 v-model="values.deliveryman_id"
-                class="input"
-                :aria-invalid="Boolean(errors.deliveryman_id)"
-                :aria-describedby="describedBy"
-              >
-                <option value="">Pilih saat mengirim...</option>
-                <option v-for="kurir in deliverymanList" :key="kurir.id" :value="kurir.id">
-                  {{ kurir.nama }}
-                </option>
-              </select>
+                :options="deliverymanList.map((kurir) => ({ value: kurir.id, label: `${kurir.nama}` }))"
+                placeholder="Pilih saat mengirim..."
+                :invalid="Boolean(errors.deliveryman_id)"
+                :described-by="describedBy"
+              />
             </template>
           </FormField>
         </div>
@@ -973,7 +956,7 @@ async function onConfirmDelete() {
         </button>
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="submitting"
           @click="onSave('kirim')"
         >
@@ -1011,7 +994,7 @@ async function onConfirmDelete() {
               </template>
             </p>
           </div>
-          <div class="num">
+          <div v-if="!isDeliveryman" class="num">
             <span class="detail-label">Nilai Barang Dikirim</span>
             <div class="detail-value mono font-semibold">
               {{ formatRupiah(detailData.nilai_dikirim) }}
@@ -1106,7 +1089,7 @@ async function onConfirmDelete() {
         <button
           v-if="detailData"
           type="button"
-          class="btn btn-secondary"
+          class="btn btn-get"
           @click="goSuratJalan(detailData)"
         >
           <AppIcon name="printer" :size="15" />
@@ -1115,22 +1098,22 @@ async function onConfirmDelete() {
         <template v-if="detailData && canSendRow(detailData)">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openDelete(detailData)"
           >
             {{ detailData.permintaan ? 'Batalkan draf' : 'Hapus draf' }}
           </button>
-          <button type="button" class="btn btn-secondary" @click="openEdit(detailData)">
+          <button type="button" class="btn btn-put" @click="openEdit(detailData)">
             Ubah draf
           </button>
-          <button type="button" class="btn btn-primary" @click="openKirim(detailData)">
+          <button type="button" class="btn btn-post" @click="openKirim(detailData)">
             Kirim barang
           </button>
         </template>
         <button
           v-if="detailData && canReceiveRow(detailData)"
           type="button"
-          class="btn btn-primary"
+          class="btn btn-post"
           @click="openTerima(detailData)"
         >
           Konfirmasi terima
@@ -1166,22 +1149,18 @@ async function onConfirmDelete() {
         <FormField
           id="modal-kirim-kurir"
           label="Deliveryman pengantar"
-          :error="kirimForm.errors.deliveryman_id"
+          :error="kirimForm.errors.value.deliveryman_id"
         >
           <template #default="{ describedBy }">
-            <select
+            <SearchSelect
               id="modal-kirim-kurir"
               v-model="kirimForm.values.deliveryman_id"
-              class="input"
+              :options="deliverymanList.map((kurir) => ({ value: kurir.id, label: `${kurir.nama}` }))"
+              placeholder="Pilih deliveryman aktif..."
               required
-              :aria-invalid="Boolean(kirimForm.errors.deliveryman_id)"
-              :aria-describedby="describedBy"
-            >
-              <option value="">Pilih deliveryman aktif...</option>
-              <option v-for="kurir in deliverymanList" :key="kurir.id" :value="kurir.id">
-                {{ kurir.nama }}
-              </option>
-            </select>
+              :invalid="Boolean(kirimForm.errors.value.deliveryman_id)"
+              :described-by="describedBy"
+            />
           </template>
         </FormField>
 
@@ -1189,7 +1168,7 @@ async function onConfirmDelete() {
           <FormField
             id="modal-kirim-jenis"
             label="Jenis kendaraan"
-            :error="kirimForm.errors.kendaraan_jenis"
+            :error="kirimForm.errors.value.kendaraan_jenis"
           >
             <template #default="{ describedBy }">
               <select
@@ -1197,7 +1176,7 @@ async function onConfirmDelete() {
                 v-model="kirimForm.values.kendaraan_jenis"
                 class="input"
                 required
-                :aria-invalid="Boolean(kirimForm.errors.kendaraan_jenis)"
+                :aria-invalid="Boolean(kirimForm.errors.value.kendaraan_jenis)"
                 :aria-describedby="describedBy"
               >
                 <option v-for="(lbl, key) in KENDARAAN_TYPE_LABELS" :key="key" :value="key">
@@ -1211,7 +1190,7 @@ async function onConfirmDelete() {
             id="modal-kirim-nopol"
             label="Nomor polisi"
             hint="Contoh: B 1234 TBC"
-            :error="kirimForm.errors.kendaraan_nomor"
+            :error="kirimForm.errors.value.kendaraan_nomor"
           >
             <template #default="{ describedBy }">
               <input
@@ -1221,7 +1200,7 @@ async function onConfirmDelete() {
                 placeholder="B 1234 TBC"
                 maxlength="12"
                 required
-                :aria-invalid="Boolean(kirimForm.errors.kendaraan_nomor)"
+                :aria-invalid="Boolean(kirimForm.errors.value.kendaraan_nomor)"
                 :aria-describedby="describedBy"
               />
             </template>
@@ -1241,7 +1220,7 @@ async function onConfirmDelete() {
         <button
           type="submit"
           form="kirim-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="kirimForm.submitting.value"
         >
           {{ kirimForm.submitting.value ? 'Mengirim...' : 'Kirim sekarang' }}
@@ -1375,7 +1354,7 @@ async function onConfirmDelete() {
         <button
           type="submit"
           form="terima-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="terimaSubmitting || terimaLoadingDetail"
         >
           {{ terimaSubmitting ? 'Menyimpan...' : 'Konfirmasi terima' }}

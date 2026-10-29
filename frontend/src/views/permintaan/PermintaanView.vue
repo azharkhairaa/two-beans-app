@@ -13,6 +13,7 @@ import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { lokasiApi, permintaanApi, produkApi } from '@/services'
@@ -70,7 +71,7 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
 
 onMounted(async () => {
   try {
-    lokasiList.value = await lokasiApi.list({ aktif: 'ya' })
+    lokasiList.value = await lokasiApi.list({ aktif: 'true' })
   } catch {
     lokasiList.value = []
   }
@@ -425,7 +426,7 @@ async function onConfirmBatal() {
           Pengajuan pasokan barang dari gudang cabang dan outlet ke Gudang Utama beserta persetujuannya
         </p>
       </div>
-      <button v-if="canCreate" type="button" class="btn btn-primary" @click="openCreate">
+      <button v-if="canCreate" type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Ajukan permintaan</span>
       </button>
@@ -448,17 +449,14 @@ async function onConfirmBatal() {
       <div class="toolbar-group">
         <div v-if="canProcessAny" class="toolbar-field">
           <label class="toolbar-label" for="pmt-filter-peminta">Lokasi Peminta</label>
-          <select
+          <SearchSelect
             id="pmt-filter-peminta"
             v-model="filters.lokasi_peminta_id"
-            class="input input-sm"
+            :options="requesterLokasiOptions.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+            empty-label="Semua peminta"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua peminta</option>
-            <option v-for="lok in requesterLokasiOptions" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="pmt-filter-status">Status</label>
@@ -584,36 +582,36 @@ async function onConfirmBatal() {
             </td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openDetail(row)">
+                <button type="button" class="btn btn-get-outline btn-sm" @click="openDetail(row)">
                   Detail
                 </button>
                 <button
                   v-if="row.pengiriman"
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-get btn-sm"
                   @click="goPengiriman(row.pengiriman)"
                 >
                   Pengiriman
                 </button>
                 <template v-if="canProcessRow(row)">
-                  <button type="button" class="btn btn-primary btn-sm" @click="openSetujui(row)">
+                  <button type="button" class="btn btn-post btn-sm" @click="openSetujui(row)">
                     Setujui
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openTolak(row)"
                   >
                     Tolak
                   </button>
                 </template>
                 <template v-if="canEditOrCancelRow(row)">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(row)">
+                  <button type="button" class="btn btn-put btn-sm" @click="openEdit(row)">
                     Ubah
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openBatal(row)"
                   >
                     Batalkan
@@ -644,19 +642,15 @@ async function onConfirmBatal() {
             :error="errors.lokasi_peminta_id"
           >
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="pmt-peminta"
                 v-model="values.lokasi_peminta_id"
-                class="input"
+                :options="requesterLokasiOptions.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
                 required
                 :disabled="Boolean(editingId)"
-                :aria-invalid="Boolean(errors.lokasi_peminta_id)"
-                :aria-describedby="describedBy"
-              >
-                <option v-for="lok in requesterLokasiOptions" :key="lok.id" :value="lok.id">
-                  {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-                </option>
-              </select>
+                :invalid="Boolean(errors.lokasi_peminta_id)"
+                :described-by="describedBy"
+              />
             </template>
           </FormField>
           <div v-else class="form-field">
@@ -717,7 +711,7 @@ async function onConfirmBatal() {
         >
           Batal
         </button>
-        <button type="submit" form="permintaan-form" class="btn btn-primary" :disabled="submitting">
+        <button type="submit" form="permintaan-form" class="btn btn-post" :disabled="submitting">
           <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
           <span>
             {{
@@ -835,7 +829,7 @@ async function onConfirmBatal() {
         <button
           v-if="detailData?.pengiriman"
           type="button"
-          class="btn btn-secondary"
+          class="btn btn-get"
           @click="goPengiriman(detailData.pengiriman)"
         >
           <AppIcon name="truck" :size="15" />
@@ -844,24 +838,24 @@ async function onConfirmBatal() {
         <template v-if="detailData && canEditOrCancelRow(detailData)">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openBatal(detailData)"
           >
             Batalkan permintaan
           </button>
-          <button type="button" class="btn btn-secondary" @click="openEdit(detailData)">
+          <button type="button" class="btn btn-put" @click="openEdit(detailData)">
             Ubah permintaan
           </button>
         </template>
         <template v-if="detailData && canProcessRow(detailData)">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openTolak(detailData)"
           >
             Tolak
           </button>
-          <button type="button" class="btn btn-primary" @click="openSetujui(detailData)">
+          <button type="button" class="btn btn-post" @click="openSetujui(detailData)">
             Setujui &amp; Buat Pengiriman
           </button>
         </template>
@@ -1007,7 +1001,7 @@ async function onConfirmBatal() {
         <button
           type="submit"
           form="setujui-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="setujuiSubmitting || setujuiLoadingDetail"
         >
           {{ setujuiSubmitting ? 'Memproses...' : 'Setujui & Buat Draf Pengiriman' }}
@@ -1034,7 +1028,7 @@ async function onConfirmBatal() {
           id="tolak-alasan"
           label="Alasan penolakan"
           hint="Wajib diisi (3 sampai 300 karakter)"
-          :error="tolakForm.errors.alasan_penolakan"
+          :error="tolakForm.errors.value.alasan_penolakan"
         >
           <template #default="{ describedBy }">
             <textarea
@@ -1044,7 +1038,7 @@ async function onConfirmBatal() {
               class="input"
               required
               placeholder="Jelaskan alasan penolakan permintaan ini..."
-              :aria-invalid="Boolean(tolakForm.errors.alasan_penolakan)"
+              :aria-invalid="Boolean(tolakForm.errors.value.alasan_penolakan)"
               :aria-describedby="describedBy"
             ></textarea>
           </template>
@@ -1063,7 +1057,7 @@ async function onConfirmBatal() {
         <button
           type="submit"
           form="tolak-form"
-          class="btn btn-danger"
+          class="btn btn-delete"
           :disabled="tolakForm.submitting.value"
         >
           {{ tolakForm.submitting.value ? 'Menolak...' : 'Tolak permintaan' }}

@@ -13,6 +13,7 @@ import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
+import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { customerApi, lokasiApi, penjualanApi, produkApi } from '@/services'
@@ -54,7 +55,7 @@ onMounted(async () => {
   try {
     const promises = [customerApi.options()]
     if (auth.isAdmin) {
-      promises.push(lokasiApi.list({ aktif: 'ya' }))
+      promises.push(lokasiApi.list({ aktif: 'true' }))
     }
     const [customers, lokasis] = await Promise.all(promises)
     customerOptions.value = customers || []
@@ -373,7 +374,7 @@ async function onConfirmExecute() {
           Pencatatan penjualan biji kopi, peralatan dan bahan habis pakai beserta cetak nota penjualan
         </p>
       </div>
-      <button type="button" class="btn btn-primary" @click="openCreate">
+      <button type="button" class="btn btn-post" @click="openCreate">
         <AppIcon name="plus" :size="16" />
         <span>Penjualan baru</span>
       </button>
@@ -411,31 +412,25 @@ async function onConfirmExecute() {
       <div class="toolbar-group">
         <div v-if="auth.isAdmin" class="toolbar-field">
           <label class="toolbar-label" for="pjl-filter-lokasi">Lokasi</label>
-          <select
+          <SearchSelect
             id="pjl-filter-lokasi"
             v-model="filters.lokasi_id"
-            class="input input-sm"
+            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
+            empty-label="Semua lokasi"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua lokasi</option>
-            <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-              {{ lok.kode }} - {{ lok.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="pjl-filter-customer">Customer</label>
-          <select
+          <SearchSelect
             id="pjl-filter-customer"
             v-model="filters.customer_id"
-            class="input input-sm"
+            :options="customerOptions.map((cust) => ({ value: cust.id, label: `${cust.nama}` }))"
+            empty-label="Semua customer"
+            small
             @change="applyFilters()"
-          >
-            <option value="">Semua customer</option>
-            <option v-for="cust in customerOptions" :key="cust.id" :value="cust.id">
-              {{ cust.nama }}
-            </option>
-          </select>
+          />
         </div>
         <div class="toolbar-field">
           <label class="toolbar-label" for="pjl-filter-status">Status</label>
@@ -552,28 +547,28 @@ async function onConfirmExecute() {
             </td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
-                <button type="button" class="btn btn-secondary btn-sm" @click="openDetail(row)">
+                <button type="button" class="btn btn-get-outline btn-sm" @click="openDetail(row)">
                   Detail
                 </button>
                 <button
                   v-if="row.status === 'diposting'"
                   type="button"
-                  class="btn btn-secondary btn-sm"
+                  class="btn btn-get btn-sm"
                   @click="goNota(row)"
                 >
                   <AppIcon name="printer" :size="14" />
                   <span>Cetak nota</span>
                 </button>
                 <template v-if="row.status === 'draf'">
-                  <button type="button" class="btn btn-secondary btn-sm" @click="openEdit(row)">
+                  <button type="button" class="btn btn-put btn-sm" @click="openEdit(row)">
                     Ubah
                   </button>
-                  <button type="button" class="btn btn-primary btn-sm" @click="openPosting(row)">
+                  <button type="button" class="btn btn-post btn-sm" @click="openPosting(row)">
                     Posting
                   </button>
                   <button
                     type="button"
-                    class="btn btn-secondary btn-sm text-danger"
+                    class="btn btn-delete btn-sm"
                     @click="openDelete(row)"
                   >
                     Hapus
@@ -604,19 +599,15 @@ async function onConfirmExecute() {
             :error="errors.lokasi_id"
           >
             <template #default="{ describedBy }">
-              <select
+              <SearchSelect
                 id="pjl-lokasi"
-                :value="values.lokasi_id"
-                class="input"
+                :model-value="values.lokasi_id"
+                :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
                 required
-                :aria-invalid="Boolean(errors.lokasi_id)"
-                :aria-describedby="describedBy"
-                @change="onLokasiChange($event.target.value)"
-              >
-                <option v-for="lok in lokasiList" :key="lok.id" :value="lok.id">
-                  {{ lok.kode }} - {{ lok.nama }} ({{ LOKASI_TYPE_LABELS[lok.jenis] }})
-                </option>
-              </select>
+                :invalid="Boolean(errors.lokasi_id)"
+                :described-by="describedBy"
+                @change="onLokasiChange($event)"
+              />
             </template>
           </FormField>
           <div v-else class="form-field">
@@ -649,23 +640,19 @@ async function onConfirmExecute() {
         >
           <template #default="{ describedBy }">
             <div class="doc-qty-wrap">
-              <select
+              <SearchSelect
                 id="pjl-customer"
                 v-model="values.customer_id"
-                class="input"
+                :options="customerOptions.map((cust) => ({ value: cust.id, label: `${cust.nama}` }))"
+                :empty-label="isOutletSale ? 'Umum (Pembeli Eceran Outlet)' : ''"
+                placeholder="Pilih customer..."
                 :required="!isOutletSale"
-                :aria-invalid="Boolean(errors.customer_id)"
-                :aria-describedby="describedBy"
-              >
-                <option v-if="isOutletSale" value="">Umum (Pembeli Eceran Outlet)</option>
-                <option v-else value="">Pilih customer...</option>
-                <option v-for="cust in customerOptions" :key="cust.id" :value="cust.id">
-                  {{ cust.nama }}
-                </option>
-              </select>
+                :invalid="Boolean(errors.customer_id)"
+                :described-by="describedBy"
+              />
               <button
                 type="button"
-                class="btn btn-secondary btn-sm"
+                class="btn btn-post btn-sm"
                 @click="openNewCustomer"
               >
                 <AppIcon name="plus" :size="15" />
@@ -719,7 +706,7 @@ async function onConfirmExecute() {
         </button>
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="submitting"
           @click="onSave('posting')"
         >
@@ -746,26 +733,26 @@ async function onConfirmExecute() {
         @submit.prevent="onSaveNewCustomer"
       >
         <div class="form-row-2">
-          <FormField id="qc-nama" label="Nama customer" :error="customerForm.errors.nama">
+          <FormField id="qc-nama" label="Nama customer" :error="customerForm.errors.value.nama">
             <template #default="{ describedBy }">
               <input
                 id="qc-nama"
                 v-model.trim="customerForm.values.nama"
                 class="input"
                 required
-                :aria-invalid="Boolean(customerForm.errors.nama)"
+                :aria-invalid="Boolean(customerForm.errors.value.nama)"
                 :aria-describedby="describedBy"
               />
             </template>
           </FormField>
 
-          <FormField id="qc-jenis" label="Jenis customer" :error="customerForm.errors.jenis">
+          <FormField id="qc-jenis" label="Jenis customer" :error="customerForm.errors.value.jenis">
             <template #default="{ describedBy }">
               <select
                 id="qc-jenis"
                 v-model="customerForm.values.jenis"
                 class="input"
-                :aria-invalid="Boolean(customerForm.errors.jenis)"
+                :aria-invalid="Boolean(customerForm.errors.value.jenis)"
                 :aria-describedby="describedBy"
               >
                 <option v-for="(lbl, key) in CUSTOMER_TYPE_LABELS" :key="key" :value="key">
@@ -777,39 +764,39 @@ async function onConfirmExecute() {
         </div>
 
         <div class="form-row-2">
-          <FormField id="qc-kontak" label="Nama kontak" :error="customerForm.errors.kontak">
+          <FormField id="qc-kontak" label="Nama kontak" :error="customerForm.errors.value.kontak">
             <template #default="{ describedBy }">
               <input
                 id="qc-kontak"
                 v-model.trim="customerForm.values.kontak"
                 class="input"
-                :aria-invalid="Boolean(customerForm.errors.kontak)"
+                :aria-invalid="Boolean(customerForm.errors.value.kontak)"
                 :aria-describedby="describedBy"
               />
             </template>
           </FormField>
 
-          <FormField id="qc-telepon" label="Nomor telepon" :error="customerForm.errors.telepon">
+          <FormField id="qc-telepon" label="Nomor telepon" :error="customerForm.errors.value.telepon">
             <template #default="{ describedBy }">
               <input
                 id="qc-telepon"
                 v-model.trim="customerForm.values.telepon"
                 class="input mono"
-                :aria-invalid="Boolean(customerForm.errors.telepon)"
+                :aria-invalid="Boolean(customerForm.errors.value.telepon)"
                 :aria-describedby="describedBy"
               />
             </template>
           </FormField>
         </div>
 
-        <FormField id="qc-alamat" label="Alamat" :error="customerForm.errors.alamat">
+        <FormField id="qc-alamat" label="Alamat" :error="customerForm.errors.value.alamat">
           <template #default="{ describedBy }">
             <textarea
               id="qc-alamat"
               v-model.trim="customerForm.values.alamat"
               rows="2"
               class="input"
-              :aria-invalid="Boolean(customerForm.errors.alamat)"
+              :aria-invalid="Boolean(customerForm.errors.value.alamat)"
               :aria-describedby="describedBy"
             ></textarea>
           </template>
@@ -828,7 +815,7 @@ async function onConfirmExecute() {
         <button
           type="submit"
           form="quick-customer-form"
-          class="btn btn-primary"
+          class="btn btn-post"
           :disabled="customerForm.submitting.value"
         >
           <span v-if="customerForm.submitting.value" class="btn-spinner" aria-hidden="true"></span>
@@ -935,7 +922,7 @@ async function onConfirmExecute() {
         <button
           v-if="detailData?.status === 'diposting'"
           type="button"
-          class="btn btn-primary"
+          class="btn btn-get"
           @click="goNota(detailData)"
         >
           <AppIcon name="printer" :size="15" />
@@ -944,15 +931,15 @@ async function onConfirmExecute() {
         <template v-if="detailData?.status === 'draf'">
           <button
             type="button"
-            class="btn btn-secondary text-danger"
+            class="btn btn-delete"
             @click="openDelete(detailData)"
           >
             Hapus draf
           </button>
-          <button type="button" class="btn btn-secondary" @click="openEdit(detailData)">
+          <button type="button" class="btn btn-put" @click="openEdit(detailData)">
             Ubah draf
           </button>
-          <button type="button" class="btn btn-primary" @click="openPosting(detailData)">
+          <button type="button" class="btn btn-post" @click="openPosting(detailData)">
             Posting penjualan
           </button>
         </template>
