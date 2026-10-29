@@ -180,17 +180,17 @@ function qtyNote(row) {
 
 const isSale = computed(() => props.defaultPriceField === 'harga_jual')
 
-// harga acuan tetap tampil sebagai label, juga saat draf diubah dan harga sudah terisi
-function priceRef(row) {
+// harga acuan tetap tampil sebagai label (satu baris per harga), juga saat draf diubah
+function priceRefs(row) {
   const product = rowProduct(row)
-  if (!product) return ''
+  if (!product) return []
   if (isSale.value) {
-    return `Standar ${formatRupiah(product.harga_jual)} · HPP ${formatRupiah(product.harga_beli)}`
+    return [`Standar ${formatRupiah(product.harga_jual)}`, `HPP ${formatRupiah(product.harga_beli)}`]
   }
   if (props.defaultPriceField === 'harga_beli') {
-    return `Harga beli terakhir ${formatRupiah(product.harga_beli)}`
+    return [`Harga beli terakhir ${formatRupiah(product.harga_beli)}`]
   }
-  return ''
+  return []
 }
 
 function rowMargin(row) {
@@ -313,7 +313,7 @@ function fieldError(index, field) {
           <p v-if="fieldError(idx, 'harga_satuan')" class="field-error">
             {{ fieldError(idx, 'harga_satuan') }}
           </p>
-          <p v-if="priceRef(row)" class="doc-item-note">{{ priceRef(row) }}</p>
+          <p v-for="line in priceRefs(row)" :key="line" class="doc-item-note">{{ line }}</p>
           <p
             v-if="marginNote(row)"
             class="doc-item-note"
