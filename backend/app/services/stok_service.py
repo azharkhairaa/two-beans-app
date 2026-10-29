@@ -26,7 +26,7 @@ from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import Page, PageParams, SortDirection
 from app.schemas.lokasi import LokasiSummary
 from app.schemas.stok import KartuStokItem, StokItem, StokPage, StokProduk, StokSettingInput
-from app.services.base import CrudService
+from app.services.base import CrudService, SqlMoney
 
 class StokSort(StrEnum):
     NAMA = "nama"
@@ -96,7 +96,7 @@ class StokService:
         if sort == StokSort.JUMLAH:
             return Stok.jumlah
         if sort == StokSort.NILAI:
-            return Stok.jumlah * Produk.harga_beli
+            return SqlMoney.line(Stok.jumlah, Produk.harga_beli)
         return Produk.nama
 
     def update_setting(self, lokasi_id: int, produk_id: int, data: StokSettingInput) -> StokItem:

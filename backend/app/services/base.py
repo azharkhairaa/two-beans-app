@@ -3,7 +3,7 @@ from datetime import date
 from typing import Any
 
 from pydantic import BaseModel
-from sqlalchemy import ColumnElement, Select, func, select
+from sqlalchemy import BigInteger, ColumnElement, Select, cast, func, select
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.clock import Clock
@@ -11,6 +11,16 @@ from app.core.errors import DataInUse, InvalidStatus, NotFound, ValidationFailed
 from app.models import DOCUMENT_NUMBER_SEQUENCE, Base, Lokasi, Produk, User
 from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import ActiveFilter, Page, PageParams
+
+class SqlMoney:
+    # jumlah x harga dihitung bigint supaya tidak overflow int4 (Desain Database 8.2)
+    @staticmethod
+    def line(quantity: Any, price: Any) -> ColumnElement:
+        return cast(quantity, BigInteger) * price
+
+    @staticmethod
+    def total(quantity: Any, price: Any) -> ColumnElement:
+        return cast(func.coalesce(func.sum(SqlMoney.line(quantity, price)), 0), BigInteger)
 
 class CrudService[M: Base]:
     # induk service master data: ambil atau 404, simpan, ubah, hapus yang belum dipakai dan paginasi
@@ -91,6 +101,11 @@ class CrudService[M: Base]:
         # %, _ dan \ dari input di-escape supaya dicari sebagai teks biasa
         escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         return column.ilike(f"%{escaped}%", escape="\\")
+
+    @staticmethod
+    def local_date(column: Any) -> ColumnElement:
+        # tanggal WIB dari timestamptz, tidak bergantung zona waktu sesi database (Neon UTC)
+        return func.date(func.timezone(Clock.ZONE.key, column))
 
     @staticmethod
     def active_filter(query: Select, column: Any, aktif: ActiveFilter) -> Select:

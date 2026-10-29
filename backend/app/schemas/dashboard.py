@@ -89,7 +89,6 @@ class DeliverymanPengirimanItem(BaseModel):
     kendaraan_nomor: str | None
     jumlah_item: int
     total_unit: int
-    nilai_dikirim: int
     catatan: str | None = None
     dikirim_pada: UtcDateTime | None = None
     diterima_pada: UtcDateTime | None = None

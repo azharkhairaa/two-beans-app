@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.clock import Clock
@@ -80,9 +80,9 @@ class PermintaanService(DokumenService[Permintaan]):
         if filters.status:
             query = query.where(Permintaan.status == filters.status)
         if filters.dari:
-            query = query.where(func.date(Permintaan.created_at) >= filters.dari)
+            query = query.where(CrudService.local_date(Permintaan.created_at) >= filters.dari)
         if filters.sampai:
-            query = query.where(func.date(Permintaan.created_at) <= filters.sampai)
+            query = query.where(CrudService.local_date(Permintaan.created_at) <= filters.sampai)
         if filters.q:
             columns = (Permintaan.kode, Permintaan.catatan)
             query = query.where(

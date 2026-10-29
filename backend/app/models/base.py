@@ -4,6 +4,8 @@ from enum import StrEnum
 from sqlalchemy import CheckConstraint, DateTime, MetaData, Sequence, column, func, or_
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from app.core.clock import Clock
+
 # nama constraint konsisten supaya IntegrityError bisa di-mapping ke pesan yang jelas
 NAMING_CONVENTION = {
     "pk": "pk_%(table_name)s",
@@ -20,7 +22,10 @@ class Base(DeclarativeBase):
 DOCUMENT_NUMBER_SEQUENCE = Sequence("dokumen_nomor_seq", start=1, metadata=Base.metadata)
 
 class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    # default Python ikut Clock supaya riwayat seeder bertanggal sesuai waktu simulasinya
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=Clock.now, server_default=func.now()
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )

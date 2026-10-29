@@ -571,7 +571,13 @@ def test_role_and_location_access_and_status_transitions(
     kurir1_client = login_as("kurir1@example.com")
     daftar_kurir = kurir1_client.get("/api/pengiriman").json()
     assert [row["id"] for row in daftar_kurir["data"]] == [kr_outlet["id"]]
-    assert kurir1_client.get(f"/api/pengiriman/{kr_outlet['id']}").status_code == 200
+    detail_kurir = kurir1_client.get(f"/api/pengiriman/{kr_outlet['id']}")
+    assert detail_kurir.status_code == 200
+    # harga beli dan nilai barang tidak dikirim ke deliveryman
+    assert daftar_kurir["data"][0]["nilai_dikirim"] is None
+    assert detail_kurir.json()["nilai_dikirim"] is None
+    assert {row["produk"]["harga_beli"] for row in detail_kurir.json()["items"]} == {None}
+    assert "nilai_dikirim" not in kurir1_client.get("/api/dashboard").json()["pengiriman_aktif"][0]
     assert kurir1_client.get(f"/api/pengiriman/{kr_cabang['id']}").status_code == 404
     for res in (
         kurir1_client.post("/api/pengiriman", json=payload(setup)),

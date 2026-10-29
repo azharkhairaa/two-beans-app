@@ -79,12 +79,12 @@ class PembelianService(DokumenService[Pembelian]):
             query = query.where(Pembelian.status == filters.status)
         if filters.dari:
             query = query.where(
-                func.coalesce(Pembelian.tanggal_pesan, func.date(Pembelian.created_at))
+                func.coalesce(Pembelian.tanggal_pesan, CrudService.local_date(Pembelian.created_at))
                 >= filters.dari
             )
         if filters.sampai:
             query = query.where(
-                func.coalesce(Pembelian.tanggal_pesan, func.date(Pembelian.created_at))
+                func.coalesce(Pembelian.tanggal_pesan, CrudService.local_date(Pembelian.created_at))
                 <= filters.sampai
             )
         if filters.q:

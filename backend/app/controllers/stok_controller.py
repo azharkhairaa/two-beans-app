@@ -5,7 +5,7 @@ from app.core.database import get_db
 from app.models import KategoriType, StokStatus, User
 from app.policies.access import current_user
 from app.schemas.common import PageParams, SortDirection
-from app.schemas.stok import StokItem, StokPage, StokSettingInput
+from app.schemas.stok import StokItem, StokPage, StokSettingInput, StokStatusFilter
 from app.services.stok_service import StokFilter, StokService, StokSort
 
 class StokController:
@@ -15,16 +15,14 @@ class StokController:
         q: str | None = Query(None, max_length=100, description="Cari di SKU atau nama"),
         kategori_id: int | None = None,
         jenis: KategoriType | None = None,
-        status_stok: str | None = None,
+        status_stok: StokStatusFilter = None,
         sort: StokSort = StokSort.NAMA,
         arah: SortDirection = SortDirection.ASC,
         params: PageParams = Depends(),
         user: User = Depends(current_user),
         db: Session = Depends(get_db),
     ) -> StokPage:
-        resolved_status: StokStatus | None = None
-        if status_stok and status_stok not in ("", "semua"):
-            resolved_status = StokStatus(status_stok)
+        resolved_status = StokStatus(status_stok) if status_stok in StokStatus else None
         filters = StokFilter(lokasi_id, q, kategori_id, jenis, resolved_status, sort, arah)
         return StokService(db, user).search(filters, params)
 

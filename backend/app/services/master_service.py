@@ -23,7 +23,7 @@ from app.schemas.master import (
     KategoriResponse,
     SupplierResponse,
 )
-from app.services.base import CrudService
+from app.services.base import CrudService, SqlMoney
 
 class MasterSort(StrEnum):
     NAMA = "nama"
@@ -98,9 +98,9 @@ class CustomerService(PartnerService[Customer]):
         customer = self.get_or_404(item_id)
         # 30 hari termasuk hari ini, hanya penjualan yang sudah diposting (BR-28)
         since = Clock.today() - timedelta(days=29)
-        omzet = func.sum(PenjualanDetail.jumlah * PenjualanDetail.harga_satuan)
+        omzet = SqlMoney.total(PenjualanDetail.jumlah, PenjualanDetail.harga_satuan)
         total = self.db.scalar(
-            select(func.coalesce(omzet, 0))
+            select(omzet)
             .join(Penjualan, Penjualan.id == PenjualanDetail.penjualan_id)
             .where(
                 Penjualan.customer_id == customer.id,

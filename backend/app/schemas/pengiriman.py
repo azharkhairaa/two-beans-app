@@ -83,7 +83,8 @@ class PengirimanProduk(BaseModel):
     nama: str
     satuan: str
     jenis: str
-    harga_beli: int
+    # null untuk deliveryman, harga beli hanya untuk manager dan admin
+    harga_beli: int | None
 
 class PengirimanItemResponse(BaseModel):
     id: int
@@ -107,7 +108,7 @@ class PengirimanSummary(BaseModel):
     catatan: str | None
     catatan_penerimaan: str | None
     jumlah_item: int
-    nilai_dikirim: int
+    nilai_dikirim: int | None
     dibuat_oleh: UserRef
     dikirim_oleh: UserRef | None
     dikirim_pada: UtcDateTime | None

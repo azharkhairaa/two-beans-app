@@ -52,7 +52,7 @@ from app.schemas.dashboard import (
     TrenResponse,
 )
 from app.schemas.pengiriman import PengirimanLokasi
-from app.services.base import CrudService
+from app.services.base import CrudService, SqlMoney
 
 @dataclass(frozen=True)
 class MonitoringFilter:
@@ -236,9 +236,6 @@ class DashboardService:
     @staticmethod
     def to_deliveryman_item(pengiriman: Pengiriman) -> DeliverymanPengirimanItem:
         total_unit = sum(row.jumlah_dikirim for row in pengiriman.detail)
-        nilai_dikirim = sum(
-            row.jumlah_dikirim * row.produk.harga_beli for row in pengiriman.detail
-        )
         return DeliverymanPengirimanItem(
             id=pengiriman.id,
             kode=pengiriman.kode,
@@ -250,7 +247,6 @@ class DashboardService:
             kendaraan_nomor=pengiriman.kendaraan_nomor,
             jumlah_item=len(pengiriman.detail),
             total_unit=total_unit,
-            nilai_dikirim=nilai_dikirim,
             catatan=pengiriman.catatan,
             dikirim_pada=pengiriman.dikirim_pada,
             diterima_pada=pengiriman.diterima_pada,
@@ -268,7 +264,7 @@ class DashboardService:
                 .filter(Stok.jumlah > 0, Stok.jumlah <= Stok.stok_minimum)
                 .label("menipis"),
                 func.count().filter(Stok.jumlah == 0).label("habis"),
-                func.coalesce(func.sum(Stok.jumlah * Produk.harga_beli), 0).label("nilai"),
+                SqlMoney.total(Stok.jumlah, Produk.harga_beli).label("nilai"),
             )
             .outerjoin(Stok, Stok.lokasi_id == Lokasi.id)
             .outerjoin(Produk, Produk.id == Stok.produk_id)
@@ -285,9 +281,9 @@ class DashboardService:
             select(
                 Lokasi.id.label("lokasi_id"),
                 func.count(func.distinct(Penjualan.id)).label("nota"),
-                func.coalesce(
-                    func.sum(PenjualanDetail.jumlah * PenjualanDetail.harga_satuan), 0
-                ).label("omzet"),
+                SqlMoney.total(PenjualanDetail.jumlah, PenjualanDetail.harga_satuan).label(
+                    "omzet"
+                ),
             )
             .outerjoin(
                 Penjualan,
@@ -329,7 +325,7 @@ class DashboardService:
         # Desain Database 8.4: nilai barang dalam pengiriman berstatus dikirim
         query = (
             select(
-                func.coalesce(func.sum(PengirimanDetail.jumlah_dikirim * Produk.harga_beli), 0)
+                SqlMoney.total(PengirimanDetail.jumlah_dikirim, Produk.harga_beli)
             )
             .select_from(Pengiriman)
             .join(PengirimanDetail, PengirimanDetail.pengiriman_id == Pengiriman.id)
@@ -349,7 +345,7 @@ class DashboardService:
         # Desain Database 8.4: nilai pesanan pembelian berstatus dipesan
         query = (
             select(
-                func.coalesce(func.sum(PembelianDetail.jumlah * PembelianDetail.harga_satuan), 0)
+                SqlMoney.total(PembelianDetail.jumlah, PembelianDetail.harga_satuan)
             )
             .select_from(Pembelian)
             .join(PembelianDetail, PembelianDetail.pembelian_id == Pembelian.id)
@@ -374,9 +370,8 @@ class DashboardService:
         self, since, today, lokasi_id: int | None
     ) -> list[DashboardCustomerItem]:
         # Desain Database 8.6: 5 customer teratas dari penjualan diposting 30 hari terakhir
-        total_col = func.coalesce(
-            func.sum(PenjualanDetail.jumlah * PenjualanDetail.harga_satuan), 0
-        ).label("total")
+        total_col = SqlMoney.total(PenjualanDetail.jumlah, PenjualanDetail.harga_satuan)
+        total_col = total_col.label("total")
         nota_col = func.count(func.distinct(Penjualan.id)).label("nota")
         query = (
             select(
@@ -628,7 +623,13 @@ class MonitoringService:
             select(Produk)
             .join(Kategori, Kategori.id == Produk.kategori_id)
             .options(joinedload(Produk.kategori))
-            .where(Produk.aktif.is_(True))
+            # produk nonaktif yang masih punya stok tetap tampil agar nilainya sama dengan dashboard
+            .where(
+                or_(
+                    Produk.aktif.is_(True),
+                    Produk.id.in_(select(Stok.produk_id).where(Stok.jumlah > 0)),
+                )
+            )
             .order_by(Produk.sku)
         )
         if filters.kategori_id:

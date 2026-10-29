@@ -1,10 +1,14 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.models import StokStatus
 from app.schemas.common import Page
 from app.schemas.fields import OptionalRak, UtcDateTime
 from app.schemas.lokasi import LokasiSummary
+
+# query status_stok: nilai StokStatus, "semua" atau kosong, selain itu 422 (bukan 500)
+StokStatusFilter = Literal[*(item.value for item in StokStatus), "semua", ""] | None
 
 class StokSettingInput(BaseModel):
     # tidak ada field jumlah, stok hanya berubah lewat dokumen (BR-01)

@@ -331,3 +331,32 @@ def test_dashboard_roles_and_tren_isolation(client, seeded_dashboard):
 
     assert client.get("/api/dashboard/monitoring").status_code == 403
     assert client.get("/api/dashboard/tren").status_code == 403
+
+
+def test_large_values_inactive_products_and_unknown_status(client, db, seeded_dashboard):
+    # 48 x Rp45 juta melewati batas int4, produk nonaktif yang masih berstok tetap dihitung
+    mahal = Produk(
+        sku="AL-ESPRESSO-01",
+        nama="Mesin Espresso",
+        kategori=seeded_dashboard["prod_v60"].kategori,
+        satuan=ProdukUnit.PCS,
+        harga_beli=45_000_000,
+        harga_jual=52_000_000,
+        aktif=False,
+    )
+    db.add(mahal)
+    db.flush()
+    db.add(Stok(lokasi=seeded_dashboard["gu"], produk=mahal, jumlah=48))
+    db.commit()
+
+    login_as(client, "admin@twobeans.id")
+    dashboard = client.get("/api/dashboard")
+    monitoring = client.get("/api/dashboard/monitoring")
+    assert dashboard.status_code == monitoring.status_code == 200
+    nilai = dashboard.json()["ringkasan"]["nilai_persediaan"]
+    assert nilai > 2**31 and nilai == monitoring.json()["total_nilai"]
+    assert client.get("/api/stok", params={"sort": "nilai"}).status_code == 200
+
+    for path in ("/api/dashboard/monitoring", "/api/stok"):
+        res = client.get(path, params={"status_stok": "xyz"})
+        assert res.status_code == 422 and "status_stok" in res.json()["errors"]

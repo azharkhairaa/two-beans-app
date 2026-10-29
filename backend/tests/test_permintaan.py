@@ -1,8 +1,10 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pytest
+from sqlalchemy import event
 
 from app.core.clock import Clock
+from app.core.database import database
 from app.models import (
     CoffeeType,
     Kategori,
@@ -407,3 +409,63 @@ def test_role_and_location_isolation(setup, login_as, client):
         gudang_client.post(f"/api/permintaan/{pm_outlet['id']}/batal").status_code
         == 403
     )
+
+
+def test_draft_from_permintaan_keeps_destination_and_approved_quantity(
+    setup, login_as, client
+):
+    outlet_client = login_as("outlet@example.com")
+    pm = outlet_client.post("/api/permintaan", json=payload(setup)).json()
+
+    client.cookies.clear()
+    gudang_client = login_as("gudang@example.com")
+    approved = gudang_client.post(
+        f"/api/permintaan/{pm['id']}/setujui",
+        json={
+            "tanggal_kirim": Clock.today().isoformat(),
+            "items": [{"produk_id": setup["biji"].id, "jumlah_disetujui": 6}],
+        },
+    ).json()
+    kr_id = approved["pengiriman"]["id"]
+
+    def update(tujuan, items):
+        body = {
+            "lokasi_tujuan_id": tujuan.id,
+            "tanggal_kirim": Clock.today().isoformat(),
+            "items": items,
+        }
+        return gudang_client.put(f"/api/pengiriman/{kr_id}", json=body)
+
+    # draf tidak bisa dialihkan ke lokasi lain, ditambah produk lain atau melebihi persetujuan
+    moved = update(setup["cabang"], [{"produk_id": setup["biji"].id, "jumlah_dikirim": 20}])
+    assert moved.status_code == 422
+    assert set(moved.json()["errors"]) == {"lokasi_tujuan_id", "items.0.jumlah_dikirim"}
+    extra = update(setup["outlet"], [{"produk_id": setup["alat"].id, "jumlah_dikirim": 1}])
+    assert extra.json()["errors"] == {
+        "items.0.produk_id": f"Produk tidak ada di permintaan {pm['kode']}"
+    }
+    smaller = update(setup["outlet"], [{"produk_id": setup["biji"].id, "jumlah_dikirim": 5}])
+    assert smaller.status_code == 200 and smaller.json()["items"][0]["jumlah_dikirim"] == 5
+
+
+@pytest.fixture
+def utc_session():
+    # meniru Neon yang zona waktu sesi databasenya UTC
+    def set_utc(dbapi_connection, *_):
+        with dbapi_connection.cursor() as cursor:
+            cursor.execute("SET TIME ZONE 'UTC'")
+
+    event.listen(database.engine, "checkout", set_utc)
+    yield
+    event.remove(database.engine, "checkout", set_utc)
+    database.engine.dispose()
+
+
+def test_date_filter_uses_wib_creation_date(setup, login_as, utc_session):
+    outlet_client = login_as("outlet@example.com")
+    # 06.30 WIB tanggal 2 masih tanggal 1 di UTC
+    with Clock.at(datetime(2026, 10, 2, 6, 30, tzinfo=Clock.ZONE)):
+        assert outlet_client.post("/api/permintaan", json=payload(setup)).status_code == 201
+    for day, total in (("2026-10-02", 1), ("2026-10-01", 0)):
+        res = outlet_client.get("/api/permintaan", params={"dari": day, "sampai": day})
+        assert res.json()["meta"]["total"] == total

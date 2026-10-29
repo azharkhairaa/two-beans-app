@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.clock import Clock
@@ -28,7 +28,7 @@ from app.schemas.penjualan import (
     PenjualanProduk,
     PenjualanSummary,
 )
-from app.services.base import CrudService, DokumenService
+from app.services.base import CrudService, DokumenService, SqlMoney
 from app.services.mutasi_stok import MutasiStok, MutationSource, StockChange
 
 class PenjualanSort(StrEnum):
@@ -85,9 +85,7 @@ class PenjualanService(DokumenService[Penjualan]):
         if filters.sort == PenjualanSort.TOTAL:
             column = (
                 select(
-                    func.coalesce(
-                        func.sum(PenjualanDetail.jumlah * PenjualanDetail.harga_satuan), 0
-                    )
+                    SqlMoney.total(PenjualanDetail.jumlah, PenjualanDetail.harga_satuan)
                 )
                 .where(PenjualanDetail.penjualan_id == Penjualan.id)
                 .correlate(Penjualan)

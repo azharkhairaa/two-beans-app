@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.models import KategoriType, StokStatus, User
 from app.policies.access import current_user
 from app.schemas.dashboard import DashboardResponse, MonitoringResponse, TrenResponse
+from app.schemas.stok import StokStatusFilter
 from app.services.dashboard_service import (
     DashboardService,
     MonitoringFilter,
@@ -23,14 +24,12 @@ class DashboardController:
         self,
         kategori_id: int | None = None,
         jenis: KategoriType | None = None,
-        status_stok: str | None = None,
+        status_stok: StokStatusFilter = None,
         q: str | None = Query(None, max_length=100, description="Cari di SKU, nama atau merek"),
         user: User = Depends(current_user),
         db: Session = Depends(get_db),
     ) -> MonitoringResponse:
-        resolved_status: StokStatus | None = None
-        if status_stok and status_stok not in ("", "semua"):
-            resolved_status = StokStatus(status_stok)
+        resolved_status = StokStatus(status_stok) if status_stok in StokStatus else None
         filters = MonitoringFilter(kategori_id, jenis, resolved_status, q)
         return MonitoringService(db, user).matriks(filters)
 

@@ -101,7 +101,7 @@ class PengirimanService(DokumenService[Pengiriman]):
         order = (
             (column.desc(), Pengiriman.id.desc()) if desc else (column.asc(), Pengiriman.id.asc())
         )
-        return self.paginate(query.order_by(*order), params, self.to_summary)
+        return self.paginate(query.order_by(*order), params, self.summary_for_user)
 
     def detail(self, item_id: int) -> PengirimanDetailResponse:
         query = (
@@ -123,7 +123,21 @@ class PengirimanService(DokumenService[Pengiriman]):
         pengiriman = self.db.scalar(query)
         if pengiriman is None or not self.can_access(pengiriman):
             raise NotFound("Pengiriman tidak ditemukan")
-        return self.to_detail(pengiriman)
+        result = self.to_detail(pengiriman)
+        if not self.pengiriman_policy.is_deliveryman:
+            return result
+        # deliveryman hanya butuh barang dan jumlah, harga beli dan nilai disembunyikan
+        items = [
+            item.model_copy(update={"produk": item.produk.model_copy(update={"harga_beli": None})})
+            for item in result.items
+        ]
+        return result.model_copy(update={"nilai_dikirim": None, "items": items})
+
+    def summary_for_user(self, pengiriman: Pengiriman) -> PengirimanSummary:
+        result = self.to_summary(pengiriman)
+        if self.pengiriman_policy.is_deliveryman:
+            return result.model_copy(update={"nilai_dikirim": None})
+        return result
 
     def create(self, data: PengirimanInput) -> PengirimanDetailResponse:
         self.pengiriman_policy.ensure_can_create()
@@ -155,6 +169,8 @@ class PengirimanService(DokumenService[Pengiriman]):
         else:
             lokasi_asal = self.db.get(Lokasi, pengiriman.lokasi_asal_id)
         self.validate_draft(data, lokasi_asal)
+        if pengiriman.permintaan_id is not None:
+            self.validate_requested(pengiriman, data, lokasi_asal)
         pengiriman.lokasi_asal_id = lokasi_asal.id
         pengiriman.lokasi_tujuan_id = data.lokasi_tujuan_id
         pengiriman.tanggal_kirim = data.tanggal_kirim
@@ -264,6 +280,33 @@ class PengirimanService(DokumenService[Pengiriman]):
         if data.deliveryman_id is not None:
             self.check_deliveryman(data.deliveryman_id, errors)
         errors.update(product_errors)
+        if errors:
+            raise ValidationFailed(errors=errors)
+
+    def validate_requested(
+        self, pengiriman: Pengiriman, data: PengirimanInput, lokasi_asal: Lokasi
+    ) -> None:
+        # draf hasil permintaan tetap ke peminta dan tidak melebihi jumlah yang disetujui (BR-09)
+        permintaan = self.db.get(Permintaan, pengiriman.permintaan_id)
+        approved = {row.produk_id: row.jumlah_disetujui or 0 for row in permintaan.detail}
+        errors: dict[str, str] = {}
+        if lokasi_asal.id != pengiriman.lokasi_asal_id:
+            errors["lokasi_asal_id"] = (
+                f"Asal draf dari permintaan {permintaan.kode} tidak bisa diubah"
+            )
+        if data.lokasi_tujuan_id != pengiriman.lokasi_tujuan_id:
+            errors["lokasi_tujuan_id"] = (
+                f"Tujuan draf dari permintaan {permintaan.kode} tidak bisa diubah"
+            )
+        for index, item in enumerate(data.items):
+            if item.produk_id not in approved:
+                errors[f"items.{index}.produk_id"] = (
+                    f"Produk tidak ada di permintaan {permintaan.kode}"
+                )
+            elif item.jumlah_dikirim > approved[item.produk_id]:
+                errors[f"items.{index}.jumlah_dikirim"] = (
+                    f"Melebihi jumlah disetujui ({approved[item.produk_id]})"
+                )
         if errors:
             raise ValidationFailed(errors=errors)
 

@@ -4,7 +4,7 @@ from app.core.errors import Conflict
 from app.models import Lokasi, LokasiType, Produk, Stok
 from app.schemas.common import ActiveFilter
 from app.schemas.lokasi import LokasiInput, LokasiResponse
-from app.services.base import CrudService
+from app.services.base import CrudService, SqlMoney
 
 class LokasiService(CrudService[Lokasi]):
     model = Lokasi
@@ -20,7 +20,7 @@ class LokasiService(CrudService[Lokasi]):
                 .filter(Stok.jumlah > 0, Stok.jumlah <= Stok.stok_minimum)
                 .label("menipis"),
                 func.count().filter(Stok.jumlah == 0).label("habis"),
-                func.coalesce(func.sum(Stok.jumlah * Produk.harga_beli), 0).label("nilai"),
+                SqlMoney.total(Stok.jumlah, Produk.harga_beli).label("nilai"),
             )
             .outerjoin(Stok, Stok.lokasi_id == Lokasi.id)
             .outerjoin(Produk, Produk.id == Stok.produk_id)
