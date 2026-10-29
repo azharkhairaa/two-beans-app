@@ -79,19 +79,19 @@ export const PRODUK_UNIT_LABELS = Object.freeze({
 export const PRODUK_WEIGHTS = Object.freeze([100, 200, 250, 500, 1000])
 
 export const MUTASI_TYPE_LABELS = Object.freeze({
-  masuk: 'Barang Masuk',
-  keluar: 'Barang Keluar',
-  penyesuaian: 'Penyesuaian',
-  kirim: 'Pengiriman Keluar',
-  terima: 'Penerimaan Masuk',
-  pembelian: 'Pembelian Supplier',
-  penjualan: 'Penjualan Customer',
+  masuk: 'Masuk (IN)',
+  keluar: 'Keluar (OUT)',
+  penyesuaian: 'Penyesuaian (ADJ)',
+  kirim: 'Pengiriman (OUT)',
+  terima: 'Penerimaan (IN)',
+  pembelian: 'Pembelian (IN)',
+  penjualan: 'Penjualan (OUT)',
 })
 
 export const TRANSAKSI_TYPE_LABELS = Object.freeze({
-  masuk: 'Barang Masuk',
-  keluar: 'Barang Keluar',
-  penyesuaian: 'Penyesuaian',
+  masuk: 'Masuk (IN)',
+  keluar: 'Keluar (OUT)',
+  penyesuaian: 'Penyesuaian (ADJ)',
 })
 
 export const TRANSAKSI_REASON_LABELS = Object.freeze({

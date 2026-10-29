@@ -1,12 +1,14 @@
 <script setup>
 import { computed } from 'vue'
 
+import AppIcon from '@/components/AppIcon'
 import {
   COFFEE_TYPE_LABELS,
   CUSTOMER_TYPE_LABELS,
   DOKUMEN_STATUS_LABELS,
   KATEGORI_TYPE_LABELS,
   LOKASI_TYPE_LABELS,
+  MUTASI_TYPE_LABELS,
   ROLE_LABELS,
   STOK_STATUS_LABELS,
   TRANSAKSI_REASON_LABELS,
@@ -19,12 +21,14 @@ const props = defineProps({
   value: { type: [String, Boolean], default: '' },
   label: { type: String, default: '' },
   tone: { type: String, default: '' },
+  icon: { type: String, default: '' },
 })
 
 const LABELS = {
   ...STOK_STATUS_LABELS,
   ...USER_STATUS_LABELS,
   ...DOKUMEN_STATUS_LABELS,
+  ...MUTASI_TYPE_LABELS,
   ...TRANSAKSI_TYPE_LABELS,
   ...TRANSAKSI_REASON_LABELS,
   ...LOKASI_TYPE_LABELS,
@@ -32,10 +36,17 @@ const LABELS = {
   ...CUSTOMER_TYPE_LABELS,
   ...COFFEE_TYPE_LABELS,
   ...ROLE_LABELS,
-  kirim: 'Kirim',
-  terima: 'Terima',
-  pembelian: 'Pembelian',
-  penjualan: 'Penjualan',
+}
+
+const ICONS = {
+  masuk: 'arrow-up',
+  terima: 'arrow-up',
+  pembelian: 'arrow-up',
+  keluar: 'arrow-down',
+  kirim: 'arrow-down',
+  penjualan: 'arrow-down',
+  menipis: 'alert-triangle',
+  habis: 'alert',
 }
 
 // pemetaan warna semantik sesuai tabel Desain UI bagian 2
@@ -85,8 +96,16 @@ const key = computed(() => {
 
 const resolvedTone = computed(() => props.tone || TONES[key.value] || 'netral')
 const resolvedLabel = computed(() => props.label || LABELS[key.value] || key.value || '-')
+const resolvedIcon = computed(() => {
+  if (props.icon === 'none') return null
+  if (props.icon) return props.icon
+  return ICONS[key.value] || null
+})
 </script>
 
 <template>
-  <span class="badge" :class="`badge-${resolvedTone}`">{{ resolvedLabel }}</span>
+  <span class="badge" :class="`badge-${resolvedTone}`">
+    <AppIcon v-if="resolvedIcon" :name="resolvedIcon" :size="12" :stroke="2.5" class="badge-icon" />
+    <span>{{ resolvedLabel }}</span>
+  </span>
 </template>

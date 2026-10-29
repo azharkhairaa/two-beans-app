@@ -330,47 +330,78 @@ onMounted(() => {
     <ErrorState v-else-if="error" :message="error" @retry="loadDashboard" />
 
     <template v-else-if="dashboard">
+      <!-- Banner Sambutan Pengguna -->
+      <div class="welcome-banner">
+        <span class="welcome-banner-icon">
+          <AppIcon name="check" :size="18" :stroke="2.5" />
+        </span>
+        <div class="welcome-banner-content">
+          <strong class="welcome-banner-title">Selamat datang kembali, {{ auth.user?.name }}!</strong>
+          <span class="welcome-banner-subtitle">{{ subtitleText }}</span>
+        </div>
+      </div>
+
       <!-- ==================== TAMPILAN ADMIN ==================== -->
       <template v-if="dashboard.peran === 'admin'">
         <div class="dash-tile-grid">
           <RouterLink :to="{ name: 'monitoring' }" class="dash-tile">
-            <span class="dash-tile-label">Nilai Persediaan</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_persediaan)">
-              {{ formatRupiahCompact(dashboard.ringkasan.nilai_persediaan) }}
-            </strong>
-            <span class="dash-tile-meta num">
-              {{ formatRupiah(dashboard.ringkasan.nilai_persediaan) }} · {{ dashboard.per_lokasi.length }} lokasi
-            </span>
+            <div class="dash-tile-icon-box dash-icon-kopi">
+              <AppIcon name="box" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Nilai Persediaan</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_persediaan)">
+                {{ formatRupiahCompact(dashboard.ringkasan.nilai_persediaan) }}
+              </strong>
+              <span class="dash-tile-meta num">
+                {{ formatRupiah(dashboard.ringkasan.nilai_persediaan) }} · {{ dashboard.per_lokasi.length }} lokasi
+              </span>
+            </div>
           </RouterLink>
 
           <RouterLink :to="{ name: 'penjualan', query: { status: 'diposting' } }" class="dash-tile">
-            <span class="dash-tile-label">Omzet 30 Hari</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.omzet_30_hari)">
-              {{ formatRupiahCompact(dashboard.ringkasan.omzet_30_hari) }}
-            </strong>
-            <span class="dash-tile-meta num">
-              {{ formatRupiah(dashboard.ringkasan.omzet_30_hari) }}
-            </span>
+            <div class="dash-tile-icon-box dash-icon-hijau">
+              <AppIcon name="receipt" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Omzet 30 Hari</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.omzet_30_hari)">
+                {{ formatRupiahCompact(dashboard.ringkasan.omzet_30_hari) }}
+              </strong>
+              <span class="dash-tile-meta num">
+                {{ formatRupiah(dashboard.ringkasan.omzet_30_hari) }}
+              </span>
+            </div>
           </RouterLink>
 
           <RouterLink :to="{ name: 'pengiriman', query: { status: 'dikirim' } }" class="dash-tile">
-            <span class="dash-tile-label">Nilai dalam Perjalanan</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_dalam_perjalanan)">
-              {{ formatRupiahCompact(dashboard.ringkasan.nilai_dalam_perjalanan) }}
-            </strong>
-            <span class="dash-tile-meta num">
-              {{ formatNumber(dashboard.ringkasan.pengiriman_dalam_perjalanan) }} pengiriman aktif
-            </span>
+            <div class="dash-tile-icon-box dash-icon-biru">
+              <AppIcon name="truck" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Nilai dalam Perjalanan</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_dalam_perjalanan)">
+                {{ formatRupiahCompact(dashboard.ringkasan.nilai_dalam_perjalanan) }}
+              </strong>
+              <span class="dash-tile-meta num">
+                {{ formatNumber(dashboard.ringkasan.pengiriman_dalam_perjalanan) }} pengiriman aktif
+              </span>
+            </div>
           </RouterLink>
 
           <RouterLink :to="{ name: 'pembelian', query: { status: 'dipesan' } }" class="dash-tile">
-            <span class="dash-tile-label">Nilai PO Terbuka</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_po_terbuka)">
-              {{ formatRupiahCompact(dashboard.ringkasan.nilai_po_terbuka) }}
-            </strong>
-            <span class="dash-tile-meta num">
-              {{ formatRupiah(dashboard.ringkasan.nilai_po_terbuka) }}
-            </span>
+            <div class="dash-tile-icon-box dash-icon-ungu">
+              <AppIcon name="cart" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Nilai PO Terbuka</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_po_terbuka)">
+                {{ formatRupiahCompact(dashboard.ringkasan.nilai_po_terbuka) }}
+              </strong>
+              <span class="dash-tile-meta num">
+                {{ formatRupiah(dashboard.ringkasan.nilai_po_terbuka) }}
+              </span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -378,9 +409,14 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.stok_menipis > 0 }"
           >
-            <span class="dash-tile-label">Stock Menipis</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_menipis) }} SKU</strong>
-            <span class="dash-tile-meta">Di atas 0 sampai batas minimum</span>
+            <div class="dash-tile-icon-box dash-icon-amber">
+              <AppIcon name="alert-triangle" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Stock Menipis</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_menipis) }} SKU</strong>
+              <span class="dash-tile-meta">Di atas 0 sampai batas minimum</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -388,9 +424,14 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-bahaya': dashboard.ringkasan.stok_habis > 0 }"
           >
-            <span class="dash-tile-label">Stock Habis</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
-            <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
+            <div class="dash-tile-icon-box dash-icon-merah">
+              <AppIcon name="alert" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Stock Habis</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
+              <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -398,9 +439,14 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.permintaan_menunggu > 0 }"
           >
-            <span class="dash-tile-label">Permintaan Menunggu</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_menunggu) }}</strong>
-            <span class="dash-tile-meta">Menunggu keputusan Gudang Utama</span>
+            <div class="dash-tile-icon-box dash-icon-biru">
+              <AppIcon name="clipboard" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Permintaan Menunggu</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_menunggu) }}</strong>
+              <span class="dash-tile-meta">Menunggu keputusan Gudang Utama</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -408,9 +454,14 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.akun_menunggu > 0 }"
           >
-            <span class="dash-tile-label">Akun Menunggu</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.akun_menunggu) }}</strong>
-            <span class="dash-tile-meta">Registrasi baru perlu disetujui</span>
+            <div class="dash-tile-icon-box dash-icon-cokelat">
+              <AppIcon name="user-check" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Akun Menunggu</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.akun_menunggu) }}</strong>
+              <span class="dash-tile-meta">Registrasi baru perlu disetujui</span>
+            </div>
           </RouterLink>
         </div>
 
@@ -643,21 +694,31 @@ onMounted(() => {
       <template v-else-if="dashboard.peran === 'manager_gudang' || dashboard.peran === 'manager_outlet'">
         <div class="dash-tile-grid">
           <RouterLink :to="{ name: 'stok' }" class="dash-tile">
-            <span class="dash-tile-label">Nilai Persediaan Lokasi</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_persediaan)">
-              {{ formatRupiahCompact(dashboard.ringkasan.nilai_persediaan) }}
-            </strong>
-            <span class="dash-tile-meta num">
-              {{ formatNumber(dashboard.ringkasan.sku_ada) }} SKU tersedia di {{ dashboard.lokasi.kode }}
-            </span>
+            <div class="dash-tile-icon-box dash-icon-kopi">
+              <AppIcon name="box" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Nilai Persediaan Lokasi</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_persediaan)">
+                {{ formatRupiahCompact(dashboard.ringkasan.nilai_persediaan) }}
+              </strong>
+              <span class="dash-tile-meta num">
+                {{ formatNumber(dashboard.ringkasan.sku_ada) }} SKU tersedia di {{ dashboard.lokasi.kode }}
+              </span>
+            </div>
           </RouterLink>
 
           <RouterLink :to="{ name: 'penjualan', query: { status: 'diposting' } }" class="dash-tile">
-            <span class="dash-tile-label">Omzet 30 Hari</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.omzet_30_hari)">
-              {{ formatRupiahCompact(dashboard.ringkasan.omzet_30_hari) }}
-            </strong>
-            <span class="dash-tile-meta num">{{ formatRupiah(dashboard.ringkasan.omzet_30_hari) }}</span>
+            <div class="dash-tile-icon-box dash-icon-hijau">
+              <AppIcon name="receipt" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Omzet 30 Hari</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.omzet_30_hari)">
+                {{ formatRupiahCompact(dashboard.ringkasan.omzet_30_hari) }}
+              </strong>
+              <span class="dash-tile-meta num">{{ formatRupiah(dashboard.ringkasan.omzet_30_hari) }}</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -665,9 +726,14 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.stok_menipis > 0 }"
           >
-            <span class="dash-tile-label">Stock Menipis</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_menipis) }} SKU</strong>
-            <span class="dash-tile-meta">Perlu pengajuan atau pengisian stock</span>
+            <div class="dash-tile-icon-box dash-icon-amber">
+              <AppIcon name="alert-triangle" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Stock Menipis</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_menipis) }} SKU</strong>
+              <span class="dash-tile-meta">Perlu pengajuan atau pengisian stock</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -675,17 +741,27 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-bahaya': dashboard.ringkasan.stok_habis > 0 }"
           >
-            <span class="dash-tile-label">Stock Habis</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
-            <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
+            <div class="dash-tile-icon-box dash-icon-merah">
+              <AppIcon name="alert" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Stock Habis</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
+              <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
+            </div>
           </RouterLink>
 
           <RouterLink :to="{ name: 'transaksi' }" class="dash-tile">
-            <span class="dash-tile-label">Mutasi Hari Ini (WIB)</span>
-            <strong class="dash-tile-value num">
-              +{{ formatNumber(dashboard.ringkasan.masuk_hari_ini) }} / -{{ formatNumber(dashboard.ringkasan.keluar_hari_ini) }}
-            </strong>
-            <span class="dash-tile-meta">Unit masuk dan keluar hari ini</span>
+            <div class="dash-tile-icon-box dash-icon-biru">
+              <AppIcon name="swap" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Mutasi Hari Ini (WIB)</span>
+              <strong class="dash-tile-value num">
+                +{{ formatNumber(dashboard.ringkasan.masuk_hari_ini) }} / -{{ formatNumber(dashboard.ringkasan.keluar_hari_ini) }}
+              </strong>
+              <span class="dash-tile-meta">Unit masuk dan keluar hari ini</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -693,11 +769,16 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-proses': dashboard.ringkasan.pengiriman_masuk_menunggu > 0 }"
           >
-            <span class="dash-tile-label">Pengiriman Masuk</span>
-            <strong class="dash-tile-value num">
-              {{ formatNumber(dashboard.ringkasan.pengiriman_masuk_menunggu) }}
-            </strong>
-            <span class="dash-tile-meta">Dalam perjalanan ke {{ dashboard.lokasi.kode }}</span>
+            <div class="dash-tile-icon-box dash-icon-biru">
+              <AppIcon name="truck" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Pengiriman Masuk</span>
+              <strong class="dash-tile-value num">
+                {{ formatNumber(dashboard.ringkasan.pengiriman_masuk_menunggu) }}
+              </strong>
+              <span class="dash-tile-meta">Dalam perjalanan ke {{ dashboard.lokasi.kode }}</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -706,9 +787,14 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.permintaan_menunggu > 0 }"
           >
-            <span class="dash-tile-label">Permintaan Cabang/Outlet</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_menunggu) }}</strong>
-            <span class="dash-tile-meta">Menunggu disetujui Gudang Utama</span>
+            <div class="dash-tile-icon-box dash-icon-ungu">
+              <AppIcon name="clipboard" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Permintaan Cabang/Outlet</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_menunggu) }}</strong>
+              <span class="dash-tile-meta">Menunggu disetujui Gudang Utama</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -716,9 +802,14 @@ onMounted(() => {
             :to="{ name: 'permintaan' }"
             class="dash-tile"
           >
-            <span class="dash-tile-label">Permintaan Supply Saya</span>
-            <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_saya_aktif) }}</strong>
-            <span class="dash-tile-meta">Berstatus diajukan atau disetujui</span>
+            <div class="dash-tile-icon-box dash-icon-ungu">
+              <AppIcon name="clipboard" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Permintaan Supply Saya</span>
+              <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.permintaan_saya_aktif) }}</strong>
+              <span class="dash-tile-meta">Berstatus diajukan atau disetujui</span>
+            </div>
           </RouterLink>
 
           <RouterLink
@@ -726,11 +817,16 @@ onMounted(() => {
             :to="{ name: 'pembelian', query: { status: 'dipesan' } }"
             class="dash-tile"
           >
-            <span class="dash-tile-label">Nilai PO Terbuka</span>
-            <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_po_terbuka)">
-              {{ formatRupiahCompact(dashboard.ringkasan.nilai_po_terbuka) }}
-            </strong>
-            <span class="dash-tile-meta">Pesanan ke supplier belum diterima</span>
+            <div class="dash-tile-icon-box dash-icon-cokelat">
+              <AppIcon name="cart" :size="22" />
+            </div>
+            <div class="dash-tile-body">
+              <span class="dash-tile-label">Nilai PO Terbuka</span>
+              <strong class="dash-tile-value num" :title="formatRupiah(dashboard.ringkasan.nilai_po_terbuka)">
+                {{ formatRupiahCompact(dashboard.ringkasan.nilai_po_terbuka) }}
+              </strong>
+              <span class="dash-tile-meta">Pesanan ke supplier belum diterima</span>
+            </div>
           </RouterLink>
         </div>
 
@@ -738,9 +834,14 @@ onMounted(() => {
           <!-- Kartu Perlu Tindakan -->
           <article class="card">
             <div class="section-header-row">
-              <div>
-                <h2 class="section-title">Perlu Tindakan</h2>
-                <p class="field-hint">Dokumen aktif yang membutuhkan konfirmasi atau keputusan</p>
+              <div class="section-title-wrap">
+                <span class="section-title-icon section-icon-ungu">
+                  <AppIcon name="clipboard" :size="18" />
+                </span>
+                <div>
+                  <h2 class="section-title">Perlu Tindakan</h2>
+                  <p class="field-hint">Dokumen aktif yang membutuhkan konfirmasi atau keputusan</p>
+                </div>
               </div>
               <BadgeStatus :value="dashboard.tugas.length ? 'menunggu' : 'aman'" :label="`${dashboard.tugas.length} tugas`" />
             </div>
@@ -884,9 +985,14 @@ onMounted(() => {
           <!-- Lima Customer Teratas (30 Hari) -->
           <article class="card">
             <div class="section-header-row">
-              <div>
-                <h2 class="section-title">Lima Customer Teratas (30 Hari)</h2>
-                <p class="field-hint">Berdasarkan nilai penjualan yang sudah diposting</p>
+              <div class="section-title-wrap">
+                <span class="section-title-icon section-icon-hijau">
+                  <AppIcon name="users" :size="18" />
+                </span>
+                <div>
+                  <h2 class="section-title">Lima Customer Teratas (30 Hari)</h2>
+                  <p class="field-hint">Berdasarkan nilai penjualan yang sudah diposting</p>
+                </div>
               </div>
               <RouterLink :to="{ name: 'penjualan' }" class="btn btn-secondary btn-small">
                 Semua penjualan
@@ -934,9 +1040,14 @@ onMounted(() => {
           <!-- Stock Kritis -->
           <article class="card">
             <div class="section-header-row">
-              <div>
-                <h2 class="section-title">Stock Kritis (Menipis &amp; Habis)</h2>
-                <p class="field-hint">Produk yang berada pada atau di bawah stock minimum</p>
+              <div class="section-title-wrap">
+                <span class="section-title-icon section-icon-amber">
+                  <AppIcon name="alert-triangle" :size="18" />
+                </span>
+                <div>
+                  <h2 class="section-title">Peringatan Stock Menipis</h2>
+                  <p class="field-hint">Produk yang berada di bawah atau pada batas minimum</p>
+                </div>
               </div>
               <RouterLink :to="{ name: 'monitoring' }" class="btn btn-secondary btn-small">
                 Buka matriks
@@ -956,7 +1067,7 @@ onMounted(() => {
                   <tr>
                     <th scope="col">Lokasi</th>
                     <th scope="col">Produk</th>
-                    <th scope="col" class="num">Stock / Min</th>
+                    <th scope="col" class="num">Sisa Stock</th>
                     <th scope="col">Status</th>
                     <th scope="col" class="col-actions">Aksi</th>
                   </tr>
@@ -971,11 +1082,16 @@ onMounted(() => {
                       <div class="field-hint">{{ item.lokasi_nama }}</div>
                     </td>
                     <td data-label="Produk">
-                      <span class="mono">{{ item.sku }}</span>
                       <div><strong>{{ item.nama_produk }}</strong></div>
+                      <div class="field-hint mono">SKU: {{ item.sku }} | Batas Min: {{ formatNumber(item.stok_minimum) }} {{ item.satuan }}</div>
                     </td>
-                    <td data-label="Stock / Min" class="num">
-                      <strong>{{ formatNumber(item.jumlah) }}</strong> / {{ formatNumber(item.stok_minimum) }} {{ item.satuan }}
+                    <td data-label="Sisa Stock" class="num">
+                      <span
+                        class="stock-sisa-pill"
+                        :class="item.jumlah === 0 ? 'stock-sisa-habis' : 'stock-sisa-menipis'"
+                      >
+                        Sisa: {{ formatNumber(item.jumlah) }}
+                      </span>
                     </td>
                     <td data-label="Status">
                       <BadgeStatus :value="item.status_stok" />
@@ -999,12 +1115,17 @@ onMounted(() => {
         <!-- Aktivitas Buku Besar Terbaru -->
         <article class="card">
           <div class="section-header-row">
-            <div>
-              <h2 class="section-title">Aktivitas Mutasi Stock Terbaru</h2>
-              <p class="field-hint">10 pencatatan terakhir pada buku besar stock</p>
+            <div class="section-title-wrap">
+              <span class="section-title-icon section-icon-biru">
+                <AppIcon name="swap" :size="18" />
+              </span>
+              <div>
+                <h2 class="section-title">Aktivitas Mutasi Stock Terbaru</h2>
+                <p class="field-hint">Aktivitas pergerakan stock mutasi terkini</p>
+              </div>
             </div>
             <RouterLink :to="{ name: 'stok' }" class="btn btn-secondary btn-small">
-              Kelola stock
+              Lihat semua riwayat →
             </RouterLink>
           </div>
 
@@ -1023,40 +1144,41 @@ onMounted(() => {
                   <th scope="col">Lokasi</th>
                   <th scope="col">Produk</th>
                   <th scope="col">Jenis</th>
-                  <th scope="col" class="num">Perubahan</th>
+                  <th scope="col" class="num">Jumlah</th>
                   <th scope="col" class="num">Saldo Akhir</th>
                   <th scope="col">Dokumen</th>
-                  <th scope="col">Oleh</th>
+                  <th scope="col">Dicatat Oleh</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="akt in dashboard.aktivitas_terbaru" :key="akt.id">
-                  <td data-label="Waktu">{{ formatDateTime(akt.waktu) }}</td>
+                  <td data-label="Waktu" class="cell-secondary">{{ formatDateTime(akt.waktu) }}</td>
                   <td data-label="Lokasi">
                     <strong>{{ akt.lokasi_kode }}</strong> · {{ akt.lokasi_nama }}
                   </td>
                   <td data-label="Produk">
-                    <span class="mono">{{ akt.produk_sku }}</span> · {{ akt.produk_nama }}
+                    <div><strong>{{ akt.produk_nama }}</strong></div>
+                    <div class="field-hint mono">SKU: {{ akt.produk_sku }}</div>
                   </td>
                   <td data-label="Jenis">
                     <BadgeStatus
                       :value="akt.perubahan >= 0 ? 'masuk' : 'keluar'"
-                      :label="MUTASI_TYPE_LABELS[akt.jenis] || akt.jenis"
+                      :label="MUTASI_TYPE_LABELS[akt.jenis] || (akt.perubahan >= 0 ? 'Masuk (IN)' : 'Keluar (OUT)')"
                     />
                   </td>
-                  <td data-label="Perubahan" class="num">
-                    <strong :class="akt.perubahan >= 0 ? 'text-aman' : 'text-bahaya'">
+                  <td data-label="Jumlah" class="num font-semibold">
+                    <span :class="akt.perubahan >= 0 ? 'text-aman' : 'text-bahaya'">
                       {{ akt.perubahan >= 0 ? `+${formatNumber(akt.perubahan)}` : formatNumber(akt.perubahan) }}
                       {{ akt.satuan }}
-                    </strong>
+                    </span>
                   </td>
-                  <td data-label="Saldo Akhir" class="num">
+                  <td data-label="Saldo Akhir" class="num mono">
                     {{ formatNumber(akt.stok_sesudah) }} {{ akt.satuan }}
                   </td>
                   <td data-label="Dokumen">
                     <span class="mono">{{ akt.dokumen_kode || '-' }}</span>
                   </td>
-                  <td data-label="Oleh">{{ akt.oleh }}</td>
+                  <td data-label="Dicatat Oleh">{{ akt.oleh }}</td>
                 </tr>
               </tbody>
             </table>
@@ -1081,9 +1203,14 @@ onMounted(() => {
 
         <article class="card">
           <div class="section-header-row">
-            <div>
-              <h2 class="section-title">Pengiriman yang Sedang Dibawa</h2>
-              <p class="field-hint">Cetak atau tunjukkan surat jalan kepada manager lokasi penerima</p>
+            <div class="section-title-wrap">
+              <span class="section-title-icon section-icon-biru">
+                <AppIcon name="truck" :size="18" />
+              </span>
+              <div>
+                <h2 class="section-title">Pengiriman yang Sedang Dibawa</h2>
+                <p class="field-hint">Cetak atau tunjukkan surat jalan kepada manager lokasi penerima</p>
+              </div>
             </div>
             <RouterLink :to="{ name: 'pengiriman' }" class="btn btn-secondary btn-small">
               Daftar pengiriman

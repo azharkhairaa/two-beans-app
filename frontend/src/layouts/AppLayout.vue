@@ -31,6 +31,10 @@ const userContext = computed(() => {
   return auth.user.role === ROLES.ADMIN ? `${role} · Semua lokasi` : role
 })
 
+function isAdminRoute(item) {
+  return item.meta?.roles && item.meta.roles.length === 1 && item.meta.roles[0] === ROLES.ADMIN
+}
+
 watch(() => route.fullPath, () => {
   drawerOpen.value = false
 })
@@ -64,6 +68,7 @@ async function logout() {
             >
               <AppIcon :name="item.meta.menu.icon" />
               <span class="app-nav-label">{{ item.meta.menu.label }}</span>
+              <span v-if="isAdminRoute(item)" class="nav-admin-badge">ADMIN</span>
             </RouterLink>
           </div>
         </nav>
@@ -83,7 +88,10 @@ async function logout() {
             <AppIcon name="menu" />
           </button>
           <div class="app-user">
-            <strong class="app-user-name">{{ auth.user.name }}</strong>
+            <div class="app-user-header">
+              <strong class="app-user-name">{{ auth.user.name }}</strong>
+              <span class="app-user-role-chip">{{ ROLE_LABELS[auth.user.role] || auth.user.role }}</span>
+            </div>
             <span class="app-user-context">{{ userContext }}</span>
           </div>
           <RouterLink :to="{ name: 'profil' }" class="btn btn-secondary btn-small">

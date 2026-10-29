@@ -384,6 +384,19 @@ select.input {
   font-weight: 600;
 }
 
+.nav-admin-badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.38);
+  line-height: 1.2;
+}
+
 .app-sidebar :focus-visible {
   outline-color: var(--susu);
 }
@@ -415,6 +428,24 @@ select.input {
   display: grid;
   margin-right: auto;
   min-width: 0;
+}
+
+.app-user-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-user-role-chip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--selesai-latar);
+  color: var(--espresso);
+  border: 1px solid var(--garis);
+  line-height: 1.3;
 }
 
 .app-user-name,
@@ -650,7 +681,8 @@ select.input-sm {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 10px;
+  gap: 4px;
+  padding: 2px 9px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
@@ -658,36 +690,46 @@ select.input-sm {
   white-space: nowrap;
 }
 
+.badge-icon {
+  flex-shrink: 0;
+}
+
 .badge-aman {
   background: var(--aman-latar);
   color: var(--aman-teks);
+  border: 1px solid color-mix(in srgb, var(--aman-teks) 22%, transparent);
 }
 
 .badge-menunggu {
   background: var(--menunggu-latar);
   color: var(--menunggu-teks);
+  border: 1px solid color-mix(in srgb, var(--menunggu-teks) 25%, transparent);
 }
 
 .badge-proses {
   background: var(--proses-latar);
   color: var(--proses-teks);
+  border: 1px solid color-mix(in srgb, var(--proses-teks) 22%, transparent);
 }
 
 .badge-error,
 .badge-bahaya {
   background: var(--error-latar);
   color: var(--error-teks);
+  border: 1px solid color-mix(in srgb, var(--error-teks) 22%, transparent);
 }
 
 .badge-draf,
 .badge-netral {
   background: var(--draf-latar);
   color: var(--draf-teks);
+  border: 1px solid color-mix(in srgb, var(--draf-teks) 20%, transparent);
 }
 
 .badge-selesai {
   background: var(--selesai-latar);
   color: var(--selesai-teks);
+  border: 1px solid color-mix(in srgb, var(--selesai-teks) 20%, transparent);
 }
 
 /* halaman daftar, toolbar, tabel dan paginasi */
@@ -1539,8 +1581,53 @@ select.input-sm {
   color: var(--aman-teks);
 }
 
+.text-menunggu {
+  color: var(--menunggu-teks);
+}
+
 .text-bahaya {
   color: var(--error-teks);
+}
+
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  border-radius: var(--radius-kartu);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+}
+
+.welcome-banner-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #d1fae5;
+  color: #059669;
+  flex-shrink: 0;
+}
+
+.welcome-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.welcome-banner-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.welcome-banner-subtitle {
+  font-size: 12px;
+  color: #047857;
 }
 
 .section-header-row {
@@ -1551,6 +1638,42 @@ select.input-sm {
   gap: 12px;
 }
 
+.section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.section-icon-amber {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.section-icon-biru {
+  background: #e8f0fb;
+  color: #1d4f91;
+}
+
+.section-icon-hijau {
+  background: #e6f4ea;
+  color: #1e6b34;
+}
+
+.section-icon-ungu {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
 .dash-tile-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1558,9 +1681,9 @@ select.input-sm {
 }
 
 .dash-tile {
-  display: grid;
-  align-content: start;
-  gap: 4px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
   min-width: 0;
   padding: 16px 18px;
   border: 1px solid var(--garis);
@@ -1568,27 +1691,51 @@ select.input-sm {
   background: var(--permukaan);
   color: var(--espresso);
   text-decoration: none;
-  transition: border-color 0.15s, background-color 0.15s;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
 }
 
 .dash-tile:hover {
   border-color: var(--kopi);
   background: var(--hover);
+  box-shadow: 0 4px 12px rgba(44, 29, 26, 0.06);
 }
 
 .dash-tile-menunggu {
-  border-color: var(--menunggu-teks);
-  background: color-mix(in srgb, var(--menunggu-latar) 45%, white);
+  border-color: color-mix(in srgb, var(--menunggu-teks) 45%, var(--garis));
+  background: color-mix(in srgb, var(--menunggu-latar) 40%, white);
 }
 
 .dash-tile-bahaya {
-  border-color: var(--error-teks);
-  background: color-mix(in srgb, var(--error-latar) 40%, white);
+  border-color: color-mix(in srgb, var(--error-teks) 45%, var(--garis));
+  background: color-mix(in srgb, var(--error-latar) 35%, white);
 }
 
 .dash-tile-proses {
-  border-color: var(--proses-teks);
-  background: color-mix(in srgb, var(--proses-latar) 45%, white);
+  border-color: color-mix(in srgb, var(--proses-teks) 45%, var(--garis));
+  background: color-mix(in srgb, var(--proses-latar) 40%, white);
+}
+
+.dash-tile-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.dash-tile:hover .dash-tile-icon-box {
+  transform: scale(1.05);
+}
+
+.dash-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
 }
 
 .dash-tile-label {
@@ -1607,6 +1754,72 @@ select.input-sm {
 .dash-tile-meta {
   font-size: 12px;
   color: var(--abu);
+}
+
+/* soft icon container colors */
+.dash-icon-kopi {
+  background: color-mix(in srgb, var(--kopi) 12%, white);
+  color: var(--kopi);
+  border: 1px solid color-mix(in srgb, var(--kopi) 22%, transparent);
+}
+
+.dash-icon-biru {
+  background: #e8f0fb;
+  color: #1d4f91;
+  border: 1px solid #bfdbfe;
+}
+
+.dash-icon-hijau {
+  background: #e6f4ea;
+  color: #1e6b34;
+  border: 1px solid #bbf7d0;
+}
+
+.dash-icon-amber {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.dash-icon-merah {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.dash-icon-ungu {
+  background: #f3e8ff;
+  color: #6b21a8;
+  border: 1px solid #e9d5ff;
+}
+
+.dash-icon-cokelat {
+  background: #f5ebe6;
+  color: #78350f;
+  border: 1px solid #fed7aa;
+}
+
+/* badge sisa stock darurat / menipis */
+.stock-sisa-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stock-sisa-habis {
+  background: #dc2626;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.35);
+}
+
+.stock-sisa-menipis {
+  background: #ea580c;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.3);
 }
 
 .dash-grid-2 {
@@ -1982,16 +2195,19 @@ select.input-sm {
 .matrix-cell-aman {
   background: var(--aman-latar);
   color: var(--aman-teks);
+  border: 1px solid color-mix(in srgb, var(--aman-teks) 25%, transparent);
 }
 
 .matrix-cell-menipis {
   background: var(--menunggu-latar);
   color: var(--menunggu-teks);
+  border: 1px solid color-mix(in srgb, var(--menunggu-teks) 25%, transparent);
 }
 
 .matrix-cell-habis {
   background: var(--error-latar);
   color: var(--error-teks);
+  border: 1px solid color-mix(in srgb, var(--error-teks) 30%, transparent);
 }
 
 .matrix-cell-qty {

@@ -296,7 +296,9 @@ function openKartu(row) {
             </td>
             <td data-label="Rak" class="mono">{{ row.rak || '-' }}</td>
             <td data-label="Jumlah" class="num mono font-semibold">
-              {{ formatNumber(row.jumlah) }} {{ row.produk.satuan }}
+              <span :class="{ 'text-bahaya': row.jumlah === 0, 'text-menunggu': row.jumlah > 0 && row.jumlah <= row.stok_minimum }">
+                {{ formatNumber(row.jumlah) }} {{ row.produk.satuan }}
+              </span>
             </td>
             <td data-label="Minimum" class="num mono">
               {{ formatNumber(row.stok_minimum) }} {{ row.produk.satuan }}
