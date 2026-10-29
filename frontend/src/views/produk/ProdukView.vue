@@ -757,7 +757,7 @@ async function onConfirmDelete() {
                     class="btn btn-secondary btn-sm"
                     @click="openKartuFromDetail(st.lokasi)"
                   >
-                    Kartu stok
+                    Stock Card
                   </button>
                 </td>
               </tr>

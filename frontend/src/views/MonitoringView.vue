@@ -63,8 +63,9 @@ async function fetchMatrix() {
   loading.value = true
   error.value = ''
   try {
-    const params = {
-      status_stok: filters.status_stok || 'semua',
+    const params = {}
+    if (filters.status_stok && filters.status_stok !== 'semua') {
+      params.status_stok = filters.status_stok
     }
     if (filters.q.trim()) params.q = filters.q.trim()
     if (filters.kategori_id) params.kategori_id = Number(filters.kategori_id)
@@ -79,7 +80,7 @@ async function fetchMatrix() {
       total_nilai: Number(res?.total_nilai || 0),
     }
   } catch (err) {
-    error.value = err?.message || 'Gagal memuat matriks monitoring stok.'
+    error.value = err?.message || 'Gagal memuat matriks monitoring stock.'
   } finally {
     loading.value = false
   }
@@ -140,9 +141,9 @@ onMounted(() => {
   <section class="page">
     <header class="page-header">
       <div>
-        <h1 class="page-title">Monitoring Matriks Stok</h1>
+        <h1 class="page-title">Monitoring Matriks Stock</h1>
         <p class="page-subtitle">
-          Sebaran stok dan nilai persediaan produk di seluruh lokasi yang dapat diakses.
+          Sebaran stock dan nilai persediaan produk di seluruh lokasi yang dapat diakses.
         </p>
       </div>
       <div class="action-group">
@@ -156,57 +157,59 @@ onMounted(() => {
     <div class="toolbar">
       <div class="toolbar-search">
         <label for="mon-q" class="toolbar-label">Pencarian</label>
-        <div class="search-box">
-          <AppIcon name="search" :size="18" class="search-icon" />
+        <div class="toolbar-search-box">
+          <AppIcon name="search" :size="16" class="toolbar-search-icon" />
           <input
             id="mon-q"
             v-model="filters.q"
             type="search"
-            class="input search-input"
+            class="input input-sm"
             placeholder="Cari SKU atau nama produk..."
           />
         </div>
       </div>
 
       <div class="toolbar-group">
-        <label for="mon-kategori" class="toolbar-label">Kategori</label>
-        <select id="mon-kategori" v-model="filters.kategori_id" class="input">
-          <option value="">Semua kategori</option>
-          <option v-for="kat in kategoriOptions" :key="kat.id" :value="String(kat.id)">
-            {{ kat.nama }}
-          </option>
-        </select>
-      </div>
+        <div class="toolbar-field">
+          <label for="mon-kategori" class="toolbar-label">Kategori</label>
+          <select id="mon-kategori" v-model="filters.kategori_id" class="input input-sm">
+            <option value="">Semua kategori</option>
+            <option v-for="kat in kategoriOptions" :key="kat.id" :value="String(kat.id)">
+              {{ kat.nama }}
+            </option>
+          </select>
+        </div>
 
-      <div class="toolbar-group">
-        <label for="mon-jenis" class="toolbar-label">Jenis Produk</label>
-        <select id="mon-jenis" v-model="filters.jenis" class="input">
-          <option value="">Semua jenis</option>
-          <option v-for="(label, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
-            {{ label }}
-          </option>
-        </select>
-      </div>
+        <div class="toolbar-field">
+          <label for="mon-jenis" class="toolbar-label">Jenis Produk</label>
+          <select id="mon-jenis" v-model="filters.jenis" class="input input-sm">
+            <option value="">Semua jenis</option>
+            <option v-for="(label, key) in KATEGORI_TYPE_LABELS" :key="key" :value="key">
+              {{ label }}
+            </option>
+          </select>
+        </div>
 
-      <div class="toolbar-group">
-        <label for="mon-status" class="toolbar-label">Status Stok</label>
-        <select id="mon-status" v-model="filters.status_stok" class="input">
-          <option value="semua">Semua status</option>
-          <option value="aman">Aman</option>
-          <option value="menipis">Menipis</option>
-          <option value="habis">Habis</option>
-        </select>
-      </div>
+        <div class="toolbar-field">
+          <label for="mon-status" class="toolbar-label">Status Stock</label>
+          <select id="mon-status" v-model="filters.status_stok" class="input input-sm">
+            <option value="semua">Semua status</option>
+            <option value="aman">Aman</option>
+            <option value="menipis">Menipis</option>
+            <option value="habis">Habis</option>
+          </select>
+        </div>
 
-      <div v-if="hasActiveFilter" class="toolbar-group">
-        <span class="toolbar-label">&nbsp;</span>
-        <button type="button" class="btn btn-secondary" @click="resetFilters">
-          Reset filter
-        </button>
+        <div v-if="hasActiveFilter" class="toolbar-field">
+          <label class="toolbar-label">&nbsp;</label>
+          <button type="button" class="btn btn-secondary btn-sm" @click="resetFilters">
+            Reset filter
+          </button>
+        </div>
       </div>
     </div>
 
-    <LoadingState v-if="loading" message="Memuat matriks monitoring stok..." :rows="6" />
+    <LoadingState v-if="loading" message="Memuat matriks monitoring stock..." :rows="6" />
 
     <ErrorState v-else-if="error" :message="error" @retry="fetchMatrix" />
 

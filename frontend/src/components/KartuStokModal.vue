@@ -37,7 +37,7 @@ async function loadKartu(page = 1) {
     items.value = res?.data || []
     meta.value = res?.meta || { page, per_page: 15, total: items.value.length, total_pages: 1 }
   } catch (err) {
-    error.value = err?.message || 'Gagal memuat kartu stok.'
+    error.value = err?.message || 'Gagal memuat Stock Card.'
   } finally {
     loading.value = false
   }
@@ -59,7 +59,7 @@ watch(
 <template>
   <BaseModal
     :open="open"
-    :title="produk ? `Kartu Stok: ${produk.sku} - ${produk.nama}` : 'Kartu Stok'"
+    :title="produk ? `Stock Card: ${produk.sku} - ${produk.nama}` : 'Stock Card'"
     size="lg"
     @close="emit('close')"
   >
@@ -80,8 +80,8 @@ watch(
     <ErrorState v-else-if="error" :message="error" @retry="loadKartu(meta.page)" />
     <EmptyState
       v-else-if="!items.length"
-      title="Belum ada mutasi stok"
-      description="Belum ada riwayat dokumen yang mengubah stok produk ini di lokasi terpilih."
+      title="Belum ada mutasi stock"
+      description="Belum ada riwayat dokumen yang mengubah stock produk ini di lokasi terpilih."
     />
 
     <div v-else class="table-card">

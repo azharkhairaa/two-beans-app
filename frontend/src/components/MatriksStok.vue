@@ -59,15 +59,15 @@ function handleSelect(produk, lok) {
   <div class="matrix-card">
     <div class="matrix-legend">
       <div class="matrix-legend-items">
-        <span class="matrix-legend-title">Keterangan status sel</span>
+        <span class="matrix-legend-title">Keterangan status sel stock</span>
         <span class="matrix-legend-chip matrix-cell-aman">Aman (di atas minimum)</span>
         <span class="matrix-legend-chip matrix-cell-menipis">Menipis (1 sampai batas minimum)</span>
         <span class="matrix-legend-chip matrix-cell-habis">Habis (0 saat minimum &gt; 0)</span>
       </div>
-      <span class="matrix-legend-hint">Klik sel untuk melihat kartu stok produk di lokasi tersebut</span>
+      <span class="matrix-legend-hint">Klik sel untuk melihat Stock Card produk di lokasi tersebut</span>
     </div>
 
-    <div class="matrix-wrap" role="region" aria-label="Matriks stok produk per lokasi" tabindex="0">
+    <div class="matrix-wrap" role="region" aria-label="Matriks stock produk per lokasi" tabindex="0">
       <table class="matrix-table">
         <thead>
           <tr>
@@ -106,7 +106,7 @@ function handleSelect(produk, lok) {
               <button
                 type="button"
                 :class="cellClass(getSel(row, lok.kode).status)"
-                :aria-label="`${row.produk.nama} di ${lok.nama}: stok ${getSel(row, lok.kode).jumlah} ${row.produk.satuan}, minimum ${getSel(row, lok.kode).stok_minimum}, status ${STOK_STATUS_LABELS[getSel(row, lok.kode).status] || getSel(row, lok.kode).status}. Klik untuk kartu stok`"
+                :aria-label="`${row.produk.nama} di ${lok.nama}: stock ${getSel(row, lok.kode).jumlah} ${row.produk.satuan}, minimum ${getSel(row, lok.kode).stok_minimum}, status ${STOK_STATUS_LABELS[getSel(row, lok.kode).status] || getSel(row, lok.kode).status}. Klik untuk Stock Card`"
                 @click="handleSelect(row.produk, lok)"
               >
                 <span class="matrix-cell-qty num">

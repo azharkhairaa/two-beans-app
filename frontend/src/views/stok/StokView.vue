@@ -139,13 +139,13 @@ function openKartu(row) {
     <header class="page-header">
       <div>
         <h2 class="page-heading">
-          Stok Lokasi
+          Stock Lokasi
           <template v-if="currentLokasi">
             : {{ currentLokasi.kode }} - {{ currentLokasi.nama }}
           </template>
         </h2>
         <p class="page-subtitle">
-          Pemantauan saldo buku besar stok, batas minimum, posisi rak dan kartu stok per produk
+          Pemantauan saldo buku besar stock, batas minimum, posisi rak dan Stock Card per produk
         </p>
       </div>
       <button
@@ -216,7 +216,7 @@ function openKartu(row) {
           </select>
         </div>
         <div class="toolbar-field">
-          <label class="toolbar-label" for="stk-filter-status">Status Stok</label>
+          <label class="toolbar-label" for="stk-filter-status">Status Stock</label>
           <select
             id="stk-filter-status"
             v-model="filters.status_stok"
@@ -238,8 +238,8 @@ function openKartu(row) {
             @change="applyFilters()"
           >
             <option value="nama">Nama produk</option>
-            <option value="jumlah">Jumlah stok</option>
-            <option value="nilai">Nilai stok</option>
+            <option value="jumlah">Jumlah stock</option>
+            <option value="nilai">Nilai stock</option>
           </select>
         </div>
         <div class="toolbar-field">
@@ -280,7 +280,7 @@ function openKartu(row) {
             <th class="num">Jumlah</th>
             <th class="num">Minimum</th>
             <th>Status</th>
-            <th class="num">Nilai Stok</th>
+            <th class="num">Nilai Stock</th>
             <th>Diperbarui</th>
             <th class="col-actions">Aksi</th>
           </tr>
@@ -304,12 +304,12 @@ function openKartu(row) {
             <td data-label="Status">
               <BadgeStatus :status="row.status_stok" />
             </td>
-            <td data-label="Nilai Stok" class="num mono">{{ formatRupiah(row.nilai) }}</td>
+            <td data-label="Nilai Stock" class="num mono">{{ formatRupiah(row.nilai) }}</td>
             <td data-label="Diperbarui" class="cell-secondary">{{ formatDate(row.updated_at) }}</td>
             <td data-label="Aksi" class="col-actions">
               <div class="action-group">
                 <button type="button" class="btn btn-secondary btn-sm" @click="openKartu(row)">
-                  Kartu stok
+                  Stock Card
                 </button>
                 <button
                   v-if="canManageCurrentLokasi"
@@ -370,8 +370,8 @@ function openKartu(row) {
 
         <FormField
           id="stk-min"
-          label="Batas stok minimum"
-          hint="Stok berstatus Menipis bila jumlah berada pada atau di bawah angka ini"
+          label="Batas stock minimum"
+          hint="Stock berstatus Menipis bila jumlah berada pada atau di bawah angka ini"
           :error="errors.stok_minimum"
         >
           <template #default="{ describedBy }">

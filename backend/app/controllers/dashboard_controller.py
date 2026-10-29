@@ -23,12 +23,15 @@ class DashboardController:
         self,
         kategori_id: int | None = None,
         jenis: KategoriType | None = None,
-        status_stok: StokStatus | None = None,
+        status_stok: str | None = None,
         q: str | None = Query(None, max_length=100, description="Cari di SKU, nama atau merek"),
         user: User = Depends(current_user),
         db: Session = Depends(get_db),
     ) -> MonitoringResponse:
-        filters = MonitoringFilter(kategori_id, jenis, status_stok, q)
+        resolved_status: StokStatus | None = None
+        if status_stok and status_stok not in ("", "semua"):
+            resolved_status = StokStatus(status_stok)
+        filters = MonitoringFilter(kategori_id, jenis, resolved_status, q)
         return MonitoringService(db, user).matriks(filters)
 
     def tren(

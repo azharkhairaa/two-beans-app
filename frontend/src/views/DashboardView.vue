@@ -378,7 +378,7 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.stok_menipis > 0 }"
           >
-            <span class="dash-tile-label">Stok Menipis</span>
+            <span class="dash-tile-label">Stock Menipis</span>
             <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_menipis) }} SKU</strong>
             <span class="dash-tile-meta">Di atas 0 sampai batas minimum</span>
           </RouterLink>
@@ -388,7 +388,7 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-bahaya': dashboard.ringkasan.stok_habis > 0 }"
           >
-            <span class="dash-tile-label">Stok Habis</span>
+            <span class="dash-tile-label">Stock Habis</span>
             <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
             <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
           </RouterLink>
@@ -420,7 +420,7 @@ onMounted(() => {
             <div class="chart-header">
               <div>
                 <h2 class="section-title">Nilai Persediaan &amp; Omzet per Lokasi</h2>
-                <p class="field-hint">Perbandingan nilai stok (HPP) dan omzet penjualan 30 hari terakhir</p>
+                <p class="field-hint">Perbandingan nilai stock (HPP) dan omzet penjualan 30 hari terakhir</p>
               </div>
               <div class="chart-legend" aria-label="Legenda grafik nilai per lokasi">
                 <span class="chart-legend-item">
@@ -522,7 +522,7 @@ onMounted(() => {
           <article class="card chart-card">
             <div class="chart-header">
               <div>
-                <h2 class="section-title">Tren Mutasi Stok Harian</h2>
+                <h2 class="section-title">Tren Mutasi Stock Harian</h2>
                 <p class="field-hint">
                   Masuk <strong class="num">{{ formatNumber(lineChartModel.totalMasuk) }}</strong> unit ·
                   Keluar <strong class="num">{{ formatNumber(lineChartModel.totalKeluar) }}</strong> unit
@@ -665,9 +665,9 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-menunggu': dashboard.ringkasan.stok_menipis > 0 }"
           >
-            <span class="dash-tile-label">Stok Menipis</span>
+            <span class="dash-tile-label">Stock Menipis</span>
             <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_menipis) }} SKU</strong>
-            <span class="dash-tile-meta">Perlu pengajuan atau pengisian stok</span>
+            <span class="dash-tile-meta">Perlu pengajuan atau pengisian stock</span>
           </RouterLink>
 
           <RouterLink
@@ -675,7 +675,7 @@ onMounted(() => {
             class="dash-tile"
             :class="{ 'dash-tile-bahaya': dashboard.ringkasan.stok_habis > 0 }"
           >
-            <span class="dash-tile-label">Stok Habis</span>
+            <span class="dash-tile-label">Stock Habis</span>
             <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
             <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
           </RouterLink>
@@ -931,12 +931,12 @@ onMounted(() => {
             </div>
           </article>
 
-          <!-- Stok Kritis -->
+          <!-- Stock Kritis -->
           <article class="card">
             <div class="section-header-row">
               <div>
-                <h2 class="section-title">Stok Kritis (Menipis &amp; Habis)</h2>
-                <p class="field-hint">Produk yang berada pada atau di bawah stok minimum</p>
+                <h2 class="section-title">Stock Kritis (Menipis &amp; Habis)</h2>
+                <p class="field-hint">Produk yang berada pada atau di bawah stock minimum</p>
               </div>
               <RouterLink :to="{ name: 'monitoring' }" class="btn btn-secondary btn-small">
                 Buka matriks
@@ -946,7 +946,7 @@ onMounted(() => {
             <EmptyState
               v-if="!dashboard.stok_kritis?.length"
               icon="check"
-              title="Seluruh stok berada di batas aman"
+              title="Seluruh stock berada di batas aman"
               description="Tidak ada produk yang berstatus menipis atau habis."
             />
 
@@ -956,7 +956,7 @@ onMounted(() => {
                   <tr>
                     <th scope="col">Lokasi</th>
                     <th scope="col">Produk</th>
-                    <th scope="col" class="num">Stok / Min</th>
+                    <th scope="col" class="num">Stock / Min</th>
                     <th scope="col">Status</th>
                     <th scope="col" class="col-actions">Aksi</th>
                   </tr>
@@ -974,7 +974,7 @@ onMounted(() => {
                       <span class="mono">{{ item.sku }}</span>
                       <div><strong>{{ item.nama_produk }}</strong></div>
                     </td>
-                    <td data-label="Stok / Min" class="num">
+                    <td data-label="Stock / Min" class="num">
                       <strong>{{ formatNumber(item.jumlah) }}</strong> / {{ formatNumber(item.stok_minimum) }} {{ item.satuan }}
                     </td>
                     <td data-label="Status">
@@ -986,7 +986,7 @@ onMounted(() => {
                         class="btn btn-secondary btn-small"
                         @click="openKartuFromKritis(item)"
                       >
-                        Kartu stok
+                        Stock Card
                       </button>
                     </td>
                   </tr>
@@ -1000,19 +1000,19 @@ onMounted(() => {
         <article class="card">
           <div class="section-header-row">
             <div>
-              <h2 class="section-title">Aktivitas Mutasi Stok Terbaru</h2>
-              <p class="field-hint">10 pencatatan terakhir pada buku besar stok</p>
+              <h2 class="section-title">Aktivitas Mutasi Stock Terbaru</h2>
+              <p class="field-hint">10 pencatatan terakhir pada buku besar stock</p>
             </div>
             <RouterLink :to="{ name: 'stok' }" class="btn btn-secondary btn-small">
-              Kelola stok
+              Kelola stock
             </RouterLink>
           </div>
 
           <EmptyState
             v-if="!dashboard.aktivitas_terbaru?.length"
             icon="swap"
-            title="Belum ada mutasi stok"
-            description="Riwayat perubahan stok dari transaksi, pengiriman, pembelian dan penjualan akan tampil di sini."
+            title="Belum ada mutasi stock"
+            description="Riwayat perubahan stock dari transaksi, pengiriman, pembelian dan penjualan akan tampil di sini."
           />
 
           <div v-else class="table-wrap">

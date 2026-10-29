@@ -15,14 +15,17 @@ class StokController:
         q: str | None = Query(None, max_length=100, description="Cari di SKU atau nama"),
         kategori_id: int | None = None,
         jenis: KategoriType | None = None,
-        status_stok: StokStatus | None = None,
+        status_stok: str | None = None,
         sort: StokSort = StokSort.NAMA,
         arah: SortDirection = SortDirection.ASC,
         params: PageParams = Depends(),
         user: User = Depends(current_user),
         db: Session = Depends(get_db),
     ) -> StokPage:
-        filters = StokFilter(lokasi_id, q, kategori_id, jenis, status_stok, sort, arah)
+        resolved_status: StokStatus | None = None
+        if status_stok and status_stok not in ("", "semua"):
+            resolved_status = StokStatus(status_stok)
+        filters = StokFilter(lokasi_id, q, kategori_id, jenis, resolved_status, sort, arah)
         return StokService(db, user).search(filters, params)
 
     def update(
