@@ -315,7 +315,7 @@ async function onConfirmExecute() {
         </div>
       </div>
       <div class="toolbar-group">
-        <div v-if="auth.isAdmin" class="toolbar-field">
+        <div v-if="auth.isAdmin" class="toolbar-field toolbar-field-lokasi">
           <label class="toolbar-label" for="trx-filter-lokasi">Lokasi</label>
           <SearchSelect
             id="trx-filter-lokasi"

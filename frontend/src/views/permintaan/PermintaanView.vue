@@ -435,7 +435,7 @@ async function onConfirmBatal() {
         </div>
       </div>
       <div class="toolbar-group">
-        <div v-if="canProcessAny" class="toolbar-field">
+        <div v-if="canProcessAny" class="toolbar-field toolbar-field-lokasi">
           <label class="toolbar-label" for="pmt-filter-peminta">Lokasi Peminta</label>
           <SearchSelect
             id="pmt-filter-peminta"

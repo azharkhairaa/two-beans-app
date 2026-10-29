@@ -540,7 +540,7 @@ async function onConfirmDelete() {
         </div>
       </div>
       <div class="toolbar-group">
-        <div v-if="auth.isAdmin" class="toolbar-field">
+        <div v-if="auth.isAdmin" class="toolbar-field toolbar-field-lokasi">
           <label class="toolbar-label" for="krm-filter-asal">Lokasi Asal</label>
           <SearchSelect
             id="krm-filter-asal"
@@ -551,7 +551,7 @@ async function onConfirmDelete() {
             @change="applyFilters()"
           />
         </div>
-        <div v-if="auth.isAdmin" class="toolbar-field">
+        <div v-if="auth.isAdmin" class="toolbar-field toolbar-field-lokasi">
           <label class="toolbar-label" for="krm-filter-tujuan">Lokasi Tujuan</label>
           <SearchSelect
             id="krm-filter-tujuan"

@@ -17,7 +17,7 @@ import { useKategoriOptions, useLokasiOptions } from '@/composables/useOptions'
 import { produkApi, stokApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
-import { KATEGORI_TYPE_LABELS, LOKASI_TYPE_LABELS, STOK_STATUS_LABELS } from '@/utils/constants'
+import { KATEGORI_TYPE_LABELS, STOK_STATUS_LABELS } from '@/utils/constants'
 import { formatDate, formatNumber, formatRupiah } from '@/utils/format'
 
 const auth = useAuthStore()
@@ -164,12 +164,12 @@ function openKartu(row) {
         </div>
       </div>
       <div class="toolbar-group">
-        <div class="toolbar-field">
+        <div class="toolbar-field toolbar-field-lokasi">
           <label class="toolbar-label" for="stk-filter-lokasi">Lokasi</label>
           <SearchSelect
             id="stk-filter-lokasi"
             v-model="filters.lokasi_id"
-            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama} (${LOKASI_TYPE_LABELS[lok.jenis]})` }))"
+            :options="lokasiList.map((lok) => ({ value: lok.id, label: `${lok.kode} - ${lok.nama}` }))"
             small
             @change="applyFilters()"
           />

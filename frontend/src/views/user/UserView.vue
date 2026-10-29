@@ -233,7 +233,7 @@ function isSelf(row) {
             </option>
           </select>
         </div>
-        <div class="toolbar-field">
+        <div class="toolbar-field toolbar-field-lokasi">
           <label class="toolbar-label" for="usr-filter-lokasi">Lokasi Tugas</label>
           <SearchSelect
             id="usr-filter-lokasi"

@@ -940,6 +940,20 @@ select.input-sm {
   width: auto;
 }
 
+/* dropdown pencarian di toolbar diberi lebar minimum supaya pilihannya terbaca */
+.toolbar-field .search-select {
+  min-width: 200px;
+}
+
+.toolbar-field .search-select .input {
+  width: 100%;
+}
+
+/* nama lokasi panjang (kode dan nama), kolom filternya lebih lebar dari filter lain */
+.toolbar-field-lokasi .search-select {
+  min-width: 270px;
+}
+
 .table-card {
   border: 1px solid var(--garis);
   border-radius: var(--radius-kartu);
