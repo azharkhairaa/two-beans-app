@@ -9,7 +9,8 @@ import KartuStokModal from '@/components/KartuStokModal.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import MatriksStok from '@/components/MatriksStok.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
-import { dashboardApi, kategoriApi } from '@/services'
+import { useKategoriOptions } from '@/composables/useOptions'
+import { dashboardApi } from '@/services'
 import { KATEGORI_TYPE_LABELS, LOKASI_TYPE_LABELS } from '@/utils/constants'
 import { formatNumber, formatRupiah, formatRupiahCompact } from '@/utils/format'
 
@@ -26,7 +27,7 @@ const filters = reactive({
       : 'semua',
 })
 
-const kategoriOptions = ref([])
+const { items: kategoriOptions, load: loadKategoriOptions } = useKategoriOptions()
 const loading = ref(true)
 const error = ref('')
 const matrix = ref({
@@ -50,15 +51,6 @@ const hasActiveFilter = computed(
     Boolean(filters.jenis) ||
     filters.status_stok !== 'semua',
 )
-
-async function loadKategoriOptions() {
-  try {
-    const res = await kategoriApi.list()
-    kategoriOptions.value = Array.isArray(res) ? res : res?.data || []
-  } catch {
-    kategoriOptions.value = []
-  }
-}
 
 async function fetchMatrix() {
   loading.value = true

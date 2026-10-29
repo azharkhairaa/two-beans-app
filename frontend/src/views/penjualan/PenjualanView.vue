@@ -14,9 +14,11 @@ import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
+import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { customerApi, lokasiApi, penjualanApi, produkApi } from '@/services'
+import { useLokasiOptions, useOptions } from '@/composables/useOptions'
+import { customerApi, penjualanApi, produkApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import {
@@ -31,8 +33,11 @@ const toast = useToastStore()
 const route = useRoute()
 const router = useRouter()
 
-const lokasiList = ref([])
-const customerOptions = ref([])
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
+const { items: customerOptions, load: loadCustomers } = useOptions(
+  () => customerApi.options(),
+  'customer'
+)
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   (params) => penjualanApi.list(params),
@@ -52,18 +57,7 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
 )
 
 onMounted(async () => {
-  try {
-    const promises = [customerApi.options()]
-    if (auth.isAdmin) {
-      promises.push(lokasiApi.list({ aktif: 'true' }))
-    }
-    const [customers, lokasis] = await Promise.all(promises)
-    customerOptions.value = customers || []
-    if (lokasis) lokasiList.value = lokasis
-  } catch {
-    customerOptions.value = []
-    lokasiList.value = []
-  }
+  await Promise.all([loadCustomers(), auth.isAdmin ? loadLokasi() : null])
   await load()
   if (route.query.id) {
     openDetail({ id: Number(route.query.id) })
@@ -84,7 +78,7 @@ function goNota(row) {
   router.push({ name: 'penjualan-nota', params: { id: row.id } })
 }
 
-// --- Formulir Buat / Ubah Draf Penjualan ---
+// formulir buat atau ubah draf penjualan
 const modalOpen = ref(false)
 const editingId = ref(null)
 const editingKode = ref('')
@@ -209,7 +203,7 @@ async function onSave(mode = 'draf') {
   }
 }
 
-// --- Modal Cepat Tambah Customer Baru ---
+// modal cepat tambah customer baru
 const newCustomerOpen = ref(false)
 const customerForm = useForm({
   nama: '',
@@ -256,10 +250,14 @@ async function onSaveNewCustomer() {
   }
 }
 
-// --- Detail Penjualan ---
-const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detailData = ref(null)
+// detail penjualan
+const {
+  open: detailOpen,
+  loading: detailLoading,
+  data: detailData,
+  show: openDetail,
+  close: closeDetail,
+} = useDetail((id) => penjualanApi.get(id), 'penjualan')
 
 const detailTimeline = computed(() => {
   const d = detailData.value
@@ -290,21 +288,7 @@ const detailTimeline = computed(() => {
   return steps
 })
 
-async function openDetail(row) {
-  detailOpen.value = true
-  detailLoading.value = true
-  detailData.value = null
-  try {
-    detailData.value = await penjualanApi.get(row.id)
-  } catch (err) {
-    toast.show(err?.message || 'Gagal memuat detail penjualan.', 'error')
-    detailOpen.value = false
-  } finally {
-    detailLoading.value = false
-  }
-}
-
-// --- Modal Konfirmasi Posting / Hapus ---
+// modal konfirmasi posting atau hapus
 const confirmAction = ref(null)
 const confirmLoading = ref(false)
 const confirmError = ref('')
@@ -582,7 +566,7 @@ async function onConfirmExecute() {
       <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
-    <!-- Modal Buat / Ubah Penjualan -->
+    <!-- modal buat atau ubah penjualan -->
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Penjualan: ${editingKode}` : 'Buat Penjualan Baru'"
@@ -716,7 +700,7 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Cepat Tambah Customer Baru -->
+    <!-- modal cepat tambah customer baru -->
     <BaseModal
       :open="newCustomerOpen"
       title="Tambah Customer Baru"
@@ -824,12 +808,12 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Detail Penjualan -->
+    <!-- modal detail penjualan -->
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Penjualan: ${detailData.kode}` : 'Detail Penjualan'"
       size="lg"
-      @close="detailOpen = false"
+      @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
       <div v-else-if="detailData" class="detail-grid">
@@ -918,7 +902,7 @@ async function onConfirmExecute() {
       </div>
 
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="detailOpen = false">Tutup</button>
+        <button type="button" class="btn btn-secondary" @click="closeDetail">Tutup</button>
         <button
           v-if="detailData?.status === 'diposting'"
           type="button"
@@ -946,7 +930,7 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Konfirmasi Posting / Hapus -->
+    <!-- modal konfirmasi posting atau hapus -->
     <ConfirmModal
       :open="Boolean(confirmAction)"
       :title="confirmAction?.title || 'Konfirmasi'"

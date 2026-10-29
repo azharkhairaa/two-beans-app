@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppIcon from '@/components/AppIcon'
@@ -14,9 +14,12 @@ import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
+import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { lokasiApi, pengirimanApi, produkApi, userApi } from '@/services'
+import { useLokasiOptions, useOptions } from '@/composables/useOptions'
+import { useTerimaForm } from '@/composables/useTerimaForm'
+import { pengirimanApi, produkApi, userApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import {
@@ -32,8 +35,11 @@ const toast = useToastStore()
 const route = useRoute()
 const router = useRouter()
 
-const lokasiList = ref([])
-const deliverymanList = ref([])
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
+const { items: deliverymanList, load: loadDeliveryman } = useOptions(
+  () => userApi.deliveryman(),
+  'deliveryman'
+)
 
 const isDeliveryman = computed(() => auth.user?.role === ROLES.DELIVERYMAN)
 const isManagerGudang = computed(() => auth.user?.role === ROLES.MANAGER_GUDANG)
@@ -88,17 +94,7 @@ function handleResetFilters() {
 
 onMounted(async () => {
   if (!isDeliveryman.value) {
-    try {
-      const [lok, kurir] = await Promise.all([
-        lokasiApi.list({ aktif: 'true' }),
-        userApi.deliveryman(),
-      ])
-      lokasiList.value = lok
-      deliverymanList.value = kurir
-    } catch {
-      lokasiList.value = []
-      deliverymanList.value = []
-    }
+    await Promise.all([loadLokasi(), loadDeliveryman()])
   }
   await load()
   if (route.query.id) {
@@ -129,7 +125,7 @@ function goSuratJalan(row) {
   router.push({ name: 'pengiriman-surat-jalan', params: { id: row.id } })
 }
 
-// --- Formulir Buat / Ubah Draf Pengiriman ---
+// formulir buat atau ubah draf pengiriman
 const modalOpen = ref(false)
 const editingId = ref(null)
 const editingKode = ref('')
@@ -282,10 +278,14 @@ async function onSave(mode = 'draf') {
   }
 }
 
-// --- Detail Pengiriman ---
-const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detailData = ref(null)
+// detail pengiriman
+const {
+  open: detailOpen,
+  loading: detailLoading,
+  data: detailData,
+  show: openDetail,
+  close: closeDetail,
+} = useDetail((id) => pengirimanApi.get(id), 'pengiriman')
 
 const detailTimeline = computed(() => {
   const d = detailData.value
@@ -345,21 +345,7 @@ const detailTimeline = computed(() => {
   return steps
 })
 
-async function openDetail(row) {
-  detailOpen.value = true
-  detailLoading.value = true
-  detailData.value = null
-  try {
-    detailData.value = await pengirimanApi.get(row.id)
-  } catch (err) {
-    toast.show(err?.message || 'Gagal memuat detail pengiriman.', 'error')
-    detailOpen.value = false
-  } finally {
-    detailLoading.value = false
-  }
-}
-
-// --- Modal Kirim Pengiriman ---
+// modal kirim pengiriman
 const kirimModalOpen = ref(false)
 const kirimTarget = ref(null)
 const kirimForm = useForm({
@@ -402,89 +388,56 @@ async function onConfirmKirim() {
   }
 }
 
-// --- Modal Terima Pengiriman ---
-const terimaModalOpen = ref(false)
-const terimaTarget = ref(null)
-const terimaLoadingDetail = ref(false)
-const terimaSubmitting = ref(false)
-const terimaMessage = ref('')
-const terimaErrors = reactive({})
-const terimaForm = reactive({
-  catatan_penerimaan: '',
-  items: [],
+// modal terima pengiriman
+const {
+  open: terimaModalOpen,
+  target: terimaTarget,
+  loadingDetail: terimaLoadingDetail,
+  submitting: terimaSubmitting,
+  message: terimaMessage,
+  errors: terimaErrors,
+  form: terimaForm,
+  show: openTerima,
+  confirm: onConfirmTerima,
+  close: closeTerima,
+} = useTerimaForm({
+  label: 'pengiriman',
+  fetchDetail: (id) => pengirimanApi.get(id),
+  toForm: (detail) => ({
+    catatan_penerimaan: detail.catatan_penerimaan || '',
+    items: detail.items.map((it) => ({
+      produk_id: it.produk.id,
+      sku: it.produk.sku,
+      nama: it.produk.nama,
+      satuan: it.produk.satuan,
+      jumlah_dikirim: it.jumlah_dikirim,
+      jumlah_diterima: it.jumlah_dikirim,
+      catatan: it.catatan || '',
+    })),
+  }),
+  toPayload: (form) => ({
+    catatan_penerimaan: form.catatan_penerimaan || null,
+    items: form.items.map((it) => ({
+      produk_id: Number(it.produk_id),
+      jumlah_diterima: it.jumlah_diterima === '' ? -1 : Number(it.jumlah_diterima),
+      catatan: it.catatan?.trim() || null,
+    })),
+  }),
+  submit: (id, payload) => pengirimanApi.terima(id, payload),
+  successMessage: (res) =>
+    `Pengiriman ${res.kode} diterima. ` +
+    `Stok ${res.lokasi_tujuan?.nama || 'lokasi tujuan'} sudah ditambah.`,
+  onSaved: async (res) => {
+    if (detailOpen.value && detailData.value?.id === res.id) detailData.value = res
+    await load()
+  },
 })
 
 const terimaSelisihCount = computed(() =>
   terimaForm.items.filter((it) => Number(it.jumlah_diterima) < Number(it.jumlah_dikirim)).length
 )
 
-async function openTerima(row) {
-  terimaModalOpen.value = true
-  terimaMessage.value = ''
-  for (const k of Object.keys(terimaErrors)) delete terimaErrors[k]
-
-  let detail = row.items ? row : null
-  if (!detail) {
-    terimaLoadingDetail.value = true
-    try {
-      detail = await pengirimanApi.get(row.id)
-    } catch (err) {
-      toast.show(err?.message || 'Gagal memuat detail pengiriman.', 'error')
-      terimaModalOpen.value = false
-      terimaLoadingDetail.value = false
-      return
-    }
-    terimaLoadingDetail.value = false
-  }
-
-  terimaTarget.value = detail
-  terimaForm.catatan_penerimaan = detail.catatan_penerimaan || ''
-  terimaForm.items = detail.items.map((it) => ({
-    produk_id: it.produk.id,
-    sku: it.produk.sku,
-    nama: it.produk.nama,
-    satuan: it.produk.satuan,
-    jumlah_dikirim: it.jumlah_dikirim,
-    jumlah_diterima: it.jumlah_dikirim,
-    catatan: it.catatan || '',
-  }))
-}
-
-async function onConfirmTerima() {
-  if (!terimaTarget.value) return
-  terimaSubmitting.value = true
-  terimaMessage.value = ''
-  for (const k of Object.keys(terimaErrors)) delete terimaErrors[k]
-
-  try {
-    const payload = {
-      catatan_penerimaan: terimaForm.catatan_penerimaan || null,
-      items: terimaForm.items.map((it) => ({
-        produk_id: Number(it.produk_id),
-        jumlah_diterima: it.jumlah_diterima === '' ? -1 : Number(it.jumlah_diterima),
-        catatan: it.catatan?.trim() || null,
-      })),
-    }
-    const res = await pengirimanApi.terima(terimaTarget.value.id, payload)
-    toast.show(
-      `Pengiriman ${res.kode} diterima. Stok ${res.lokasi_tujuan?.nama || 'lokasi tujuan'} sudah ditambah.`
-    )
-    terimaModalOpen.value = false
-    if (detailOpen.value && detailData.value?.id === res.id) {
-      detailData.value = res
-    }
-    await load()
-  } catch (err) {
-    terimaMessage.value = err?.message || 'Gagal mengonfirmasi penerimaan barang.'
-    if (err?.errors && typeof err.errors === 'object') {
-      Object.assign(terimaErrors, err.errors)
-    }
-  } finally {
-    terimaSubmitting.value = false
-  }
-}
-
-// --- Modal Hapus / Batalkan Draf ---
+// modal hapus atau batalkan draf
 const deleteRow = ref(null)
 const deleteLoading = ref(false)
 const deleteError = ref('')
@@ -789,7 +742,7 @@ async function onConfirmDelete() {
       <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
-    <!-- Modal Buat / Ubah Draf Pengiriman -->
+    <!-- modal buat atau ubah draf pengiriman -->
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Pengiriman: ${editingKode}` : 'Buat Pengiriman Antarlokasi'"
@@ -966,12 +919,12 @@ async function onConfirmDelete() {
       </template>
     </BaseModal>
 
-    <!-- Modal Detail Pengiriman -->
+    <!-- modal detail pengiriman -->
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Pengiriman: ${detailData.kode}` : 'Detail Pengiriman'"
       size="lg"
-      @close="detailOpen = false"
+      @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
       <div v-else-if="detailData" class="detail-grid">
@@ -1085,7 +1038,7 @@ async function onConfirmDelete() {
       </div>
 
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="detailOpen = false">Tutup</button>
+        <button type="button" class="btn btn-secondary" @click="closeDetail">Tutup</button>
         <button
           v-if="detailData"
           type="button"
@@ -1121,7 +1074,7 @@ async function onConfirmDelete() {
       </template>
     </BaseModal>
 
-    <!-- Modal Konfirmasi & Data Kirim -->
+    <!-- modal konfirmasi dan data kirim -->
     <BaseModal
       :open="kirimModalOpen"
       :title="kirimTarget ? `Kirim Pengiriman: ${kirimTarget.kode}` : 'Kirim Pengiriman'"
@@ -1228,12 +1181,12 @@ async function onConfirmDelete() {
       </template>
     </BaseModal>
 
-    <!-- Modal Konfirmasi Terima Pengiriman -->
+    <!-- modal konfirmasi terima pengiriman -->
     <BaseModal
       :open="terimaModalOpen"
       :title="terimaTarget ? `Terima Pengiriman: ${terimaTarget.kode}` : 'Terima Pengiriman'"
       size="lg"
-      @close="terimaModalOpen = false"
+      @close="closeTerima"
     >
       <LoadingState v-if="terimaLoadingDetail" :rows="3" />
       <template v-else-if="terimaTarget">
@@ -1347,7 +1300,7 @@ async function onConfirmDelete() {
           type="button"
           class="btn btn-secondary"
           :disabled="terimaSubmitting"
-          @click="terimaModalOpen = false"
+          @click="closeTerima"
         >
           Batal
         </button>
@@ -1362,7 +1315,7 @@ async function onConfirmDelete() {
       </template>
     </BaseModal>
 
-    <!-- Modal Hapus / Batalkan Draf -->
+    <!-- modal hapus atau batalkan draf -->
     <ConfirmModal
       :open="Boolean(deleteRow)"
       :title="deleteRow?.permintaan ? 'Batalkan Draf Pengiriman' : 'Hapus Draf Pengiriman'"

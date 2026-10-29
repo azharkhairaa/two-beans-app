@@ -10,6 +10,7 @@ import ErrorState from '@/components/ErrorState.vue'
 import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
+import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { customerApi } from '@/services'
@@ -97,22 +98,13 @@ async function onSave() {
   }
 }
 
-const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detailData = ref(null)
-
-async function openDetail(row) {
-  detailOpen.value = true
-  detailLoading.value = true
-  detailData.value = row
-  try {
-    detailData.value = await customerApi.get(row.id)
-  } catch (err) {
-    toast.show(err?.message || 'Gagal memuat detail customer.', 'error')
-  } finally {
-    detailLoading.value = false
-  }
-}
+const {
+  open: detailOpen,
+  loading: detailLoading,
+  data: detailData,
+  show: openDetail,
+  close: closeDetail,
+} = useDetail((id) => customerApi.get(id), 'customer', { previewRow: true })
 
 const deletingRow = ref(null)
 const deleteLoading = ref(false)
@@ -395,7 +387,7 @@ async function onConfirmDelete() {
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Customer: ${detailData.nama}` : 'Detail Customer'"
-      @close="detailOpen = false"
+      @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="3" />
       <div v-else-if="detailData" class="detail-grid">
@@ -437,7 +429,7 @@ async function onConfirmDelete() {
         </dl>
       </div>
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="detailOpen = false">Tutup</button>
+        <button type="button" class="btn btn-secondary" @click="closeDetail">Tutup</button>
       </template>
     </BaseModal>
 

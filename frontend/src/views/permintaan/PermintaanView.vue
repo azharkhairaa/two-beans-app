@@ -14,9 +14,11 @@ import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
+import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { lokasiApi, permintaanApi, produkApi } from '@/services'
+import { useLokasiOptions } from '@/composables/useOptions'
+import { permintaanApi, produkApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { LOKASI_TYPE_LABELS, LOKASI_TYPES, ROLES } from '@/utils/constants'
@@ -27,7 +29,7 @@ const toast = useToastStore()
 const route = useRoute()
 const router = useRouter()
 
-const lokasiList = ref([])
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
 
 const isGudangUtamaManager = computed(
   () =>
@@ -70,11 +72,7 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
 )
 
 onMounted(async () => {
-  try {
-    lokasiList.value = await lokasiApi.list({ aktif: 'true' })
-  } catch {
-    lokasiList.value = []
-  }
+  await loadLokasi()
   await load()
   if (route.query.id) {
     openDetail({ id: Number(route.query.id) })
@@ -97,7 +95,7 @@ function goPengiriman(pengiriman) {
   router.push({ name: 'pengiriman', query: { id: pengiriman.id } })
 }
 
-// --- Formulir Ajukan / Ubah Permintaan ---
+// formulir ajukan atau ubah permintaan
 const modalOpen = ref(false)
 const editingId = ref(null)
 const editingKode = ref('')
@@ -185,10 +183,14 @@ async function onSave() {
   }
 }
 
-// --- Detail Permintaan ---
-const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detailData = ref(null)
+// detail permintaan
+const {
+  open: detailOpen,
+  loading: detailLoading,
+  data: detailData,
+  show: openDetail,
+  close: closeDetail,
+} = useDetail((id) => permintaanApi.get(id), 'permintaan')
 
 const detailTimeline = computed(() => {
   const d = detailData.value
@@ -254,21 +256,7 @@ const detailTimeline = computed(() => {
   return steps
 })
 
-async function openDetail(row) {
-  detailOpen.value = true
-  detailLoading.value = true
-  detailData.value = null
-  try {
-    detailData.value = await permintaanApi.get(row.id)
-  } catch (err) {
-    toast.show(err?.message || 'Gagal memuat detail permintaan.', 'error')
-    detailOpen.value = false
-  } finally {
-    detailLoading.value = false
-  }
-}
-
-// --- Modal Setujui Permintaan ---
+// modal setujui permintaan
 const setujuiModalOpen = ref(false)
 const setujuiTarget = ref(null)
 const setujuiLoadingDetail = ref(false)
@@ -357,7 +345,7 @@ async function onConfirmSetujui() {
   }
 }
 
-// --- Modal Tolak Permintaan ---
+// modal tolak permintaan
 const tolakModalOpen = ref(false)
 const tolakTarget = ref(null)
 const tolakForm = useForm({
@@ -387,7 +375,7 @@ async function onConfirmTolak() {
   }
 }
 
-// --- Modal Batalkan Permintaan oleh Peminta ---
+// modal batalkan permintaan oleh peminta
 const batalRow = ref(null)
 const batalLoading = ref(false)
 const batalError = ref('')
@@ -625,7 +613,7 @@ async function onConfirmBatal() {
       <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
-    <!-- Modal Ajukan / Ubah Permintaan -->
+    <!-- modal ajukan atau ubah permintaan -->
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Permintaan: ${editingKode}` : 'Ajukan Permintaan Supply ke Gudang Utama'"
@@ -726,12 +714,12 @@ async function onConfirmBatal() {
       </template>
     </BaseModal>
 
-    <!-- Modal Detail Permintaan -->
+    <!-- modal detail permintaan -->
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Permintaan: ${detailData.kode}` : 'Detail Permintaan'"
       size="lg"
-      @close="detailOpen = false"
+      @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
       <div v-else-if="detailData" class="detail-grid">
@@ -825,7 +813,7 @@ async function onConfirmBatal() {
       </div>
 
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="detailOpen = false">Tutup</button>
+        <button type="button" class="btn btn-secondary" @click="closeDetail">Tutup</button>
         <button
           v-if="detailData?.pengiriman"
           type="button"
@@ -862,7 +850,7 @@ async function onConfirmBatal() {
       </template>
     </BaseModal>
 
-    <!-- Modal Setujui Permintaan -->
+    <!-- modal setujui permintaan -->
     <BaseModal
       :open="setujuiModalOpen"
       :title="setujuiTarget ? `Setujui Permintaan: ${setujuiTarget.kode}` : 'Setujui Permintaan'"
@@ -1009,7 +997,7 @@ async function onConfirmBatal() {
       </template>
     </BaseModal>
 
-    <!-- Modal Tolak Permintaan -->
+    <!-- modal tolak permintaan -->
     <BaseModal
       :open="tolakModalOpen"
       :title="tolakTarget ? `Tolak Permintaan: ${tolakTarget.kode}` : 'Tolak Permintaan'"
@@ -1065,7 +1053,7 @@ async function onConfirmBatal() {
       </template>
     </BaseModal>
 
-    <!-- Modal Batalkan Permintaan -->
+    <!-- modal batalkan permintaan -->
     <ConfirmModal
       :open="Boolean(batalRow)"
       title="Batalkan Permintaan Supply"

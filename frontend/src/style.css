@@ -80,15 +80,6 @@ textarea {
   outline-offset: 2px;
 }
 
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 .skip-link {
   position: absolute;
   left: 16px;
@@ -189,8 +180,7 @@ textarea {
   background: var(--aksi-put);
 }
 
-.btn-delete,
-.btn-danger {
+.btn-delete {
   background: var(--aksi-delete);
   color: #fff;
 }
@@ -218,8 +208,7 @@ textarea {
   background: color-mix(in srgb, var(--aksi-put) 82%, #000);
 }
 
-.btn-delete:hover:not(:disabled),
-.btn-danger:hover:not(:disabled) {
+.btn-delete:hover:not(:disabled) {
   background: color-mix(in srgb, var(--aksi-delete) 82%, #000);
 }
 
@@ -703,30 +692,6 @@ select.input {
   overflow-wrap: anywhere;
 }
 
-.shortcut-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-}
-
-.shortcut {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--garis);
-  border-radius: var(--radius-kartu);
-  background: var(--permukaan);
-  color: var(--espresso);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.shortcut:hover {
-  background: var(--hover);
-}
-
 .empty-state,
 .status-page {
   display: grid;
@@ -841,9 +806,7 @@ select.input {
 }
 
 .input-sm {
-  min-height: 36px;
   padding: 6px 10px;
-  font-size: 14px;
 }
 
 select.input-sm {
@@ -1092,14 +1055,11 @@ select.input-sm {
   font-size: 14px;
 }
 
-.pagination-info,
 .pagination-summary {
   color: var(--kopi);
 }
 
-.pagination-controls,
-.pagination-actions,
-.pagination-pages {
+.pagination-controls {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
@@ -1128,48 +1088,18 @@ select.input-sm {
 
 /* state pemuatan, kosong dan error */
 
-.loading-state,
-.loading-card,
-.state-card {
-  display: grid;
-  gap: 12px;
-  padding: 36px 24px;
+.loading-state {
   border: 1px solid var(--garis);
   border-radius: var(--radius-kartu);
   background: var(--permukaan);
 }
 
-.loading-label {
-  font-size: 14px;
-  color: var(--abu);
-}
-
-.state-card {
-  justify-items: center;
-  text-align: center;
-}
-
-.state-error,
 .error-state {
   border-color: var(--error-teks);
   background: color-mix(in srgb, var(--error-latar) 35%, white);
-}
-
-.state-icon {
-  color: var(--kopi);
-}
-
-.state-error .state-icon,
-.error-state {
   color: var(--error-teks);
 }
 
-.state-title {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.state-desc,
 .state-message {
   max-width: 460px;
   font-size: 14px;
@@ -1209,8 +1139,7 @@ select.input-sm {
   flex-shrink: 0;
 }
 
-.skeleton-row,
-.skeleton-cell {
+.skeleton-row {
   height: 18px;
   border-radius: 4px;
   background: linear-gradient(
@@ -2782,7 +2711,6 @@ select.input-sm {
   .app-sidebar,
   .app-topbar,
   .app-backdrop,
-  .toast-region,
   .no-print {
     display: none !important;
   }

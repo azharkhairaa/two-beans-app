@@ -13,7 +13,8 @@ import PaginationBar from '@/components/PaginationBar.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { kategoriApi, lokasiApi, produkApi, stokApi } from '@/services'
+import { useKategoriOptions, useLokasiOptions } from '@/composables/useOptions'
+import { produkApi, stokApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { KATEGORI_TYPE_LABELS, LOKASI_TYPE_LABELS, STOK_STATUS_LABELS } from '@/utils/constants'
@@ -22,23 +23,11 @@ import { formatDate, formatNumber, formatRupiah } from '@/utils/format'
 const auth = useAuthStore()
 const toast = useToastStore()
 
-const lokasiList = ref([])
-const kategoriList = ref([])
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
+const { items: kategoriList, load: loadKategori } = useKategoriOptions()
 const currentLokasi = ref(auth.user?.lokasi || null)
 
-onMounted(async () => {
-  try {
-    const [lokRes, katRes] = await Promise.all([
-      lokasiApi.list({ aktif: 'true' }),
-      kategoriApi.list(),
-    ])
-    lokasiList.value = lokRes || []
-    kategoriList.value = katRes || []
-  } catch {
-    lokasiList.value = []
-    kategoriList.value = []
-  }
-})
+onMounted(() => Promise.all([loadLokasi(), loadKategori()]))
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   async (params) => {

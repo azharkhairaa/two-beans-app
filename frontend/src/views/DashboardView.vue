@@ -8,6 +8,7 @@ import ErrorState from '@/components/ErrorState.vue'
 import KartuStokModal from '@/components/KartuStokModal.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
+import TrenChart from '@/components/TrenChart.vue'
 import { dashboardApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -104,7 +105,7 @@ watch(
   },
 )
 
-// perhitungan grafik batang nilai persediaan & omzet 30 hari per lokasi
+// perhitungan grafik batang nilai persediaan dan omzet 30 hari per lokasi
 const barChartModel = computed(() => {
   const rows = dashboard.value?.per_lokasi || []
   if (!rows.length) return { bars: [], ticks: [], maxVal: 1 }
@@ -163,86 +164,11 @@ const barChartModel = computed(() => {
   }
 })
 
-// perhitungan grafik garis tren mutasi masuk dan keluar harian
-const lineChartModel = computed(() => {
-  const rows = trenData.value || []
-  const chartLeft = 64
-  const chartRight = 656
-  const chartTop = 24
-  const chartBottom = 204
-  const plotWidth = chartRight - chartLeft
-  const plotHeight = chartBottom - chartTop
-
-  if (!rows.length) {
-    return {
-      points: [],
-      masukPath: '',
-      keluarPath: '',
-      ticks: [],
-      totalMasuk: 0,
-      totalKeluar: 0,
-      chartLeft,
-      chartRight,
-      chartBottom,
-    }
-  }
-
-  const rawMax = Math.max(
-    4,
-    ...rows.flatMap((r) => [Number(r.masuk || 0), Number(r.keluar || 0)]),
-  )
-  const niceMax = Math.ceil(rawMax / 4) * 4
-
-  const stepX = rows.length > 1 ? plotWidth / (rows.length - 1) : 0
-  const labelStride = rows.length > 20 ? 5 : rows.length > 10 ? 2 : 1
-
-  const points = rows.map((r, idx) => {
-    const x = rows.length > 1 ? Math.round(chartLeft + idx * stepX) : Math.round(chartLeft + plotWidth / 2)
-    const masuk = Number(r.masuk || 0)
-    const keluar = Number(r.keluar || 0)
-    const masukY = Math.round(chartBottom - (masuk / niceMax) * plotHeight)
-    const keluarY = Math.round(chartBottom - (keluar / niceMax) * plotHeight)
-    const shortDate = String(r.tanggal || '').slice(5)
-    return {
-      tanggal: r.tanggal,
-      shortDate,
-      showLabel: idx === 0 || idx === rows.length - 1 || idx % labelStride === 0,
-      x,
-      masuk,
-      keluar,
-      masukY,
-      keluarY,
-    }
-  })
-
-  const masukPath = points
-    .map((pt, idx) => `${idx === 0 ? 'M' : 'L'}${pt.x},${pt.masukY}`)
-    .join(' ')
-  const keluarPath = points
-    .map((pt, idx) => `${idx === 0 ? 'M' : 'L'}${pt.x},${pt.keluarY}`)
-    .join(' ')
-
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-    const val = Math.round(niceMax * ratio)
-    const y = Math.round(chartBottom - ratio * plotHeight)
-    return { val, y, label: formatNumber(val) }
-  })
-
-  const totalMasuk = points.reduce((acc, pt) => acc + pt.masuk, 0)
-  const totalKeluar = points.reduce((acc, pt) => acc + pt.keluar, 0)
-
-  return {
-    points,
-    masukPath,
-    keluarPath,
-    ticks,
-    totalMasuk,
-    totalKeluar,
-    chartLeft,
-    chartRight,
-    chartBottom,
-  }
-})
+// total tren untuk judul kartu, grafiknya digambar TrenChart
+const trenTotal = computed(() => ({
+  masuk: trenData.value.reduce((sum, row) => sum + Number(row.masuk || 0), 0),
+  keluar: trenData.value.reduce((sum, row) => sum + Number(row.keluar || 0), 0),
+}))
 
 function tugasRoute(tugas) {
   if (tugas.jenis === 'terima_pengiriman' || tugas.jenis === 'kirim_pengiriman') {
@@ -334,7 +260,7 @@ onMounted(() => {
     <ErrorState v-else-if="error" :message="error" @retry="loadDashboard" />
 
     <template v-else-if="dashboard">
-      <!-- Banner Sambutan Pengguna -->
+      <!-- banner sambutan user -->
       <div class="welcome-banner">
         <span class="welcome-banner-icon">
           <AppIcon name="check" :size="18" :stroke="2.5" />
@@ -344,7 +270,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- ==================== TAMPILAN ADMIN ==================== -->
+      <!-- tampilan admin -->
       <template v-if="dashboard.peran === 'admin'">
         <div class="dash-tile-grid">
           <RouterLink :to="{ name: 'monitoring' }" class="dash-tile">
@@ -469,7 +395,7 @@ onMounted(() => {
         </div>
 
         <div class="dash-grid-2">
-          <!-- Grafik 1: Batang Nilai Persediaan & Omzet 30 Hari per Lokasi -->
+          <!-- grafik batang nilai persediaan dan omzet 30 hari per lokasi -->
           <article class="card chart-card">
             <div class="chart-header">
               <div>
@@ -572,14 +498,14 @@ onMounted(() => {
             </details>
           </article>
 
-          <!-- Grafik 2: Garis Tren Mutasi Harian -->
+          <!-- grafik garis tren mutasi harian -->
           <article class="card chart-card">
             <div class="chart-header">
               <div>
                 <h2 class="section-title">Tren Mutasi Stock Harian</h2>
                 <p class="field-hint">
-                  Masuk <strong class="num">{{ formatNumber(lineChartModel.totalMasuk) }}</strong> unit ·
-                  Keluar <strong class="num">{{ formatNumber(lineChartModel.totalKeluar) }}</strong> unit
+                  Masuk <strong class="num">{{ formatNumber(trenTotal.masuk) }}</strong> unit ·
+                  Keluar <strong class="num">{{ formatNumber(trenTotal.keluar) }}</strong> unit
                 </p>
               </div>
               <div class="chart-controls">
@@ -600,101 +526,19 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="chart-legend" aria-label="Legenda grafik tren mutasi">
-              <span class="chart-legend-item">
-                <span class="chart-swatch chart-swatch-hijau"></span>
-                <span>Barang Masuk (garis utuh)</span>
-              </span>
-              <span class="chart-legend-item">
-                <span class="chart-swatch chart-swatch-merah"></span>
-                <span>Barang Keluar (garis putus-putus)</span>
-              </span>
-            </div>
-
-            <ErrorState v-if="trenError" :message="trenError" @retry="loadTren" />
-            <div v-else-if="trenLoading" class="chart-loading-overlay">
-              <span class="loading-spinner" aria-hidden="true"></span>
-              <span>Memuat tren mutasi harian...</span>
-            </div>
-            <div v-else class="chart-svg-wrap">
-              <svg
-                class="chart-svg"
-                viewBox="0 0 680 240"
-                role="img"
-                aria-label="Grafik garis tren mutasi barang masuk dan keluar harian"
-              >
-                <g v-for="t in lineChartModel.ticks" :key="t.val">
-                  <line
-                    :x1="lineChartModel.chartLeft"
-                    :y1="t.y"
-                    :x2="lineChartModel.chartRight"
-                    :y2="t.y"
-                    class="chart-grid-line"
-                  />
-                  <text :x="lineChartModel.chartLeft - 8" :y="t.y + 4" text-anchor="end" class="chart-axis-text">
-                    {{ t.label }}
-                  </text>
-                </g>
-
-                <path :d="lineChartModel.masukPath" class="chart-line-masuk" />
-                <path :d="lineChartModel.keluarPath" class="chart-line-keluar" />
-
-                <g v-for="pt in lineChartModel.points" :key="pt.tanggal">
-                  <circle :cx="pt.x" :cy="pt.masukY" r="3.5" class="chart-dot-masuk">
-                    <title>{{ formatDate(pt.tanggal) }} - Masuk: {{ formatNumber(pt.masuk) }} unit</title>
-                  </circle>
-                  <rect
-                    :x="pt.x - 3"
-                    :y="pt.keluarY - 3"
-                    width="6"
-                    height="6"
-                    class="chart-dot-keluar"
-                  >
-                    <title>{{ formatDate(pt.tanggal) }} - Keluar: {{ formatNumber(pt.keluar) }} unit</title>
-                  </rect>
-                  <text
-                    v-if="pt.showLabel"
-                    :x="pt.x"
-                    :y="lineChartModel.chartBottom + 20"
-                    text-anchor="middle"
-                    class="chart-axis-sub"
-                  >
-                    {{ pt.shortDate }}
-                  </text>
-                </g>
-              </svg>
-            </div>
-
-            <details class="chart-alt-details">
-              <summary>Tabel data tren mutasi harian ({{ trenFilter.hari }} hari)</summary>
-              <div class="table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Tanggal</th>
-                      <th scope="col" class="num">Barang Masuk</th>
-                      <th scope="col" class="num">Barang Keluar</th>
-                      <th scope="col" class="num">Selisih</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="pt in trenData" :key="pt.tanggal">
-                      <td data-label="Tanggal">{{ formatDate(pt.tanggal) }}</td>
-                      <td data-label="Barang Masuk" class="num">+{{ formatNumber(pt.masuk) }}</td>
-                      <td data-label="Barang Keluar" class="num">-{{ formatNumber(pt.keluar) }}</td>
-                      <td data-label="Selisih" class="num">
-                        {{ pt.masuk - pt.keluar >= 0 ? `+${formatNumber(pt.masuk - pt.keluar)}` : formatNumber(pt.masuk - pt.keluar) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </details>
+            <TrenChart
+              :rows="trenData"
+              :hari="trenFilter.hari"
+              :loading="trenLoading"
+              :error="trenError"
+              chart-label="Grafik garis tren mutasi barang masuk dan keluar harian"
+              @retry="loadTren"
+            />
           </article>
         </div>
       </template>
 
-      <!-- ==================== TAMPILAN MANAGER (GUDANG & OUTLET) ==================== -->
+      <!-- tampilan manager (gudang dan outlet) -->
       <template v-else-if="dashboard.peran === 'manager_gudang' || dashboard.peran === 'manager_outlet'">
         <div class="dash-tile-grid">
           <RouterLink :to="{ name: 'stok' }" class="dash-tile">
@@ -835,7 +679,7 @@ onMounted(() => {
         </div>
 
         <div class="dash-grid-2">
-          <!-- Kartu Perlu Tindakan -->
+          <!-- kartu perlu tindakan -->
           <article class="card">
             <div class="section-header-row">
               <div class="section-title-wrap">
@@ -873,14 +717,14 @@ onMounted(() => {
             </ul>
           </article>
 
-          <!-- Grafik Tren Mutasi Lokasi Manager -->
+          <!-- grafik tren mutasi lokasi manager -->
           <article class="card chart-card">
             <div class="chart-header">
               <div>
                 <h2 class="section-title">Tren Mutasi {{ dashboard.lokasi.kode }}</h2>
                 <p class="field-hint">
-                  Masuk <strong class="num">{{ formatNumber(lineChartModel.totalMasuk) }}</strong> unit ·
-                  Keluar <strong class="num">{{ formatNumber(lineChartModel.totalKeluar) }}</strong> unit
+                  Masuk <strong class="num">{{ formatNumber(trenTotal.masuk) }}</strong> unit ·
+                  Keluar <strong class="num">{{ formatNumber(trenTotal.keluar) }}</strong> unit
                 </p>
               </div>
               <div class="chart-controls">
@@ -893,104 +737,22 @@ onMounted(() => {
               </div>
             </div>
 
-            <div class="chart-legend" aria-label="Legenda grafik tren mutasi">
-              <span class="chart-legend-item">
-                <span class="chart-swatch chart-swatch-hijau"></span>
-                <span>Barang Masuk (garis utuh)</span>
-              </span>
-              <span class="chart-legend-item">
-                <span class="chart-swatch chart-swatch-merah"></span>
-                <span>Barang Keluar (garis putus-putus)</span>
-              </span>
-            </div>
-
-            <ErrorState v-if="trenError" :message="trenError" @retry="loadTren" />
-            <div v-else-if="trenLoading" class="chart-loading-overlay">
-              <span class="loading-spinner" aria-hidden="true"></span>
-              <span>Memuat tren mutasi harian...</span>
-            </div>
-            <div v-else class="chart-svg-wrap">
-              <svg
-                class="chart-svg"
-                viewBox="0 0 680 240"
-                role="img"
-                aria-label="Grafik garis tren mutasi barang masuk dan keluar harian lokasi"
-              >
-                <g v-for="t in lineChartModel.ticks" :key="t.val">
-                  <line
-                    :x1="lineChartModel.chartLeft"
-                    :y1="t.y"
-                    :x2="lineChartModel.chartRight"
-                    :y2="t.y"
-                    class="chart-grid-line"
-                  />
-                  <text :x="lineChartModel.chartLeft - 8" :y="t.y + 4" text-anchor="end" class="chart-axis-text">
-                    {{ t.label }}
-                  </text>
-                </g>
-
-                <path :d="lineChartModel.masukPath" class="chart-line-masuk" />
-                <path :d="lineChartModel.keluarPath" class="chart-line-keluar" />
-
-                <g v-for="pt in lineChartModel.points" :key="pt.tanggal">
-                  <circle :cx="pt.x" :cy="pt.masukY" r="3.5" class="chart-dot-masuk">
-                    <title>{{ formatDate(pt.tanggal) }} - Masuk: {{ formatNumber(pt.masuk) }} unit</title>
-                  </circle>
-                  <rect
-                    :x="pt.x - 3"
-                    :y="pt.keluarY - 3"
-                    width="6"
-                    height="6"
-                    class="chart-dot-keluar"
-                  >
-                    <title>{{ formatDate(pt.tanggal) }} - Keluar: {{ formatNumber(pt.keluar) }} unit</title>
-                  </rect>
-                  <text
-                    v-if="pt.showLabel"
-                    :x="pt.x"
-                    :y="lineChartModel.chartBottom + 20"
-                    text-anchor="middle"
-                    class="chart-axis-sub"
-                  >
-                    {{ pt.shortDate }}
-                  </text>
-                </g>
-              </svg>
-            </div>
-
-            <details class="chart-alt-details">
-              <summary>Tabel data tren mutasi harian ({{ trenFilter.hari }} hari)</summary>
-              <div class="table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Tanggal</th>
-                      <th scope="col" class="num">Barang Masuk</th>
-                      <th scope="col" class="num">Barang Keluar</th>
-                      <th scope="col" class="num">Selisih</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="pt in trenData" :key="pt.tanggal">
-                      <td data-label="Tanggal">{{ formatDate(pt.tanggal) }}</td>
-                      <td data-label="Barang Masuk" class="num">+{{ formatNumber(pt.masuk) }}</td>
-                      <td data-label="Barang Keluar" class="num">-{{ formatNumber(pt.keluar) }}</td>
-                      <td data-label="Selisih" class="num">
-                        {{ pt.masuk - pt.keluar >= 0 ? `+${formatNumber(pt.masuk - pt.keluar)}` : formatNumber(pt.masuk - pt.keluar) }}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </details>
+            <TrenChart
+              :rows="trenData"
+              :hari="trenFilter.hari"
+              :loading="trenLoading"
+              :error="trenError"
+              chart-label="Grafik garis tren mutasi barang masuk dan keluar harian lokasi"
+              @retry="loadTren"
+            />
           </article>
         </div>
       </template>
 
-      <!-- ==================== BAGIAN BERSAMA ADMIN & MANAGER ==================== -->
+      <!-- bagian bersama admin dan manager -->
       <template v-if="dashboard.peran !== 'deliveryman'">
         <div class="dash-grid-2">
-          <!-- Lima Customer Teratas (30 Hari) -->
+          <!-- lima customer teratas (30 hari) -->
           <article class="card">
             <div class="section-header-row">
               <div class="section-title-wrap">
@@ -1045,7 +807,7 @@ onMounted(() => {
             </div>
           </article>
 
-          <!-- Stock Kritis -->
+          <!-- stock kritis -->
           <article class="card">
             <div class="section-header-row">
               <div class="section-title-wrap">
@@ -1120,7 +882,7 @@ onMounted(() => {
           </article>
         </div>
 
-        <!-- Aktivitas Buku Besar Terbaru -->
+        <!-- aktivitas buku besar terbaru -->
         <article class="card">
           <div class="section-header-row">
             <div class="section-title-wrap">
@@ -1194,7 +956,7 @@ onMounted(() => {
         </article>
       </template>
 
-      <!-- ==================== TAMPILAN DELIVERYMAN ==================== -->
+      <!-- tampilan deliveryman -->
       <template v-else>
         <div class="summary-strip">
           <div class="summary-item">

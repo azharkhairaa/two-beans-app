@@ -32,11 +32,11 @@ const productOptions = computed(() => {
   return Array.from(groups.entries()).flatMap(([group, items]) =>
     items.map((prod) => {
       const blocked = props.disableZeroStock && Number(prod.stok || 0) <= 0
-      const known = prod.stok !== undefined && prod.stok !== null
+      const stock = prod.stok ?? null
       return {
         value: prod.id,
         label: `${prod.sku} - ${prod.nama} (${prod.satuan})`,
-        hint: blocked ? 'Stok habis' : known ? `Stok ${formatNumber(prod.stok)} ${prod.satuan}` : '',
+        hint: blocked ? 'Stok habis' : stock === null ? '' : `Stok ${formatNumber(stock)}`,
         group,
         disabled: blocked,
       }

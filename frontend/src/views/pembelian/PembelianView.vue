@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
 import AppIcon from '@/components/AppIcon'
@@ -14,9 +14,12 @@ import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import RiwayatDokumen from '@/components/RiwayatDokumen.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
+import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { lokasiApi, pembelianApi, produkApi, supplierApi } from '@/services'
+import { useLokasiOptions, useOptions } from '@/composables/useOptions'
+import { useTerimaForm } from '@/composables/useTerimaForm'
+import { pembelianApi, produkApi, supplierApi } from '@/services'
 import { useToastStore } from '@/stores/toast'
 import { LOKASI_TYPES } from '@/utils/constants'
 import { formatDate, formatDateTime, formatNumber, formatRupiah, todayIso } from '@/utils/format'
@@ -24,8 +27,14 @@ import { formatDate, formatDateTime, formatNumber, formatRupiah, todayIso } from
 const toast = useToastStore()
 const route = useRoute()
 
-const supplierList = ref([])
-const gudangUtama = ref(null)
+const { items: supplierList, load: loadSuppliers } = useOptions(
+  () => supplierApi.options(),
+  'supplier'
+)
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
+const gudangUtama = computed(
+  () => lokasiList.value.find((lok) => lok.jenis === LOKASI_TYPES.GUDANG_UTAMA) || null
+)
 const productOptions = ref([])
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
@@ -45,16 +54,7 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
 )
 
 onMounted(async () => {
-  try {
-    const [suppliers, lokasis] = await Promise.all([
-      supplierApi.options(),
-      lokasiApi.list({ aktif: 'true' }),
-    ])
-    supplierList.value = suppliers
-    gudangUtama.value = lokasis.find((l) => l.jenis === LOKASI_TYPES.GUDANG_UTAMA) || null
-  } catch {
-    supplierList.value = []
-  }
+  await Promise.all([loadSuppliers(), loadLokasi()])
   await load()
   if (route.query.id) {
     openDetail({ id: Number(route.query.id) })
@@ -73,7 +73,7 @@ async function loadPurchasableProducts() {
   }
 }
 
-// --- Formulir Buat / Ubah Draf Pembelian (PO) ---
+// formulir buat atau ubah draf pembelian (PO)
 const modalOpen = ref(false)
 const editingId = ref(null)
 const editingKode = ref('')
@@ -161,10 +161,14 @@ async function onSave(mode = 'draf') {
   }
 }
 
-// --- Detail Pembelian ---
-const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detailData = ref(null)
+// detail pembelian
+const {
+  open: detailOpen,
+  loading: detailLoading,
+  data: detailData,
+  show: openDetail,
+  close: closeDetail,
+} = useDetail((id) => pembelianApi.get(id), 'pembelian')
 
 const detailTimeline = computed(() => {
   const d = detailData.value
@@ -220,21 +224,7 @@ const detailTimeline = computed(() => {
   return steps
 })
 
-async function openDetail(row) {
-  detailOpen.value = true
-  detailLoading.value = true
-  detailData.value = null
-  try {
-    detailData.value = await pembelianApi.get(row.id)
-  } catch (err) {
-    toast.show(err?.message || 'Gagal memuat detail pembelian.', 'error')
-    detailOpen.value = false
-  } finally {
-    detailLoading.value = false
-  }
-}
-
-// --- Modal Pesan ke Supplier ---
+// modal pesan ke supplier
 const pesanModalOpen = ref(false)
 const pesanTarget = ref(null)
 const pesanForm = useForm({
@@ -270,16 +260,48 @@ async function onConfirmPesan() {
   }
 }
 
-// --- Modal Terima Barang Pembelian ---
-const terimaModalOpen = ref(false)
-const terimaTarget = ref(null)
-const terimaLoadingDetail = ref(false)
-const terimaSubmitting = ref(false)
-const terimaMessage = ref('')
-const terimaErrors = reactive({})
-const terimaForm = reactive({
-  catatan: '',
-  items: [],
+// modal terima barang pembelian
+const {
+  open: terimaModalOpen,
+  target: terimaTarget,
+  loadingDetail: terimaLoadingDetail,
+  submitting: terimaSubmitting,
+  message: terimaMessage,
+  errors: terimaErrors,
+  form: terimaForm,
+  show: openTerima,
+  confirm: onConfirmTerima,
+  close: closeTerima,
+} = useTerimaForm({
+  label: 'pembelian',
+  fetchDetail: (id) => pembelianApi.get(id),
+  toForm: (detail) => ({
+    catatan: detail.catatan || '',
+    items: detail.items.map((it) => ({
+      produk_id: it.produk.id,
+      sku: it.produk.sku,
+      nama: it.produk.nama,
+      satuan: it.produk.satuan,
+      harga_satuan: it.harga_satuan,
+      jumlah: it.jumlah,
+      jumlah_diterima: it.jumlah,
+    })),
+  }),
+  toPayload: (form) => ({
+    catatan: form.catatan?.trim() || null,
+    items: form.items.map((it) => ({
+      produk_id: Number(it.produk_id),
+      jumlah_diterima: it.jumlah_diterima === '' ? -1 : Number(it.jumlah_diterima),
+    })),
+  }),
+  submit: (id, payload) => pembelianApi.terima(id, payload),
+  successMessage: (res) =>
+    `Pembelian ${res.kode} diterima. ` +
+    'Stok Gudang Utama bertambah dan harga beli produk telah diperbarui.',
+  onSaved: async (res) => {
+    if (detailOpen.value && detailData.value?.id === res.id) detailData.value = res
+    await load()
+  },
 })
 
 const terimaTotalNilai = computed(() =>
@@ -289,72 +311,7 @@ const terimaTotalNilai = computed(() =>
   )
 )
 
-async function openTerima(row) {
-  terimaModalOpen.value = true
-  terimaMessage.value = ''
-  for (const k of Object.keys(terimaErrors)) delete terimaErrors[k]
-
-  let detail = row.items ? row : null
-  if (!detail) {
-    terimaLoadingDetail.value = true
-    try {
-      detail = await pembelianApi.get(row.id)
-    } catch (err) {
-      toast.show(err?.message || 'Gagal memuat detail pembelian.', 'error')
-      terimaModalOpen.value = false
-      terimaLoadingDetail.value = false
-      return
-    }
-    terimaLoadingDetail.value = false
-  }
-
-  terimaTarget.value = detail
-  terimaForm.catatan = detail.catatan || ''
-  terimaForm.items = detail.items.map((it) => ({
-    produk_id: it.produk.id,
-    sku: it.produk.sku,
-    nama: it.produk.nama,
-    satuan: it.produk.satuan,
-    harga_satuan: it.harga_satuan,
-    jumlah: it.jumlah,
-    jumlah_diterima: it.jumlah,
-  }))
-}
-
-async function onConfirmTerima() {
-  if (!terimaTarget.value) return
-  terimaSubmitting.value = true
-  terimaMessage.value = ''
-  for (const k of Object.keys(terimaErrors)) delete terimaErrors[k]
-
-  try {
-    const payload = {
-      catatan: terimaForm.catatan?.trim() || null,
-      items: terimaForm.items.map((it) => ({
-        produk_id: Number(it.produk_id),
-        jumlah_diterima: it.jumlah_diterima === '' ? -1 : Number(it.jumlah_diterima),
-      })),
-    }
-    const res = await pembelianApi.terima(terimaTarget.value.id, payload)
-    toast.show(
-      `Pembelian ${res.kode} diterima. Stok Gudang Utama bertambah dan harga beli produk telah diperbarui.`
-    )
-    terimaModalOpen.value = false
-    if (detailOpen.value && detailData.value?.id === res.id) {
-      detailData.value = res
-    }
-    await load()
-  } catch (err) {
-    terimaMessage.value = err?.message || 'Gagal mengonfirmasi penerimaan barang.'
-    if (err?.errors && typeof err.errors === 'object') {
-      Object.assign(terimaErrors, err.errors)
-    }
-  } finally {
-    terimaSubmitting.value = false
-  }
-}
-
-// --- Modal Konfirmasi Batal / Hapus ---
+// modal konfirmasi batal atau hapus
 const confirmAction = ref(null)
 const confirmLoading = ref(false)
 const confirmError = ref('')
@@ -615,7 +572,7 @@ async function onConfirmExecute() {
       <PaginationBar :meta="meta" @page="setPage" @per-page="setPerPage" />
     </div>
 
-    <!-- Modal Buat / Ubah Draf Pembelian -->
+    <!-- modal buat atau ubah draf pembelian -->
     <BaseModal
       :open="modalOpen"
       :title="editingId ? `Ubah Draf Pembelian: ${editingKode}` : 'Buat Pesanan Pembelian (PO)'"
@@ -711,12 +668,12 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Detail Pembelian -->
+    <!-- modal detail pembelian -->
     <BaseModal
       :open="detailOpen"
       :title="detailData ? `Detail Pembelian: ${detailData.kode}` : 'Detail Pembelian'"
       size="lg"
-      @close="detailOpen = false"
+      @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
       <div v-else-if="detailData" class="detail-grid">
@@ -811,7 +768,7 @@ async function onConfirmExecute() {
       </div>
 
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="detailOpen = false">Tutup</button>
+        <button type="button" class="btn btn-secondary" @click="closeDetail">Tutup</button>
         <template v-if="detailData?.status === 'draf'">
           <button
             type="button"
@@ -849,7 +806,7 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Pesan ke Supplier -->
+    <!-- modal pesan ke supplier -->
     <BaseModal
       :open="pesanModalOpen"
       :title="pesanTarget ? `Kirim Pesanan: ${pesanTarget.kode}` : 'Kirim Pesanan ke Supplier'"
@@ -924,12 +881,12 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Terima Barang Pembelian -->
+    <!-- modal terima barang pembelian -->
     <BaseModal
       :open="terimaModalOpen"
       :title="terimaTarget ? `Terima Barang PO: ${terimaTarget.kode}` : 'Terima Barang Pembelian'"
       size="lg"
-      @close="terimaModalOpen = false"
+      @close="closeTerima"
     >
       <LoadingState v-if="terimaLoadingDetail" :rows="3" />
       <template v-else-if="terimaTarget">
@@ -1032,7 +989,7 @@ async function onConfirmExecute() {
           type="button"
           class="btn btn-secondary"
           :disabled="terimaSubmitting"
-          @click="terimaModalOpen = false"
+          @click="closeTerima"
         >
           Batal
         </button>
@@ -1047,7 +1004,7 @@ async function onConfirmExecute() {
       </template>
     </BaseModal>
 
-    <!-- Modal Konfirmasi Batal / Hapus -->
+    <!-- modal konfirmasi batal atau hapus -->
     <ConfirmModal
       :open="Boolean(confirmAction)"
       :title="confirmAction?.title || 'Konfirmasi'"

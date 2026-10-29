@@ -3,7 +3,8 @@ import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 import AppIcon from '@/components/AppIcon'
 
-// dropdown yang bisa diketik untuk mencari, pola combobox ARIA, daftar di-teleport ke body agar tidak terpotong modal
+// dropdown yang bisa dicari dengan mengetik (pola combobox ARIA), daftar di-teleport ke body
+// supaya tidak terpotong modal atau tabel
 const props = defineProps({
   id: { type: String, required: true },
   modelValue: { type: [String, Number], default: '' },

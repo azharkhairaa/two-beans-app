@@ -13,7 +13,8 @@ import PaginationBar from '@/components/PaginationBar.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { lokasiApi, userApi } from '@/services'
+import { useLokasiOptions } from '@/composables/useOptions'
+import { userApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { LOKASI_TYPE_LABELS, ROLE_LABELS, USER_STATUS_LABELS } from '@/utils/constants'
@@ -22,15 +23,9 @@ import { formatDateTime } from '@/utils/format'
 const auth = useAuthStore()
 const toast = useToastStore()
 
-const lokasiList = ref([])
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
 
-onMounted(async () => {
-  try {
-    lokasiList.value = await lokasiApi.list({ aktif: 'true' })
-  } catch {
-    lokasiList.value = []
-  }
-})
+onMounted(loadLokasi)
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
   (params) => userApi.list(params),

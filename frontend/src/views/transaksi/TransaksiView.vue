@@ -12,9 +12,11 @@ import FormField from '@/components/FormField.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import SearchSelect from '@/components/SearchSelect.vue'
+import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
-import { lokasiApi, produkApi, transaksiApi } from '@/services'
+import { useLokasiOptions } from '@/composables/useOptions'
+import { produkApi, transaksiApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import {
@@ -28,16 +30,10 @@ import { formatDate, formatDateTime, formatNumber, todayIso } from '@/utils/form
 const auth = useAuthStore()
 const toast = useToastStore()
 
-const lokasiList = ref([])
+const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
 
-onMounted(async () => {
-  if (auth.isAdmin) {
-    try {
-      lokasiList.value = await lokasiApi.list({ aktif: 'true' })
-    } catch {
-      lokasiList.value = []
-    }
-  }
+onMounted(() => {
+  if (auth.isAdmin) loadLokasi()
 })
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
@@ -187,23 +183,13 @@ async function onSave() {
   }
 }
 
-const detailOpen = ref(false)
-const detailLoading = ref(false)
-const detailData = ref(null)
-
-async function openDetail(row) {
-  detailOpen.value = true
-  detailLoading.value = true
-  detailData.value = null
-  try {
-    detailData.value = await transaksiApi.get(row.id)
-  } catch (err) {
-    toast.show(err?.message || 'Gagal memuat detail transaksi.', 'error')
-    detailOpen.value = false
-  } finally {
-    detailLoading.value = false
-  }
-}
+const {
+  open: detailOpen,
+  loading: detailLoading,
+  data: detailData,
+  show: openDetail,
+  close: closeDetail,
+} = useDetail((id) => transaksiApi.get(id), 'transaksi')
 
 const confirmAction = ref(null)
 const confirmLoading = ref(false)
@@ -585,7 +571,7 @@ async function onConfirmExecute() {
       :open="detailOpen"
       :title="detailData ? `Transaksi ${detailData.kode}` : 'Detail Transaksi'"
       size="lg"
-      @close="detailOpen = false"
+      @close="closeDetail"
     >
       <LoadingState v-if="detailLoading" :rows="4" />
       <div v-else-if="detailData" class="detail-grid">
@@ -661,7 +647,7 @@ async function onConfirmExecute() {
         </div>
       </div>
       <template #footer>
-        <button type="button" class="btn btn-secondary" @click="detailOpen = false">Tutup</button>
+        <button type="button" class="btn btn-secondary" @click="closeDetail">Tutup</button>
         <template v-if="detailData?.status === 'draf'">
           <button
             type="button"
