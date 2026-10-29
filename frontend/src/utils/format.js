@@ -68,3 +68,15 @@ export function formatDateTime(value) {
 export function todayIso() {
   return isoDateWib.format(new Date())
 }
+
+// tanggal WIB n hari dari hari ini, untuk batas input sama dengan aturan tanggal di backend (BR-19)
+export function shiftIso(days) {
+  return isoDateWib.format(new Date(Date.now() + days * 86_400_000))
+}
+
+// batas tanggal dokumen (maksimal hari ini, 365 hari ke belakang) dan tanggal rencana
+export const DOCUMENT_DATE_RANGE = Object.freeze({
+  min: () => shiftIso(-365),
+  max: () => todayIso(),
+})
+export const PLAN_DATE_RANGE = Object.freeze({ min: () => todayIso(), max: () => shiftIso(365) })

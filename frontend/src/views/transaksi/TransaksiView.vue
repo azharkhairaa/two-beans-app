@@ -21,11 +21,18 @@ import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import {
   KATEGORI_TYPE_LABELS,
-  TRANSAKSI_REASON_LABELS,
+  REDUCING_REASONS,
   TRANSAKSI_REASONS,
+  TRANSAKSI_REASON_LABELS,
   TRANSAKSI_TYPE_LABELS,
 } from '@/utils/constants'
-import { formatDate, formatDateTime, formatNumber, todayIso } from '@/utils/format'
+import {
+  DOCUMENT_DATE_RANGE,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  todayIso,
+} from '@/utils/format'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -69,6 +76,29 @@ const { values, errors, message, submitting, submit, fill } = useForm({
 })
 
 const reasonOptions = computed(() => TRANSAKSI_REASONS[values.jenis] || [])
+
+// cara isi jumlah: rusak, hilang dan kedaluwarsa cukup jumlah yang berkurang,
+// opname dan lainnya diisi stock fisik lalu selisihnya dihitung dari stock tercatat
+const quantityMode = computed(() => {
+  if (values.jenis !== 'penyesuaian') return 'jumlah'
+  return REDUCING_REASONS.includes(values.alasan) ? 'kurangi' : 'hitung'
+})
+
+const ALASAN_HINTS = {
+  roasting: 'Roasting hanya untuk produk kategori Green Bean',
+  hasil_roasting: 'Hasil roasting hanya untuk produk kategori Roasted Bean',
+  kurangi: 'Alasan ini selalu mengurangi stock, isi jumlah barang yang berkurang',
+  hitung: 'Isi stock fisik hasil hitung, selisihnya dihitung otomatis',
+}
+
+const alasanHint = computed(
+  () => ALASAN_HINTS[values.alasan] || ALASAN_HINTS[quantityMode.value] || ''
+)
+
+// efek baris ke stock: keluar mengurangi, penyesuaian sudah bertanda
+function stockChange(item) {
+  return detailData.value?.jenis === 'keluar' ? -item.jumlah : item.jumlah
+}
 
 const requiredProductJenis = computed(() => {
   if (values.alasan === 'roasting') return 'green_bean'
@@ -195,12 +225,21 @@ const confirmAction = ref(null)
 const confirmLoading = ref(false)
 const confirmError = ref('')
 
+const POSTING_EFFECTS = {
+  masuk: 'Stock lokasi bertambah',
+  keluar: 'Stock lokasi berkurang',
+  penyesuaian: 'Stock lokasi disesuaikan sebesar selisih tiap baris',
+}
+
 function openPosting(row) {
+  const alasan = TRANSAKSI_REASON_LABELS[row.alasan] || row.alasan
   confirmAction.value = {
     type: 'posting',
     row,
-    title: 'Posting Transaksi Stok',
-    message: `Posting transaksi ${row.kode} (${TRANSAKSI_TYPE_LABELS[row.jenis]}) di ${row.lokasi?.nama || ''}? Setelah diposting, stok lokasi akan langsung berubah dan dokumen tidak dapat diubah lagi.`,
+    title: 'Posting Transaksi Stock',
+    message:
+      `Posting ${row.kode} (${TRANSAKSI_TYPE_LABELS[row.jenis]}, ${alasan}) ` +
+      `di ${row.lokasi?.nama}? ${POSTING_EFFECTS[row.jenis]} dan dokumen tidak bisa diubah lagi.`,
     confirmLabel: 'Posting Sekarang',
     variant: 'primary',
   }
@@ -334,6 +373,7 @@ async function onConfirmExecute() {
             id="trx-filter-dari"
             v-model="filters.dari"
             type="date"
+            :max="filters.sampai || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -344,6 +384,7 @@ async function onConfirmExecute() {
             id="trx-filter-sampai"
             v-model="filters.sampai"
             type="date"
+            :min="filters.dari || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -458,6 +499,8 @@ async function onConfirmExecute() {
                 id="trx-tanggal"
                 v-model="values.tanggal"
                 type="date"
+                :min="DOCUMENT_DATE_RANGE.min()"
+                :max="DOCUMENT_DATE_RANGE.max()"
                 class="input mono"
                 required
                 :aria-invalid="Boolean(errors.tanggal)"
@@ -498,13 +541,7 @@ async function onConfirmExecute() {
           <FormField
             id="trx-alasan"
             label="Alasan transaksi"
-            :hint="
-              values.alasan === 'roasting'
-                ? 'Roasting hanya untuk produk kategori Green Bean'
-                : values.alasan === 'hasil_roasting'
-                  ? 'Hasil roasting hanya untuk produk kategori Roasted Bean'
-                  : ''
-            "
+            :hint="alasanHint"
             :error="errors.alasan"
           >
             <template #default="{ describedBy }">
@@ -541,7 +578,9 @@ async function onConfirmExecute() {
         <DocumentItemsEditor
           v-model="values.items"
           :products="productOptions"
-          :allow-negative="values.jenis === 'penyesuaian'"
+          :mode="quantityMode"
+          :outbound="values.jenis === 'keluar'"
+          stock-label="Stock saat ini"
           :errors="errors"
         />
 
@@ -623,7 +662,7 @@ async function onConfirmExecute() {
                 <th>SKU</th>
                 <th>Nama Produk</th>
                 <th>Jenis</th>
-                <th class="num">Jumlah</th>
+                <th class="num">Perubahan stock</th>
               </tr>
             </thead>
             <tbody>
@@ -633,12 +672,12 @@ async function onConfirmExecute() {
                 <td data-label="Jenis">
                   {{ KATEGORI_TYPE_LABELS[it.produk.jenis] || it.produk.jenis }}
                 </td>
-                <td data-label="Jumlah" class="num mono font-semibold">
-                  {{
-                    detailData.jenis === 'penyesuaian' && it.jumlah > 0
-                      ? `+${formatNumber(it.jumlah)}`
-                      : formatNumber(it.jumlah)
-                  }}
+                <td
+                  data-label="Perubahan stock"
+                  class="num mono font-semibold"
+                  :class="stockChange(it) < 0 ? 'text-danger' : 'text-success'"
+                >
+                  {{ stockChange(it) > 0 ? '+' : '' }}{{ formatNumber(stockChange(it)) }}
                   {{ it.produk.satuan }}
                 </td>
               </tr>

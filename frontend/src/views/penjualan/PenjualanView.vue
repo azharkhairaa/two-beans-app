@@ -26,7 +26,14 @@ import {
   LOKASI_TYPE_LABELS,
   LOKASI_TYPES,
 } from '@/utils/constants'
-import { formatDate, formatDateTime, formatNumber, formatRupiah, todayIso } from '@/utils/format'
+import {
+  DOCUMENT_DATE_RANGE,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatRupiah,
+  todayIso,
+} from '@/utils/format'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -435,6 +442,7 @@ async function onConfirmExecute() {
             id="pjl-filter-dari"
             v-model="filters.dari"
             type="date"
+            :max="filters.sampai || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -445,6 +453,7 @@ async function onConfirmExecute() {
             id="pjl-filter-sampai"
             v-model="filters.sampai"
             type="date"
+            :min="filters.dari || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -608,6 +617,8 @@ async function onConfirmExecute() {
                 id="pjl-tanggal"
                 v-model="values.tanggal"
                 type="date"
+                :min="DOCUMENT_DATE_RANGE.min()"
+                :max="DOCUMENT_DATE_RANGE.max()"
                 class="input mono"
                 required
                 :aria-invalid="Boolean(errors.tanggal)"
@@ -664,6 +675,7 @@ async function onConfirmExecute() {
           v-model="values.items"
           :products="productOptions"
           :show-stock="true"
+          :outbound="true"
           :with-price="true"
           default-price-field="harga_jual"
           :errors="errors"

@@ -107,6 +107,9 @@ export const TRANSAKSI_REASON_LABELS = Object.freeze({
   lainnya: 'Lainnya',
 })
 
+// penyesuaian dengan alasan ini selalu mengurangi stock (sama dengan REDUCING_REASONS di backend)
+export const REDUCING_REASONS = Object.freeze(['rusak', 'hilang', 'kedaluwarsa'])
+
 export const TRANSAKSI_REASONS = Object.freeze({
   masuk: ['hasil_roasting', 'retur', 'lainnya'],
   keluar: ['pemakaian', 'roasting', 'sampel', 'lainnya'],

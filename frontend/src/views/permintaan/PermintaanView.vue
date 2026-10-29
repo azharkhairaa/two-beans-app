@@ -22,7 +22,7 @@ import { permintaanApi, produkApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
 import { LOKASI_TYPE_LABELS, LOKASI_TYPES, ROLES } from '@/utils/constants'
-import { formatDate, formatDateTime, formatNumber, todayIso } from '@/utils/format'
+import { PLAN_DATE_RANGE, formatDate, formatDateTime, formatNumber, todayIso } from '@/utils/format'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -468,6 +468,7 @@ async function onConfirmBatal() {
             id="pmt-filter-dari"
             v-model="filters.dari"
             type="date"
+            :max="filters.sampai || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -478,6 +479,7 @@ async function onConfirmBatal() {
             id="pmt-filter-sampai"
             v-model="filters.sampai"
             type="date"
+            :min="filters.dari || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -659,6 +661,8 @@ async function onConfirmBatal() {
                 id="pmt-tanggal-butuh"
                 v-model="values.tanggal_butuh"
                 type="date"
+                :min="PLAN_DATE_RANGE.min()"
+                :max="PLAN_DATE_RANGE.max()"
                 class="input mono"
                 :aria-invalid="Boolean(errors.tanggal_butuh)"
                 :aria-describedby="describedBy"
@@ -882,6 +886,8 @@ async function onConfirmBatal() {
                   id="setujui-tanggal-kirim"
                   v-model="setujuiForm.tanggal_kirim"
                   type="date"
+                  :min="PLAN_DATE_RANGE.min()"
+                  :max="PLAN_DATE_RANGE.max()"
                   class="input mono"
                   required
                   :aria-invalid="Boolean(setujuiErrors.tanggal_kirim)"

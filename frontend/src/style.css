@@ -1469,6 +1469,17 @@ select.input-sm {
   font-size: 14px;
 }
 
+/* keterangan di bawah jumlah baris dokumen: stock sesudahnya atau peringatan */
+.doc-item-note {
+  font-size: 13px;
+  color: var(--kopi);
+}
+
+.doc-item-note-warn {
+  color: var(--menunggu-teks);
+  font-weight: 600;
+}
+
 .doc-qty-wrap {
   display: flex;
   align-items: center;

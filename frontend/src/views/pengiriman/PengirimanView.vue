@@ -28,7 +28,7 @@ import {
   LOKASI_TYPES,
   ROLES,
 } from '@/utils/constants'
-import { formatDate, formatNumber, formatRupiah, todayIso } from '@/utils/format'
+import { PLAN_DATE_RANGE, formatDate, formatNumber, formatRupiah, todayIso } from '@/utils/format'
 
 const auth = useAuthStore()
 const toast = useToastStore()
@@ -583,6 +583,7 @@ async function onConfirmDelete() {
             id="krm-filter-dari"
             v-model="filters.dari"
             type="date"
+            :max="filters.sampai || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -593,6 +594,7 @@ async function onConfirmDelete() {
             id="krm-filter-sampai"
             v-model="filters.sampai"
             type="date"
+            :min="filters.dari || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -800,6 +802,8 @@ async function onConfirmDelete() {
                 id="krm-tanggal"
                 v-model="values.tanggal_kirim"
                 type="date"
+                :min="PLAN_DATE_RANGE.min()"
+                :max="PLAN_DATE_RANGE.max()"
                 class="input mono"
                 required
                 :aria-invalid="Boolean(errors.tanggal_kirim)"
@@ -886,6 +890,7 @@ async function onConfirmDelete() {
           v-model="values.items"
           :products="productOptions"
           :show-stock="true"
+          :outbound="true"
           :errors="errors"
         />
       </form>

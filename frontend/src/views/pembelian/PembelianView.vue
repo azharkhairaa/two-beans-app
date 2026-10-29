@@ -22,7 +22,15 @@ import { useTerimaForm } from '@/composables/useTerimaForm'
 import { pembelianApi, produkApi, supplierApi } from '@/services'
 import { useToastStore } from '@/stores/toast'
 import { LOKASI_TYPES } from '@/utils/constants'
-import { formatDate, formatDateTime, formatNumber, formatRupiah, todayIso } from '@/utils/format'
+import {
+  DOCUMENT_DATE_RANGE,
+  PLAN_DATE_RANGE,
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatRupiah,
+  todayIso,
+} from '@/utils/format'
 
 const toast = useToastStore()
 const route = useRoute()
@@ -429,6 +437,7 @@ async function onConfirmExecute() {
             id="po-filter-dari"
             v-model="filters.dari"
             type="date"
+            :max="filters.sampai || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -439,6 +448,7 @@ async function onConfirmExecute() {
             id="po-filter-sampai"
             v-model="filters.sampai"
             type="date"
+            :min="filters.dari || undefined"
             class="input input-sm mono"
             @change="applyFilters()"
           />
@@ -606,6 +616,8 @@ async function onConfirmExecute() {
                 id="po-perkiraan"
                 v-model="values.tanggal_perkiraan"
                 type="date"
+                :min="PLAN_DATE_RANGE.min()"
+                :max="PLAN_DATE_RANGE.max()"
                 class="input mono"
                 :aria-invalid="Boolean(errors.tanggal_perkiraan)"
                 :aria-describedby="describedBy"
@@ -834,6 +846,8 @@ async function onConfirmExecute() {
                 id="pesan-tanggal"
                 v-model="pesanForm.values.tanggal_pesan"
                 type="date"
+                :min="DOCUMENT_DATE_RANGE.min()"
+                :max="DOCUMENT_DATE_RANGE.max()"
                 class="input mono"
                 required
                 :aria-invalid="Boolean(pesanForm.errors.value.tanggal_pesan)"
@@ -852,6 +866,8 @@ async function onConfirmExecute() {
                 id="pesan-perkiraan"
                 v-model="pesanForm.values.tanggal_perkiraan"
                 type="date"
+                :min="PLAN_DATE_RANGE.min()"
+                :max="PLAN_DATE_RANGE.max()"
                 class="input mono"
                 :aria-invalid="Boolean(pesanForm.errors.value.tanggal_perkiraan)"
                 :aria-describedby="describedBy"
