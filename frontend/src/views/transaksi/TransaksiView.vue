@@ -252,7 +252,7 @@ async function onConfirmExecute() {
       <div>
         <h2 class="page-heading">Transaksi Stok</h2>
         <p class="page-subtitle">
-          Pencatatan barang masuk, pemakaian keluar, roasting dan penyesuaian stok opname
+          Pencatatan barang masuk, pemakaian keluar, roasting dan penyesuaian stock opname
         </p>
       </div>
       <button type="button" class="btn btn-post" @click="openCreate">

@@ -98,8 +98,8 @@ watch(
             <th>Jenis</th>
             <th>Dokumen</th>
             <th class="num">Perubahan</th>
-            <th class="num">Saldo Sebelum</th>
-            <th class="num">Saldo Sesudah</th>
+            <th class="num">Stock Sebelum</th>
+            <th class="num">Stock Sesudah</th>
             <th>Oleh</th>
           </tr>
         </thead>
@@ -117,8 +117,8 @@ watch(
             >
               {{ row.perubahan > 0 ? `+${formatNumber(row.perubahan)}` : formatNumber(row.perubahan) }}
             </td>
-            <td data-label="Saldo Sebelum" class="num mono">{{ formatNumber(row.stok_sebelum) }}</td>
-            <td data-label="Saldo Sesudah" class="num mono font-semibold">
+            <td data-label="Stock Sebelum" class="num mono">{{ formatNumber(row.stok_sebelum) }}</td>
+            <td data-label="Stock Sesudah" class="num mono font-semibold">
               {{ formatNumber(row.stok_sesudah) }}
             </td>
             <td data-label="Oleh">{{ row.oleh }}</td>

@@ -198,7 +198,7 @@ def test_a06_insecure_design_prevents_negative_stock(client, db, factory):
     # posting gagal 409 dan stok tidak berkurang
     post_res = client.post(f"/api/penjualan/{pj_id}/posting", headers={"X-CSRF-Token": csrf})
     assert post_res.status_code == 409
-    assert "Stok tidak cukup" in post_res.json()["detail"]
+    assert "Stock tidak cukup" in post_res.json()["detail"]
 
     db.expire_all()
     stok_row = db.scalar(select(Stok).where(Stok.lokasi_id == ot.id, Stok.produk_id == prod.id))

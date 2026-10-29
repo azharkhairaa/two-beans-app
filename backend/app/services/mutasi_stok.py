@@ -59,7 +59,7 @@ class MutasiStok:
             if after < 0:
                 row = rows[key]
                 shortages[change.field] = (
-                    f"Stok {row.produk.sku} di {row.lokasi.nama} tersisa {before} "
+                    f"Stock {row.produk.sku} di {row.lokasi.nama} tersisa {before} "
                     f"{row.produk.satuan}"
                 )
                 continue
@@ -68,7 +68,7 @@ class MutasiStok:
         # BR-02: satu baris kurang menggagalkan seluruh aksi, tidak ada stok yang berubah sebagian
         if shortages:
             self.db.rollback()
-            raise InsufficientStock(f"Stok tidak cukup untuk {len(shortages)} produk", shortages)
+            raise InsufficientStock(f"Stock tidak cukup untuk {len(shortages)} produk", shortages)
         mutations = []
         now = Clock.now()
         for change, before, after in plan:

@@ -73,10 +73,10 @@ def test_negative_balance_rejected_without_any_change(db, factory, setup):
     with pytest.raises(InsufficientStock) as error:
         apply(db, setup, keluar, StokMutasiType.KELUAR,
               [(gudang.id, biji.id, -4), (gudang.id, alat.id, -5), (setup["outlet"].id, biji.id, -1)])
-    assert error.value.message == "Stok tidak cukup untuk 2 produk"
+    assert error.value.message == "Stock tidak cukup untuk 2 produk"
     assert error.value.errors == {
-        "items.1.jumlah": "Stok AL-V60-02 di Gudang Utama Roastery tersisa 3 pcs",
-        "items.2.jumlah": "Stok BK-ARB-GAYO-200 di Outlet Pusat Kota tersisa 0 pack",
+        "items.1.jumlah": "Stock AL-V60-02 di Gudang Utama Roastery tersisa 3 pcs",
+        "items.2.jumlah": "Stock BK-ARB-GAYO-200 di Outlet Pusat Kota tersisa 0 pack",
     }
     # baris pertama yang cukup pun tidak berubah dan baris stok outlet tidak ikut tercipta
     db.expire_all()
@@ -125,7 +125,7 @@ def test_stok_setting_only_own_lokasi(setup, login_as):
     assert (response.json()["jumlah"], response.json()["stok_minimum"], response.json()["rak"]) == (0, 4, "B-02")
     response = manager.put(f"/api/stok/{gudang.id}/{alat.id}", json={"stok_minimum": 4})
     assert (response.status_code, response.json()) == (
-        403, {"detail": "Stok minimum dan rak hanya bisa diatur di lokasi sendiri"})
+        403, {"detail": "Stock minimum dan rak hanya bisa diatur di lokasi sendiri"})
     response = manager.put(f"/api/stok/{outlet.id}/{alat.id}", json={"stok_minimum": "4", "rak": "rak1", "jumlah": 9})
     assert response.json()["errors"] == {
         "stok_minimum": "Harus bilangan bulat", "rak": "Format rak seperti A-01 atau BC-12", "jumlah": "Field tidak dikenal"}

@@ -643,7 +643,7 @@ async function onConfirmDelete() {
       <div v-else-if="detailData" class="detail-grid">
         <div class="summary-strip">
           <div class="summary-item">
-            <span class="detail-label">Total Stok Seluruh Lokasi</span>
+            <span class="detail-label">Total Stock Seluruh Lokasi</span>
             <strong class="detail-value mono">
               {{ formatNumber(detailData.total_stok) }} {{ detailData.satuan }}
             </strong>
@@ -655,7 +655,7 @@ async function onConfirmDelete() {
             </strong>
           </div>
           <div class="summary-item">
-            <span class="detail-label">Total Nilai Stok</span>
+            <span class="detail-label">Total Nilai Stock</span>
             <strong class="detail-value mono">{{ formatRupiah(detailData.total_nilai) }}</strong>
           </div>
         </div>
@@ -697,11 +697,11 @@ async function onConfirmDelete() {
           </div>
         </dl>
 
-        <h3 class="section-title">Sebaran Stok per Lokasi</h3>
+        <h3 class="section-title">Sebaran Stock per Lokasi</h3>
         <EmptyState
           v-if="!detailData.stok?.length"
-          title="Belum ada baris stok"
-          description="Produk ini belum memiliki pencatatan stok di lokasi mana pun."
+          title="Belum ada baris stock"
+          description="Produk ini belum memiliki pencatatan stock di lokasi mana pun."
         />
         <div v-else class="table-card">
           <table class="data-table">

@@ -298,7 +298,7 @@ def test_validation_rules_for_create_and_setujui(setup, login_as):
         ),
     )
     assert stok_kosong.status_code == 422 and stok_kosong.json()["errors"] == {
-        "items.1.produk_id": "Stok di gudang utama kosong"
+        "items.1.produk_id": "Stock di gudang utama kosong"
     }
 
     # ajukan permintaan valid dengan jumlah_diminta > stok_gudang_utama untuk uji batas setujui
@@ -327,7 +327,7 @@ def test_validation_rules_for_create_and_setujui(setup, login_as):
     )
     assert melebihi.status_code == 422 and melebihi.json()["errors"] == {
         "items.0.jumlah_disetujui": "Maksimal sebesar jumlah diminta (10)",
-        "items.1.jumlah_disetujui": "Melebihi stok gudang utama (4 pcs)",
+        "items.1.jumlah_disetujui": "Melebihi stock gudang utama (4 pcs)",
     }
 
     # semua baris disetujui 0 ditolak 422 (BR-09)

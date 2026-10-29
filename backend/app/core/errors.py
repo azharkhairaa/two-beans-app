@@ -49,7 +49,7 @@ class InvalidStatus(Conflict):
     default_message = "Status dokumen tidak sesuai untuk aksi ini"
 
 class InsufficientStock(Conflict):
-    default_message = "Stok tidak cukup"
+    default_message = "Stock tidak cukup"
 
 class ValidationFailed(AppError):
     status_code = 422

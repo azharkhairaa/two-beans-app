@@ -135,7 +135,7 @@ function openKartu(row) {
           </template>
         </h2>
         <p class="page-subtitle">
-          Pemantauan saldo buku besar stock, batas minimum, posisi rak dan Stock Card per produk
+          Pemantauan buku besar stock, batas minimum, posisi rak dan Stock Card per produk
         </p>
       </div>
       <button

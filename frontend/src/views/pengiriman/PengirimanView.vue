@@ -268,7 +268,7 @@ async function onSave(mode = 'draf') {
   if (saved) {
     if (mode === 'kirim') {
       toast.show(
-        `Pengiriman ${saved.kode} dikirim. Stok ${saved.lokasi_asal?.nama || 'gudang asal'} sudah dikurangi.`
+        `Pengiriman ${saved.kode} dikirim. Stock ${saved.lokasi_asal?.nama || 'gudang asal'} sudah dikurangi.`
       )
     } else {
       toast.show(`Draf pengiriman ${saved.kode} disimpan.`)
@@ -378,7 +378,7 @@ async function onConfirmKirim() {
   const res = await kirimForm.submit(() => pengirimanApi.kirim(kirimTarget.value.id, payload))
   if (res) {
     toast.show(
-      `Pengiriman ${res.kode} dikirim. Stok ${res.lokasi_asal?.nama || 'gudang asal'} sudah dikurangi.`
+      `Pengiriman ${res.kode} dikirim. Stock ${res.lokasi_asal?.nama || 'gudang asal'} sudah dikurangi.`
     )
     kirimModalOpen.value = false
     if (detailOpen.value && detailData.value?.id === res.id) {
@@ -426,7 +426,7 @@ const {
   submit: (id, payload) => pengirimanApi.terima(id, payload),
   successMessage: (res) =>
     `Pengiriman ${res.kode} diterima. ` +
-    `Stok ${res.lokasi_tujuan?.nama || 'lokasi tujuan'} sudah ditambah.`,
+    `Stock ${res.lokasi_tujuan?.nama || 'lokasi tujuan'} sudah ditambah.`,
   onSaved: async (res) => {
     if (detailOpen.value && detailData.value?.id === res.id) detailData.value = res
     await load()

@@ -239,7 +239,7 @@ def test_posting_insufficient_stock_rolls_back(db, factory, setup, login_as):
     res = client.post(f"/api/penjualan/{pj['id']}/posting")
     assert res.status_code == 409
     assert res.json()["errors"] == {
-        "items.1.jumlah": "Stok AL-V60-02 di Outlet Pusat Kota tersisa 1 pcs"
+        "items.1.jumlah": "Stock AL-V60-02 di Outlet Pusat Kota tersisa 1 pcs"
     }
     db.expire_all()
     assert (balance(db, outlet.id, biji.id), balance(db, outlet.id, alat.id)) == (5, 1)

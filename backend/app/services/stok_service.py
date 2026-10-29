@@ -104,7 +104,7 @@ class StokService:
         if self.db.get(Produk, produk_id) is None:
             raise NotFound("Produk tidak ditemukan")
         if not self.policy.can_manage(lokasi.id):
-            raise Forbidden("Stok minimum dan rak hanya bisa diatur di lokasi sendiri")
+            raise Forbidden("Stock minimum dan rak hanya bisa diatur di lokasi sendiri")
         # baris stok dibuat bila produk belum pernah ada di lokasi ini
         self.db.execute(
             insert(Stok).values(lokasi_id=lokasi.id, produk_id=produk_id).on_conflict_do_nothing()

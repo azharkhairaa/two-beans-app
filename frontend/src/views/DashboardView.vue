@@ -359,7 +359,7 @@ onMounted(() => {
             <div class="dash-tile-body">
               <span class="dash-tile-label">Stock Habis</span>
               <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
-              <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
+              <span class="dash-tile-meta">Stock 0 pada SKU wajib tersedia</span>
             </div>
           </RouterLink>
 
@@ -595,7 +595,7 @@ onMounted(() => {
             <div class="dash-tile-body">
               <span class="dash-tile-label">Stock Habis</span>
               <strong class="dash-tile-value num">{{ formatNumber(dashboard.ringkasan.stok_habis) }} SKU</strong>
-              <span class="dash-tile-meta">Saldo 0 pada SKU wajib tersedia</span>
+              <span class="dash-tile-meta">Stock 0 pada SKU wajib tersedia</span>
             </div>
           </RouterLink>
 
@@ -915,7 +915,7 @@ onMounted(() => {
                   <th scope="col">Produk</th>
                   <th scope="col">Jenis</th>
                   <th scope="col" class="num">Jumlah</th>
-                  <th scope="col" class="num">Saldo Akhir</th>
+                  <th scope="col" class="num">Stock Sesudah</th>
                   <th scope="col">Dokumen</th>
                   <th scope="col">Dicatat Oleh</th>
                 </tr>
@@ -942,7 +942,7 @@ onMounted(() => {
                       {{ akt.satuan }}
                     </span>
                   </td>
-                  <td data-label="Saldo Akhir" class="num mono">
+                  <td data-label="Stock Sesudah" class="num mono">
                     {{ formatNumber(akt.stok_sesudah) }} {{ akt.satuan }}
                   </td>
                   <td data-label="Dokumen">

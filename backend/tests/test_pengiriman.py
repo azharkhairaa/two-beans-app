@@ -328,7 +328,7 @@ def test_kirim_insufficient_stock_rolls_back(db, factory, setup, login_as):
     res = client.post(f"/api/pengiriman/{draft['id']}/kirim")
     assert res.status_code == 409
     assert res.json()["errors"] == {
-        "items.1.jumlah_dikirim": "Stok AL-V60-02 di Gudang Utama Roastery tersisa 1 pcs"
+        "items.1.jumlah_dikirim": "Stock AL-V60-02 di Gudang Utama Roastery tersisa 1 pcs"
     }
     db.expire_all()
     assert (balance(db, gudang.id, biji.id), balance(db, gudang.id, alat.id)) == (10, 1)

@@ -36,7 +36,7 @@ const productOptions = computed(() => {
       return {
         value: prod.id,
         label: `${prod.sku} - ${prod.nama} (${prod.satuan})`,
-        hint: blocked ? 'Stok habis' : stock === null ? '' : `Stok ${formatNumber(stock)}`,
+        hint: blocked ? 'Stock habis' : stock === null ? '' : `Stock ${formatNumber(stock)}`,
         group,
         disabled: blocked,
       }
@@ -151,7 +151,7 @@ function fieldError(index, field) {
         </div>
 
         <div v-if="showStock" class="doc-item-col doc-item-stock">
-          <span class="field-label-sm">Stok asal</span>
+          <span class="field-label-sm">Stock asal</span>
           <div class="doc-item-readonly mono">
             <template v-if="rowProduct(row)">
               {{ formatNumber(rowStock(row)) }} {{ rowProduct(row).satuan }}

@@ -193,7 +193,7 @@ async function onSave(mode = 'draf') {
   if (saved) {
     if (mode === 'posting') {
       toast.show(
-        `Penjualan ${saved.kode} diposting. Stok ${saved.lokasi?.nama || 'lokasi penjual'} sudah dikurangi.`
+        `Penjualan ${saved.kode} diposting. Stock ${saved.lokasi?.nama || 'lokasi penjual'} sudah dikurangi.`
       )
     } else {
       toast.show(`Draf penjualan ${saved.kode} disimpan.`)
@@ -298,7 +298,7 @@ function openPosting(row) {
     type: 'posting',
     row,
     title: 'Posting Penjualan',
-    message: `Posting penjualan ${row.kode} senilai ${formatRupiah(row.total)}? Stok ${row.jumlah_item} produk di ${row.lokasi?.nama || 'lokasi penjual'} akan berkurang dan penjualan tidak bisa diedit lagi.`,
+    message: `Posting penjualan ${row.kode} senilai ${formatRupiah(row.total)}? Stock ${row.jumlah_item} produk di ${row.lokasi?.nama || 'lokasi penjual'} akan berkurang dan penjualan tidak bisa diedit lagi.`,
     confirmLabel: 'Posting Sekarang',
     variant: 'primary',
   }
@@ -326,7 +326,7 @@ async function onConfirmExecute() {
     if (type === 'posting') {
       const res = await penjualanApi.posting(row.id)
       toast.show(
-        `Penjualan ${res.kode} diposting. Stok ${res.lokasi?.nama || 'lokasi penjual'} sudah dikurangi.`
+        `Penjualan ${res.kode} diposting. Stock ${res.lokasi?.nama || 'lokasi penjual'} sudah dikurangi.`
       )
       if (detailOpen.value && detailData.value?.id === res.id) {
         detailData.value = res

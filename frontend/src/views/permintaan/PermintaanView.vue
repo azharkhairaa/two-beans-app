@@ -674,7 +674,7 @@ async function onConfirmBatal() {
               v-model.trim="values.catatan"
               rows="2"
               class="input"
-              placeholder="Kebutuhan stok harian, jadwal promosi atau keterangan tambahan..."
+              placeholder="Kebutuhan stock harian, jadwal promosi atau keterangan tambahan..."
               :aria-invalid="Boolean(errors.catatan)"
               :aria-describedby="describedBy"
             ></textarea>
@@ -778,7 +778,7 @@ async function onConfirmBatal() {
               <tr>
                 <th>SKU</th>
                 <th>Produk</th>
-                <th class="num">Stok Gudang Utama</th>
+                <th class="num">Stock Gudang Utama</th>
                 <th class="num">Jumlah Diminta</th>
                 <th class="num">Jumlah Disetujui</th>
               </tr>
@@ -790,7 +790,7 @@ async function onConfirmBatal() {
                   <div class="cell-primary">{{ item.produk.nama }}</div>
                   <BadgeStatus :status="item.produk.jenis" />
                 </td>
-                <td data-label="Stok Gudang Utama" class="num mono">
+                <td data-label="Stock Gudang Utama" class="num mono">
                   {{ formatNumber(item.produk.stok_sumber) }} {{ item.produk.satuan }}
                 </td>
                 <td data-label="Jumlah Diminta" class="num mono font-semibold">
@@ -913,7 +913,7 @@ async function onConfirmBatal() {
               <thead>
                 <tr>
                   <th>Produk</th>
-                  <th class="num">Stok Gudang Utama</th>
+                  <th class="num">Stock Gudang Utama</th>
                   <th class="num">Diminta</th>
                   <th class="num">Jumlah Disetujui</th>
                   <th>Pemenuhan</th>
@@ -925,7 +925,7 @@ async function onConfirmBatal() {
                     <div class="cell-primary">{{ item.nama }}</div>
                     <div class="cell-secondary mono">{{ item.sku }}</div>
                   </td>
-                  <td data-label="Stok Gudang Utama" class="num mono">
+                  <td data-label="Stock Gudang Utama" class="num mono">
                     {{ formatNumber(item.stok_sumber) }} {{ item.satuan }}
                   </td>
                   <td data-label="Diminta" class="num mono font-semibold">

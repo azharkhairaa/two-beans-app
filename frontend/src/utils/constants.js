@@ -100,7 +100,7 @@ export const TRANSAKSI_REASON_LABELS = Object.freeze({
   pemakaian: 'Pemakaian',
   roasting: 'Roasting',
   sampel: 'Sampel',
-  opname: 'Stok Opname',
+  opname: 'Stock Opname',
   rusak: 'Barang Rusak',
   hilang: 'Barang Hilang',
   kedaluwarsa: 'Kedaluwarsa',

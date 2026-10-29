@@ -211,7 +211,7 @@ class PermintaanService(DokumenService[Permintaan]):
             if item.produk_id not in products:
                 continue
             if stok_map.get(item.produk_id, 0) <= 0:
-                errors[f"items.{index}.produk_id"] = "Stok di gudang utama kosong"
+                errors[f"items.{index}.produk_id"] = "Stock di gudang utama kosong"
         if errors:
             raise ValidationFailed(errors=errors)
 
@@ -228,7 +228,7 @@ class PermintaanService(DokumenService[Permintaan]):
                 )
             elif item.jumlah_disetujui > stok_tersedia:
                 matcher.errors[f"{field}.jumlah_disetujui"] = (
-                    f"Melebihi stok gudang utama ({stok_tersedia} {row.produk.satuan})"
+                    f"Melebihi stock gudang utama ({stok_tersedia} {row.produk.satuan})"
                 )
         approved_map = {
             produk_id: item.jumlah_disetujui for produk_id, item in matcher.matched.items()
