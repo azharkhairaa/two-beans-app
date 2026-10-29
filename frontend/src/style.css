@@ -1451,11 +1451,18 @@ select.input-sm {
 }
 
 .doc-item-stock {
-  flex: 0 0 110px;
+  flex: 0 0 auto;
+  min-width: 110px;
 }
 
+/* label stock (misalnya "Stock gudang utama") tetap satu baris */
+.doc-item-stock .field-label-sm {
+  white-space: nowrap;
+}
+
+/* jumlah cukup untuk angka dan satuan, sisa ruang diberikan ke kolom produk */
 .doc-item-qty {
-  flex: 1 1 130px;
+  flex: 0 1 160px;
 }
 
 .doc-item-price {
