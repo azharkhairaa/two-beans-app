@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.sanitize import SingleLineText
 from app.models import KendaraanType
+from app.schemas.common import LokasiKontakRef, ProdukRef, UserRef
 from app.schemas.fields import (
     BlankToNone,
     ForeignId,
@@ -55,34 +56,13 @@ class PengirimanTerimaInput(BaseModel):
     catatan_penerimaan: OptionalAddress = None
     items: Annotated[list[PengirimanTerimaItemInput], Field(min_length=1, max_length=50)]
 
-class PengirimanLokasi(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    kode: str
-    nama: str
-    jenis: str
-    alamat: str | None
-    telepon: str | None
-
 class PermintaanRef(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     kode: str
 
-class UserRef(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-
-class PengirimanProduk(BaseModel):
-    id: int
-    sku: str
-    nama: str
-    satuan: str
-    jenis: str
+class PengirimanProduk(ProdukRef):
     # null untuk deliveryman, harga beli hanya untuk manager dan admin
     harga_beli: int | None
 
@@ -98,8 +78,8 @@ class PengirimanSummary(BaseModel):
     id: int
     kode: str
     status: str
-    lokasi_asal: PengirimanLokasi
-    lokasi_tujuan: PengirimanLokasi
+    lokasi_asal: LokasiKontakRef
+    lokasi_tujuan: LokasiKontakRef
     permintaan: PermintaanRef | None
     deliveryman: UserRef | None
     kendaraan_jenis: str | None

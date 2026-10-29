@@ -6,11 +6,8 @@ from app.models import KategoriType, StokStatus, User
 from app.policies.access import current_user
 from app.schemas.dashboard import DashboardResponse, MonitoringResponse, TrenResponse
 from app.schemas.stok import StokStatusFilter
-from app.services.dashboard_service import (
-    DashboardService,
-    MonitoringFilter,
-    MonitoringService,
-)
+from app.services.dashboard_service import DashboardService
+from app.services.monitoring_service import MonitoringFilter, MonitoringService
 
 class DashboardController:
     def index(

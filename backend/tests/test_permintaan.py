@@ -101,7 +101,6 @@ def setup(db, factory):
         "kurir": kurir,
     }
 
-
 def payload(setup, **changes):
     base = {
         "tanggal_butuh": (Clock.today() + timedelta(days=2)).isoformat(),
@@ -109,7 +108,6 @@ def payload(setup, **changes):
         "items": [{"produk_id": setup["biji"].id, "jumlah_diminta": 10}],
     }
     return base | changes
-
 
 def test_create_update_and_batal_permintaan(setup, login_as):
     client = login_as("outlet@example.com")
@@ -148,7 +146,6 @@ def test_create_update_and_batal_permintaan(setup, login_as):
             409,
             {"detail": "Permintaan sudah dibatalkan"},
         )
-
 
 def test_setujui_partial_creates_draft_pengiriman_and_full_cycle_to_selesai(
     setup, login_as, client
@@ -217,7 +214,6 @@ def test_setujui_partial_creates_draft_pengiriman_and_full_cycle_to_selesai(
     assert final_pm["status"] == "selesai"
     assert final_pm["pengiriman"]["status"] == "diterima"
 
-
 def test_cancel_draft_pengiriman_reopens_permintaan_for_reapproval(
     setup, login_as, client
 ):
@@ -251,7 +247,6 @@ def test_cancel_draft_pengiriman_reopens_permintaan_for_reapproval(
     assert second.json()["status"] == "disetujui"
     assert second.json()["pengiriman"]["id"] != kr1_id
 
-
 def test_tolak_permintaan_requires_reason(setup, login_as, client):
     outlet_client = login_as("outlet@example.com")
     pm = outlet_client.post("/api/permintaan", json=payload(setup)).json()
@@ -274,7 +269,6 @@ def test_tolak_permintaan_requires_reason(setup, login_as, client):
     assert data["status"] == "ditolak"
     assert data["alasan_penolakan"] == "Stok diprioritaskan untuk cabang"
     assert data["diproses_oleh"]["id"] == setup["manager_gudang"].id
-
 
 def test_validation_rules_for_create_and_setujui(setup, login_as):
     admin = login_as("admin@example.com")
@@ -354,7 +348,6 @@ def test_validation_rules_for_create_and_setujui(setup, login_as):
         )
     }
 
-
 def test_role_and_location_isolation(setup, login_as, client):
     # deliveryman ditolak 403
     assert login_as("kurir@example.com").get("/api/permintaan").status_code == 403
@@ -395,7 +388,7 @@ def test_role_and_location_isolation(setup, login_as, client):
         == 403
     )
 
-    # manager gudang utama melihat semua permintaan tetapi tidak boleh mengubah/membatalkan milik peminta (403)
+    # gudang utama melihat semua permintaan tetapi tidak boleh mengubah atau membatalkannya (403)
     client.cookies.clear()
     gudang_client = login_as("gudang@example.com")
     assert gudang_client.get("/api/permintaan").json()["meta"]["total"] == 2
@@ -409,7 +402,6 @@ def test_role_and_location_isolation(setup, login_as, client):
         gudang_client.post(f"/api/permintaan/{pm_outlet['id']}/batal").status_code
         == 403
     )
-
 
 def test_draft_from_permintaan_keeps_destination_and_approved_quantity(
     setup, login_as, client
@@ -447,7 +439,6 @@ def test_draft_from_permintaan_keeps_destination_and_approved_quantity(
     smaller = update(setup["outlet"], [{"produk_id": setup["biji"].id, "jumlah_dikirim": 5}])
     assert smaller.status_code == 200 and smaller.json()["items"][0]["jumlah_dikirim"] == 5
 
-
 @pytest.fixture
 def utc_session():
     # meniru Neon yang zona waktu sesi databasenya UTC
@@ -459,7 +450,6 @@ def utc_session():
     yield
     event.remove(database.engine, "checkout", set_utc)
     database.engine.dispose()
-
 
 def test_date_filter_uses_wib_creation_date(setup, login_as, utc_session):
     outlet_client = login_as("outlet@example.com")

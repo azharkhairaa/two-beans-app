@@ -30,7 +30,6 @@ class LoginRequest(BaseModel):
     email: EmailAddress
     password: Annotated[str, Field(min_length=1, max_length=128)]
 
-
 class PasswordChangeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

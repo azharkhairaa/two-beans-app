@@ -1,15 +1,11 @@
-from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import Select, case, func, or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.clock import Clock
-from app.core.errors import NotFound
 from app.models import (
     Customer,
-    Kategori,
-    KategoriType,
     Lokasi,
     LokasiType,
     Pembelian,
@@ -26,13 +22,12 @@ from app.models import (
     Produk,
     Stok,
     StokMutasi,
-    StokStatus,
     Transaksi,
     User,
     UserRole,
     UserStatus,
 )
-from app.policies.lokasi_policy import LokasiPolicy
+from app.schemas.common import LokasiKontakRef
 from app.schemas.dashboard import (
     DashboardAktivitasItem,
     DashboardCustomerItem,
@@ -42,31 +37,14 @@ from app.schemas.dashboard import (
     DashboardStokKritisItem,
     DashboardTugasItem,
     DeliverymanPengirimanItem,
-    MonitoringBaris,
-    MonitoringLokasiHeader,
-    MonitoringProdukInfo,
-    MonitoringResponse,
-    MonitoringSel,
-    MonitoringTotalLokasi,
-    TrenHariItem,
-    TrenResponse,
 )
-from app.schemas.pengiriman import PengirimanLokasi
 from app.services.base import CrudService, SqlMoney
 
-@dataclass(frozen=True)
-class MonitoringFilter:
-    kategori_id: int | None = None
-    jenis: KategoriType | None = None
-    status_stok: StokStatus | None = None
-    q: str | None = None
-
-
 class DashboardService:
+    # ringkasan beranda per peran: admin semua lokasi, manager lokasinya, deliveryman tugasnya
     def __init__(self, db: Session, user: User):
         self.db = db
         self.user = user
-        self.lokasi_policy = LokasiPolicy(user)
 
     def summary(self) -> DashboardResponse:
         if self.user.role == UserRole.DELIVERYMAN:
@@ -89,30 +67,15 @@ class DashboardService:
         nilai_dalam_perjalanan = self.query_nilai_dalam_perjalanan(lokasi_id=None)
         nilai_po_terbuka = self.query_nilai_po_terbuka(lokasi_id=None)
 
-        sku_aktif = int(
-            self.db.scalar(select(func.count(Produk.id)).where(Produk.aktif.is_(True))) or 0
+        sku_aktif = self.scalar_int(select(func.count(Produk.id)).where(Produk.aktif.is_(True)))
+        permintaan_menunggu = self.scalar_int(
+            select(func.count(Permintaan.id)).where(Permintaan.status == PermintaanStatus.DIAJUKAN)
         )
-        permintaan_menunggu = int(
-            self.db.scalar(
-                select(func.count(Permintaan.id)).where(
-                    Permintaan.status == PermintaanStatus.DIAJUKAN
-                )
-            )
-            or 0
+        pengiriman_dalam_perjalanan = self.scalar_int(
+            select(func.count(Pengiriman.id)).where(Pengiriman.status == PengirimanStatus.DIKIRIM)
         )
-        pengiriman_dalam_perjalanan = int(
-            self.db.scalar(
-                select(func.count(Pengiriman.id)).where(
-                    Pengiriman.status == PengirimanStatus.DIKIRIM
-                )
-            )
-            or 0
-        )
-        akun_menunggu = int(
-            self.db.scalar(
-                select(func.count(User.id)).where(User.status == UserStatus.MENUNGGU)
-            )
-            or 0
+        akun_menunggu = self.scalar_int(
+            select(func.count(User.id)).where(User.status == UserStatus.MENUNGGU)
         )
         masuk_hari_ini, keluar_hari_ini = self.query_mutasi_hari_ini(today, lokasi_id=None)
 
@@ -149,7 +112,7 @@ class DashboardService:
         lokasi_id = lokasi.id if lokasi else self.user.lokasi_id
 
         per_lokasi = self.query_per_lokasi(since, today, lokasi_id=lokasi_id)
-        lok_summary = per_lokasi[0] if per_lokasi else None
+        lokasi_item = per_lokasi[0] if per_lokasi else None
 
         is_gudang_utama = lokasi is not None and lokasi.jenis == LokasiType.GUDANG_UTAMA
         nilai_dalam_perjalanan = self.query_nilai_dalam_perjalanan(lokasi_id=lokasi_id)
@@ -162,32 +125,29 @@ class DashboardService:
         )
         if not is_gudang_utama:
             permintaan_query = permintaan_query.where(Permintaan.lokasi_peminta_id == lokasi_id)
-        permintaan_menunggu = int(self.db.scalar(permintaan_query) or 0)
+        permintaan_menunggu = self.scalar_int(permintaan_query)
 
-        pengiriman_dalam_perjalanan = int(
-            self.db.scalar(
-                select(func.count(Pengiriman.id)).where(
-                    Pengiriman.status == PengirimanStatus.DIKIRIM,
-                    or_(
-                        Pengiriman.lokasi_asal_id == lokasi_id,
-                        Pengiriman.lokasi_tujuan_id == lokasi_id,
-                    ),
-                )
+        pengiriman_dalam_perjalanan = self.scalar_int(
+            select(func.count(Pengiriman.id)).where(
+                Pengiriman.status == PengirimanStatus.DIKIRIM,
+                or_(
+                    Pengiriman.lokasi_asal_id == lokasi_id,
+                    Pengiriman.lokasi_tujuan_id == lokasi_id,
+                ),
             )
-            or 0
         )
 
         masuk_hari_ini, keluar_hari_ini = self.query_mutasi_hari_ini(today, lokasi_id=lokasi_id)
 
         ringkasan = DashboardRingkasan(
-            nilai_persediaan=lok_summary.nilai if lok_summary else 0,
+            nilai_persediaan=lokasi_item.nilai if lokasi_item else 0,
             nilai_dalam_perjalanan=nilai_dalam_perjalanan,
             nilai_po_terbuka=nilai_po_terbuka,
-            omzet_30_hari=lok_summary.omzet_30_hari if lok_summary else 0,
-            nota_30_hari=lok_summary.nota_30_hari if lok_summary else 0,
-            sku_aktif=lok_summary.sku_ada if lok_summary else 0,
-            stok_menipis=lok_summary.menipis if lok_summary else 0,
-            stok_habis=lok_summary.habis if lok_summary else 0,
+            omzet_30_hari=lokasi_item.omzet_30_hari if lokasi_item else 0,
+            nota_30_hari=lokasi_item.nota_30_hari if lokasi_item else 0,
+            sku_aktif=lokasi_item.sku_ada if lokasi_item else 0,
+            stok_menipis=lokasi_item.menipis if lokasi_item else 0,
+            stok_habis=lokasi_item.habis if lokasi_item else 0,
             permintaan_menunggu=permintaan_menunggu,
             pengiriman_dalam_perjalanan=pengiriman_dalam_perjalanan,
             akun_menunggu=0,
@@ -197,7 +157,7 @@ class DashboardService:
 
         return DashboardResponse(
             peran=self.user.role,
-            lokasi=PengirimanLokasi.model_validate(lokasi) if lokasi else None,
+            lokasi=LokasiKontakRef.model_validate(lokasi) if lokasi else None,
             ringkasan=ringkasan,
             per_lokasi=per_lokasi,
             customer_teratas=self.query_customer_teratas(since, today, lokasi_id=lokasi_id),
@@ -241,8 +201,8 @@ class DashboardService:
             kode=pengiriman.kode,
             status=pengiriman.status,
             tanggal_kirim=pengiriman.tanggal_kirim,
-            lokasi_asal=PengirimanLokasi.model_validate(pengiriman.lokasi_asal),
-            lokasi_tujuan=PengirimanLokasi.model_validate(pengiriman.lokasi_tujuan),
+            lokasi_asal=LokasiKontakRef.model_validate(pengiriman.lokasi_asal),
+            lokasi_tujuan=LokasiKontakRef.model_validate(pengiriman.lokasi_tujuan),
             kendaraan_jenis=pengiriman.kendaraan_jenis,
             kendaraan_nomor=pengiriman.kendaraan_nomor,
             jumlah_item=len(pengiriman.detail),
@@ -252,10 +212,13 @@ class DashboardService:
             diterima_pada=pengiriman.diterima_pada,
         )
 
+    def scalar_int(self, query: Select) -> int:
+        return int(self.db.scalar(query) or 0)
+
     def query_per_lokasi(
-        self, since, today, lokasi_id: int | None
+        self, since: date, today: date, lokasi_id: int | None
     ) -> list[DashboardLokasiItem]:
-        # Desain Database 8.2: nilai persediaan dan status stok per lokasi
+        # nilai persediaan dan status stok per lokasi (Desain Database 8.2)
         stok_query = (
             select(
                 Lokasi,
@@ -276,7 +239,7 @@ class DashboardService:
             stok_query = stok_query.where(Lokasi.id == lokasi_id)
         stok_rows = self.db.execute(stok_query).all()
 
-        # Desain Database 8.6: omzet dan jumlah nota 30 hari per lokasi
+        # omzet dan jumlah nota 30 hari per lokasi (Desain Database 8.6)
         omzet_query = (
             select(
                 Lokasi.id.label("lokasi_id"),
@@ -303,14 +266,14 @@ class DashboardService:
         }
 
         result: list[DashboardLokasiItem] = []
-        for lok, sku_ada, menipis, habis, nilai in stok_rows:
-            nota, omzet = omzet_map.get(lok.id, (0, 0))
+        for lokasi, sku_ada, menipis, habis, nilai in stok_rows:
+            nota, omzet = omzet_map.get(lokasi.id, (0, 0))
             result.append(
                 DashboardLokasiItem(
-                    id=lok.id,
-                    kode=lok.kode,
-                    nama=lok.nama,
-                    jenis=lok.jenis,
+                    id=lokasi.id,
+                    kode=lokasi.kode,
+                    nama=lokasi.nama,
+                    jenis=lokasi.jenis,
                     sku_ada=int(sku_ada or 0),
                     menipis=int(menipis or 0),
                     habis=int(habis or 0),
@@ -322,7 +285,7 @@ class DashboardService:
         return result
 
     def query_nilai_dalam_perjalanan(self, lokasi_id: int | None) -> int:
-        # Desain Database 8.4: nilai barang dalam pengiriman berstatus dikirim
+        # nilai barang dalam pengiriman berstatus dikirim (Desain Database 8.4)
         query = (
             select(
                 SqlMoney.total(PengirimanDetail.jumlah_dikirim, Produk.harga_beli)
@@ -339,10 +302,10 @@ class DashboardService:
                     Pengiriman.lokasi_tujuan_id == lokasi_id,
                 )
             )
-        return int(self.db.scalar(query) or 0)
+        return self.scalar_int(query)
 
     def query_nilai_po_terbuka(self, lokasi_id: int | None) -> int:
-        # Desain Database 8.4: nilai pesanan pembelian berstatus dipesan
+        # nilai pesanan pembelian berstatus dipesan (Desain Database 8.4)
         query = (
             select(
                 SqlMoney.total(PembelianDetail.jumlah, PembelianDetail.harga_satuan)
@@ -353,10 +316,10 @@ class DashboardService:
         )
         if lokasi_id is not None:
             query = query.where(Pembelian.lokasi_id == lokasi_id)
-        return int(self.db.scalar(query) or 0)
+        return self.scalar_int(query)
 
-    def query_mutasi_hari_ini(self, today, lokasi_id: int | None) -> tuple[int, int]:
-        wib_date = func.date(func.timezone("Asia/Jakarta", StokMutasi.created_at))
+    def query_mutasi_hari_ini(self, today: date, lokasi_id: int | None) -> tuple[int, int]:
+        wib_date = CrudService.local_date(StokMutasi.created_at)
         query = select(
             func.coalesce(func.sum(StokMutasi.perubahan).filter(StokMutasi.perubahan > 0), 0),
             func.coalesce(-func.sum(StokMutasi.perubahan).filter(StokMutasi.perubahan < 0), 0),
@@ -367,19 +330,19 @@ class DashboardService:
         return int(masuk or 0), int(keluar or 0)
 
     def query_customer_teratas(
-        self, since, today, lokasi_id: int | None
+        self, since: date, today: date, lokasi_id: int | None
     ) -> list[DashboardCustomerItem]:
-        # Desain Database 8.6: 5 customer teratas dari penjualan diposting 30 hari terakhir
-        total_col = SqlMoney.total(PenjualanDetail.jumlah, PenjualanDetail.harga_satuan)
-        total_col = total_col.label("total")
-        nota_col = func.count(func.distinct(Penjualan.id)).label("nota")
+        # 5 customer teratas dari penjualan diposting 30 hari terakhir (Desain Database 8.6)
+        total_column = SqlMoney.total(PenjualanDetail.jumlah, PenjualanDetail.harga_satuan)
+        total_column = total_column.label("total")
+        nota_column = func.count(func.distinct(Penjualan.id)).label("nota")
         query = (
             select(
                 Customer.id.label("id"),
                 func.coalesce(Customer.nama, "Umum").label("nama"),
                 Customer.jenis.label("jenis"),
-                nota_col,
-                total_col,
+                nota_column,
+                total_column,
             )
             .select_from(Penjualan)
             .join(PenjualanDetail, PenjualanDetail.penjualan_id == Penjualan.id)
@@ -389,7 +352,7 @@ class DashboardService:
                 Penjualan.tanggal.between(since, today),
             )
             .group_by(Customer.id, Customer.nama, Customer.jenis)
-            .order_by(total_col.desc(), nota_col.desc())
+            .order_by(total_column.desc(), nota_column.desc())
             .limit(5)
         )
         if lokasi_id is not None:
@@ -424,18 +387,18 @@ class DashboardService:
         rows = self.db.execute(query).all()
         return [
             DashboardStokKritisItem(
-                lokasi_id=lok.id,
-                lokasi=lok.kode,
-                lokasi_nama=lok.nama,
-                produk_id=prod.id,
-                sku=prod.sku,
-                nama=prod.nama,
-                satuan=prod.satuan,
+                lokasi_id=lokasi.id,
+                lokasi=lokasi.kode,
+                lokasi_nama=lokasi.nama,
+                produk_id=produk.id,
+                sku=produk.sku,
+                nama=produk.nama,
+                satuan=produk.satuan,
                 jumlah=stok.jumlah,
                 stok_minimum=stok.stok_minimum,
                 status_stok=stok.status_stok.value,
             )
-            for stok, lok, prod in rows
+            for stok, lokasi, produk in rows
         ]
 
     def query_tugas(self, lokasi: Lokasi | None) -> list[DashboardTugasItem]:
@@ -446,8 +409,8 @@ class DashboardService:
             lokasi is not None and lokasi.jenis == LokasiType.GUDANG_UTAMA
         )
 
-        # 1. Pengiriman masuk berstatus dikirim yang perlu dikonfirmasi terima
-        incoming_q = (
+        # pengiriman masuk berstatus dikirim yang menunggu konfirmasi terima
+        incoming_query = (
             select(Pengiriman)
             .options(
                 joinedload(Pengiriman.lokasi_asal),
@@ -458,24 +421,26 @@ class DashboardService:
             .order_by(Pengiriman.tanggal_kirim.asc(), Pengiriman.id.asc())
         )
         if lokasi_id is not None:
-            incoming_q = incoming_q.where(Pengiriman.lokasi_tujuan_id == lokasi_id)
-        for k in self.db.scalars(incoming_q).all():
-            asal_nama = k.lokasi_asal.nama
-            tujuan_nama = k.lokasi_tujuan.nama
-            ket = f"Kiriman dari {asal_nama} menuju {tujuan_nama} ({len(k.detail)} produk)"
+            incoming_query = incoming_query.where(Pengiriman.lokasi_tujuan_id == lokasi_id)
+        for pengiriman in self.db.scalars(incoming_query).all():
+            asal_nama = pengiriman.lokasi_asal.nama
+            tujuan_nama = pengiriman.lokasi_tujuan.nama
+            jumlah_produk = len(pengiriman.detail)
             tugas.append(
                 DashboardTugasItem(
                     jenis="terima_pengiriman",
-                    id=k.id,
-                    kode=k.kode,
-                    keterangan=ket,
-                    tanggal=str(k.tanggal_kirim),
+                    id=pengiriman.id,
+                    kode=pengiriman.kode,
+                    keterangan=(
+                        f"Kiriman dari {asal_nama} menuju {tujuan_nama} ({jumlah_produk} produk)"
+                    ),
+                    tanggal=str(pengiriman.tanggal_kirim),
                 )
             )
 
-        # 2. Permintaan menunggu persetujuan di Gudang Utama
+        # permintaan yang menunggu persetujuan gudang utama
         if is_gudang_utama:
-            pm_q = (
+            permintaan_query = (
                 select(Permintaan)
                 .options(
                     joinedload(Permintaan.lokasi_peminta),
@@ -484,39 +449,42 @@ class DashboardService:
                 .where(Permintaan.status == PermintaanStatus.DIAJUKAN)
                 .order_by(Permintaan.created_at.asc())
             )
-            for p in self.db.scalars(pm_q).all():
-                peminta_nama = p.lokasi_peminta.nama
+            for permintaan in self.db.scalars(permintaan_query).all():
+                peminta_nama = permintaan.lokasi_peminta.nama
+                jumlah_produk = len(permintaan.detail)
+                tanggal_butuh = permintaan.tanggal_butuh
                 tugas.append(
                     DashboardTugasItem(
                         jenis="proses_permintaan",
-                        id=p.id,
-                        kode=p.kode,
-                        keterangan=f"Permintaan dari {peminta_nama} ({len(p.detail)} produk)",
-                        tanggal=str(p.tanggal_butuh) if p.tanggal_butuh else None,
+                        id=permintaan.id,
+                        kode=permintaan.kode,
+                        keterangan=f"Permintaan dari {peminta_nama} ({jumlah_produk} produk)",
+                        tanggal=str(tanggal_butuh) if tanggal_butuh else None,
                     )
                 )
 
-        # 3. Pesanan pembelian (PO) berstatus dipesan yang menunggu diterima di Gudang Utama
+        # PO berstatus dipesan yang menunggu diterima di gudang utama
         if is_gudang_utama:
-            po_q = (
+            po_query = (
                 select(Pembelian)
                 .options(joinedload(Pembelian.supplier), selectinload(Pembelian.detail))
                 .where(Pembelian.status == PembelianStatus.DIPESAN)
                 .order_by(Pembelian.tanggal_perkiraan.asc().nulls_last(), Pembelian.id.asc())
             )
-            for b in self.db.scalars(po_q).all():
+            for pembelian in self.db.scalars(po_query).all():
+                supplier_nama = pembelian.supplier.nama
                 tugas.append(
                     DashboardTugasItem(
                         jenis="terima_pembelian",
-                        id=b.id,
-                        kode=b.kode,
-                        keterangan=f"PO ke {b.supplier.nama} ({len(b.detail)} produk)",
-                        tanggal=str(b.tanggal_perkiraan or b.tanggal_pesan or ""),
+                        id=pembelian.id,
+                        kode=pembelian.kode,
+                        keterangan=f"PO ke {supplier_nama} ({len(pembelian.detail)} produk)",
+                        tanggal=str(pembelian.tanggal_perkiraan or pembelian.tanggal_pesan or ""),
                     )
                 )
 
-        # 4. Draf pengiriman yang perlu dikirim dari gudang asal
-        draft_kirim_q = (
+        # draf pengiriman yang menunggu dikirim dari gudang asal
+        draft_query = (
             select(Pengiriman)
             .options(
                 joinedload(Pengiriman.lokasi_asal),
@@ -527,17 +495,17 @@ class DashboardService:
             .order_by(Pengiriman.tanggal_kirim.asc(), Pengiriman.id.asc())
         )
         if lokasi_id is not None:
-            draft_kirim_q = draft_kirim_q.where(Pengiriman.lokasi_asal_id == lokasi_id)
-        for k in self.db.scalars(draft_kirim_q).all():
-            asal_nama = k.lokasi_asal.nama
-            tujuan_nama = k.lokasi_tujuan.nama
+            draft_query = draft_query.where(Pengiriman.lokasi_asal_id == lokasi_id)
+        for pengiriman in self.db.scalars(draft_query).all():
+            asal_nama = pengiriman.lokasi_asal.nama
+            tujuan_nama = pengiriman.lokasi_tujuan.nama
             tugas.append(
                 DashboardTugasItem(
                     jenis="kirim_pengiriman",
-                    id=k.id,
-                    kode=k.kode,
+                    id=pengiriman.id,
+                    kode=pengiriman.kode,
                     keterangan=f"Draf pengiriman dari {asal_nama} ke {tujuan_nama}",
-                    tanggal=str(k.tanggal_kirim),
+                    tanggal=str(pengiriman.tanggal_kirim),
                 )
             )
 
@@ -575,209 +543,29 @@ class DashboardService:
         rows = self.db.execute(query).all()
         items: list[DashboardAktivitasItem] = []
         for (
-            m,
+            mutasi,
             lokasi_kode,
             lokasi_nama,
             produk_sku,
             produk_nama,
             satuan,
             oleh,
-            dok_kode,
+            dokumen_kode,
         ) in rows:
             items.append(
                 DashboardAktivitasItem(
-                    id=m.id,
-                    waktu=m.created_at,
+                    id=mutasi.id,
+                    waktu=mutasi.created_at,
                     lokasi_kode=lokasi_kode,
                     lokasi_nama=lokasi_nama,
                     produk_sku=produk_sku,
                     produk_nama=produk_nama,
                     satuan=satuan,
-                    jenis=m.jenis,
-                    perubahan=m.perubahan,
-                    stok_sesudah=m.stok_sesudah,
-                    dokumen_kode=dok_kode,
+                    jenis=mutasi.jenis,
+                    perubahan=mutasi.perubahan,
+                    stok_sesudah=mutasi.stok_sesudah,
+                    dokumen_kode=dokumen_kode,
                     oleh=oleh or "-",
                 )
             )
         return items
-
-
-class MonitoringService:
-    def __init__(self, db: Session, user: User):
-        self.db = db
-        self.user = user
-        self.lokasi_policy = LokasiPolicy(user)
-
-    def matriks(self, filters: MonitoringFilter) -> MonitoringResponse:
-        lokasi_rows = self.db.scalars(
-            select(Lokasi).where(Lokasi.aktif.is_(True)).order_by(Lokasi.kode)
-        ).all()
-        lokasi_headers = [
-            MonitoringLokasiHeader(id=lok.id, kode=lok.kode, nama=lok.nama, jenis=lok.jenis)
-            for lok in lokasi_rows
-        ]
-        lokasi_ids = [lok.id for lok in lokasi_rows]
-
-        produk_query = (
-            select(Produk)
-            .join(Kategori, Kategori.id == Produk.kategori_id)
-            .options(joinedload(Produk.kategori))
-            # produk nonaktif yang masih punya stok tetap tampil agar nilainya sama dengan dashboard
-            .where(
-                or_(
-                    Produk.aktif.is_(True),
-                    Produk.id.in_(select(Stok.produk_id).where(Stok.jumlah > 0)),
-                )
-            )
-            .order_by(Produk.sku)
-        )
-        if filters.kategori_id:
-            produk_query = produk_query.where(Produk.kategori_id == filters.kategori_id)
-        if filters.jenis:
-            produk_query = produk_query.where(Kategori.jenis == filters.jenis)
-        if filters.q:
-            columns = (Produk.sku, Produk.nama, Produk.merek)
-            produk_query = produk_query.where(
-                or_(*(CrudService.contains(col, filters.q) for col in columns))
-            )
-        produk_rows = self.db.scalars(produk_query).all()
-        produk_ids = [p.id for p in produk_rows]
-
-        stok_map: dict[tuple[int, int], Stok] = {}
-        if lokasi_ids and produk_ids:
-            stok_rows = self.db.scalars(
-                select(Stok).where(
-                    Stok.lokasi_id.in_(lokasi_ids),
-                    Stok.produk_id.in_(produk_ids),
-                )
-            ).all()
-            stok_map = {(s.lokasi_id, s.produk_id): s for s in stok_rows}
-
-        baris_list: list[MonitoringBaris] = []
-        tot_jumlah_per_lokasi = {lok.id: 0 for lok in lokasi_rows}
-        tot_nilai_per_lokasi = {lok.id: 0 for lok in lokasi_rows}
-
-        for prod in produk_rows:
-            sel_list: list[MonitoringSel] = []
-            recorded_statuses: set[str] = set()
-            total_prod = 0
-            for lok in lokasi_rows:
-                stok = stok_map.get((lok.id, prod.id))
-                if stok is not None:
-                    jumlah = stok.jumlah
-                    minimum = stok.stok_minimum
-                    rak = stok.rak
-                    status = stok.status_stok.value
-                    recorded_statuses.add(status)
-                else:
-                    jumlah = 0
-                    minimum = 0
-                    rak = None
-                    status = StokStatus.HABIS.value
-                nilai_sel = jumlah * prod.harga_beli
-                total_prod += jumlah
-                sel_list.append(
-                    MonitoringSel(
-                        lokasi_id=lok.id,
-                        jumlah=jumlah,
-                        stok_minimum=minimum,
-                        rak=rak,
-                        status_stok=status,
-                        nilai=nilai_sel,
-                    )
-                )
-
-            if filters.status_stok is not None:
-                target_status = filters.status_stok.value
-                if target_status not in recorded_statuses:
-                    continue
-
-            nilai_prod = total_prod * prod.harga_beli
-            for sel in sel_list:
-                tot_jumlah_per_lokasi[sel.lokasi_id] += sel.jumlah
-                tot_nilai_per_lokasi[sel.lokasi_id] += sel.nilai
-
-            baris_list.append(
-                MonitoringBaris(
-                    produk=MonitoringProdukInfo(
-                        id=prod.id,
-                        sku=prod.sku,
-                        nama=prod.nama,
-                        satuan=prod.satuan,
-                        jenis=prod.kategori.jenis,
-                        kategori_nama=prod.kategori.nama,
-                        harga_beli=prod.harga_beli,
-                    ),
-                    sel=sel_list,
-                    total=total_prod,
-                    nilai=nilai_prod,
-                )
-            )
-
-        total_per_lokasi = [
-            MonitoringTotalLokasi(
-                lokasi_id=lok.id,
-                kode=lok.kode,
-                nama=lok.nama,
-                jumlah=tot_jumlah_per_lokasi[lok.id],
-                nilai=tot_nilai_per_lokasi[lok.id],
-            )
-            for lok in lokasi_rows
-        ]
-        total_jumlah = sum(item.jumlah for item in total_per_lokasi)
-        total_nilai = sum(item.nilai for item in total_per_lokasi)
-
-        return MonitoringResponse(
-            lokasi=lokasi_headers,
-            baris=baris_list,
-            total_per_lokasi=total_per_lokasi,
-            total_jumlah=total_jumlah,
-            total_nilai=total_nilai,
-        )
-
-    def tren(self, hari: int = 30, lokasi_id: int | None = None) -> TrenResponse:
-        if self.user.role == UserRole.ADMIN:
-            resolved_lokasi_id = lokasi_id
-            if resolved_lokasi_id is not None and self.db.get(Lokasi, resolved_lokasi_id) is None:
-                raise NotFound("Lokasi tidak ditemukan")
-        else:
-            if self.user.lokasi_id is None:
-                raise NotFound("Lokasi tidak ditemukan")
-            if lokasi_id is not None and not self.lokasi_policy.can_manage(lokasi_id):
-                raise NotFound("Lokasi tidak ditemukan")
-            resolved_lokasi_id = self.user.lokasi_id
-
-        today = Clock.today()
-        start_date = today - timedelta(days=hari - 1)
-        wib_date = func.date(func.timezone("Asia/Jakarta", StokMutasi.created_at))
-
-        query = (
-            select(
-                wib_date.label("tanggal"),
-                func.coalesce(
-                    func.sum(StokMutasi.perubahan).filter(StokMutasi.perubahan > 0), 0
-                ).label("masuk"),
-                func.coalesce(
-                    -func.sum(StokMutasi.perubahan).filter(StokMutasi.perubahan < 0), 0
-                ).label("keluar"),
-            )
-            .where(wib_date.between(start_date, today))
-            .group_by(wib_date)
-            .order_by(wib_date)
-        )
-        if resolved_lokasi_id is not None:
-            query = query.where(StokMutasi.lokasi_id == resolved_lokasi_id)
-
-        by_date = {
-            row.tanggal: (int(row.masuk or 0), int(row.keluar or 0))
-            for row in self.db.execute(query).all()
-        }
-
-        data: list[TrenHariItem] = []
-        for offset in range(hari):
-            day = start_date + timedelta(days=offset)
-            masuk, keluar = by_date.get(day, (0, 0))
-            data.append(TrenHariItem(tanggal=day, masuk=masuk, keluar=keluar))
-
-        return TrenResponse(hari=hari, lokasi_id=resolved_lokasi_id, data=data)

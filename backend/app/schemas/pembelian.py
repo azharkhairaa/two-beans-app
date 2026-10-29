@@ -3,6 +3,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.common import LokasiKontakRef, ProdukRef, UserRef
 from app.schemas.fields import (
     BlankToNone,
     DocumentDate,
@@ -12,7 +13,6 @@ from app.schemas.fields import (
     Rupiah,
     UtcDateTime,
 )
-from app.schemas.pengiriman import PengirimanLokasi, PengirimanProduk, UserRef
 
 class PembelianItemInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -20,7 +20,6 @@ class PembelianItemInput(BaseModel):
     produk_id: ForeignId
     jumlah: Annotated[int, Field(ge=1, le=100_000, strict=True)]
     harga_satuan: Rupiah
-
 
 class PembelianInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -30,13 +29,11 @@ class PembelianInput(BaseModel):
     catatan: OptionalAddress = None
     items: Annotated[list[PembelianItemInput], Field(min_length=1, max_length=50)]
 
-
 class PembelianPesanInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     tanggal_pesan: Annotated[DocumentDate | None, BlankToNone] = None
     tanggal_perkiraan: Annotated[FutureOrTodayDate | None, BlankToNone] = None
-
 
 class PembelianTerimaItemInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -44,13 +41,11 @@ class PembelianTerimaItemInput(BaseModel):
     produk_id: ForeignId
     jumlah_diterima: Annotated[int, Field(ge=0, le=100_000, strict=True)]
 
-
 class PembelianTerimaInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     catatan: OptionalAddress = None
     items: Annotated[list[PembelianTerimaItemInput], Field(min_length=1, max_length=50)]
-
 
 class SupplierRef(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -61,23 +56,24 @@ class SupplierRef(BaseModel):
     telepon: str | None
     email: str | None
 
+class PembelianProduk(ProdukRef):
+    harga_beli: int
 
 class PembelianItemResponse(BaseModel):
     id: int
-    produk: PengirimanProduk
+    produk: PembelianProduk
     jumlah: int
     harga_satuan: int
     subtotal: int
     jumlah_diterima: int | None
     subtotal_diterima: int | None
 
-
 class PembelianSummary(BaseModel):
     id: int
     kode: str
     status: str
     supplier: SupplierRef
-    lokasi: PengirimanLokasi
+    lokasi: LokasiKontakRef
     tanggal_pesan: date | None
     tanggal_perkiraan: date | None
     catatan: str | None
@@ -90,7 +86,6 @@ class PembelianSummary(BaseModel):
     diterima_pada: UtcDateTime | None
     created_at: UtcDateTime
     updated_at: UtcDateTime
-
 
 class PembelianDetailResponse(PembelianSummary):
     items: list[PembelianItemResponse]

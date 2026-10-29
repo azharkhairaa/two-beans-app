@@ -2,14 +2,13 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.clock import Clock
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import ValidationFailed
 from app.models import (
     Lokasi,
-    LokasiType,
     Pengiriman,
     PengirimanDetail,
     PengirimanStatus,
@@ -21,8 +20,7 @@ from app.models import (
     User,
 )
 from app.policies.dokumen_policy import PermintaanPolicy
-from app.schemas.common import Page, PageParams, SortDirection
-from app.schemas.pengiriman import PengirimanLokasi, UserRef
+from app.schemas.common import LokasiKontakRef, Page, PageParams, SortDirection, UserRef
 from app.schemas.permintaan import (
     PengirimanRef,
     PermintaanDetailResponse,
@@ -34,13 +32,12 @@ from app.schemas.permintaan import (
     PermintaanSummary,
     PermintaanTolakInput,
 )
-from app.services.base import CrudService, DokumenService
+from app.services.base import CrudService, DetailMatcher, DokumenService
 
 class PermintaanSort(StrEnum):
     CREATED_AT = "created_at"
     TANGGAL_BUTUH = "tanggal_butuh"
     KODE = "kode"
-
 
 @dataclass(frozen=True)
 class PermintaanFilter:
@@ -51,7 +48,6 @@ class PermintaanFilter:
     q: str | None = None
     sort: PermintaanSort = PermintaanSort.CREATED_AT
     arah: SortDirection = SortDirection.DESC
-
 
 class PermintaanService(DokumenService[Permintaan]):
     model = Permintaan
@@ -83,36 +79,22 @@ class PermintaanService(DokumenService[Permintaan]):
             query = query.where(CrudService.local_date(Permintaan.created_at) >= filters.dari)
         if filters.sampai:
             query = query.where(CrudService.local_date(Permintaan.created_at) <= filters.sampai)
-        if filters.q:
-            columns = (Permintaan.kode, Permintaan.catatan)
-            query = query.where(
-                or_(*(CrudService.contains(column, filters.q) for column in columns))
-            )
-        column = getattr(Permintaan, filters.sort.value)
-        desc = filters.arah == SortDirection.DESC
-        order = (
-            (column.desc(), Permintaan.id.desc()) if desc else (column.asc(), Permintaan.id.asc())
-        )
-        return self.paginate(query.order_by(*order), params, self.to_summary)
+        query = self.apply_search(query, (Permintaan.kode, Permintaan.catatan), filters.q)
+        query = self.apply_sort(query, getattr(Permintaan, filters.sort.value), filters.arah)
+        return self.paginate(query, params, self.to_summary)
 
     def detail(self, item_id: int) -> PermintaanDetailResponse:
-        query = (
-            select(Permintaan)
-            .options(
-                joinedload(Permintaan.lokasi_peminta),
-                joinedload(Permintaan.lokasi_sumber),
-                joinedload(Permintaan.pengiriman),
-                joinedload(Permintaan.diajukan_oleh),
-                joinedload(Permintaan.diproses_oleh),
-                selectinload(Permintaan.detail)
-                .joinedload(PermintaanDetail.produk)
-                .joinedload(Produk.kategori),
-            )
-            .where(Permintaan.id == item_id)
+        permintaan = self.get_or_404(
+            item_id,
+            joinedload(Permintaan.lokasi_peminta),
+            joinedload(Permintaan.lokasi_sumber),
+            joinedload(Permintaan.pengiriman),
+            joinedload(Permintaan.diajukan_oleh),
+            joinedload(Permintaan.diproses_oleh),
+            selectinload(Permintaan.detail)
+            .joinedload(PermintaanDetail.produk)
+            .joinedload(Produk.kategori),
         )
-        permintaan = self.db.scalar(query)
-        if permintaan is None or not self.can_access(permintaan):
-            raise NotFound("Permintaan tidak ditemukan")
         stok_map = self.load_stock_map(
             permintaan.lokasi_sumber_id, {row.produk_id for row in permintaan.detail}
         )
@@ -121,7 +103,7 @@ class PermintaanService(DokumenService[Permintaan]):
     def create(self, data: PermintaanInput) -> PermintaanDetailResponse:
         lokasi_peminta = self.resolve_lokasi(data.lokasi_peminta_id, field="lokasi_peminta_id")
         self.permintaan_policy.ensure_can_create(lokasi_peminta)
-        lokasi_sumber = self.resolve_gudang_utama()
+        lokasi_sumber = self.resolve_gudang_utama(field="lokasi_sumber_id")
         self.validate_request(data, lokasi_peminta, lokasi_sumber)
         permintaan = Permintaan(
             kode=self.next_code("PM"),
@@ -204,16 +186,6 @@ class PermintaanService(DokumenService[Permintaan]):
         self.db.commit()
         return self.detail(permintaan.id)
 
-    def resolve_gudang_utama(self) -> Lokasi:
-        gudang_utama = self.db.scalar(
-            select(Lokasi).where(
-                Lokasi.jenis == LokasiType.GUDANG_UTAMA, Lokasi.aktif.is_(True)
-            )
-        )
-        if gudang_utama is None:
-            raise ValidationFailed(errors={"lokasi_sumber_id": "Gudang utama tidak ditemukan"})
-        return gudang_utama
-
     def load_stock_map(self, lokasi_id: int, produk_ids: set[int]) -> dict[int, int]:
         if not produk_ids:
             return {}
@@ -246,39 +218,29 @@ class PermintaanService(DokumenService[Permintaan]):
     def validate_setujui(
         self, permintaan: Permintaan, data: PermintaanSetujuiInput
     ) -> dict[int, int]:
-        detail_by_produk = {row.produk_id: row for row in permintaan.detail}
-        stok_map = self.load_stock_map(permintaan.lokasi_sumber_id, set(detail_by_produk))
-        errors: dict[str, str] = {}
-        approved_map: dict[int, int] = {}
-        for index, item in enumerate(data.items):
-            row = detail_by_produk.get(item.produk_id)
-            if row is None:
-                errors[f"items.{index}.produk_id"] = "Produk tidak ada di permintaan ini"
-                continue
-            if item.produk_id in approved_map:
-                errors[f"items.{index}.produk_id"] = (
-                    "Produk tidak boleh duplikat dalam satu dokumen"
-                )
-                continue
-            approved_map[item.produk_id] = item.jumlah_disetujui
+        matcher = DetailMatcher(self.label, permintaan.detail)
+        stok_map = self.load_stock_map(permintaan.lokasi_sumber_id, set(matcher.rows))
+        for field, item, row in matcher.pairs(data.items):
             stok_tersedia = stok_map.get(item.produk_id, 0)
             if item.jumlah_disetujui > row.jumlah_diminta:
-                errors[f"items.{index}.jumlah_disetujui"] = (
+                matcher.errors[f"{field}.jumlah_disetujui"] = (
                     f"Maksimal sebesar jumlah diminta ({row.jumlah_diminta})"
                 )
             elif item.jumlah_disetujui > stok_tersedia:
-                errors[f"items.{index}.jumlah_disetujui"] = (
+                matcher.errors[f"{field}.jumlah_disetujui"] = (
                     f"Melebihi stok gudang utama ({stok_tersedia} {row.produk.satuan})"
                 )
-        if set(detail_by_produk) != set(approved_map):
-            errors.setdefault("items", "Semua produk di permintaan wajib diputuskan")
+        approved_map = {
+            produk_id: item.jumlah_disetujui for produk_id, item in matcher.matched.items()
+        }
+        if not matcher.complete:
+            matcher.errors.setdefault("items", "Semua produk di permintaan wajib diputuskan")
         elif approved_map and all(jumlah == 0 for jumlah in approved_map.values()):
-            errors["items"] = (
+            matcher.errors["items"] = (
                 "Minimal satu produk harus disetujui lebih dari 0. "
                 "Gunakan aksi tolak bila tidak ada yang disetujui"
             )
-        if errors:
-            raise ValidationFailed(errors=errors)
+        matcher.raise_if_invalid()
         return approved_map
 
     @staticmethod
@@ -294,8 +256,8 @@ class PermintaanService(DokumenService[Permintaan]):
             id=permintaan.id,
             kode=permintaan.kode,
             status=permintaan.status,
-            lokasi_peminta=PengirimanLokasi.model_validate(permintaan.lokasi_peminta),
-            lokasi_sumber=PengirimanLokasi.model_validate(permintaan.lokasi_sumber),
+            lokasi_peminta=LokasiKontakRef.model_validate(permintaan.lokasi_peminta),
+            lokasi_sumber=LokasiKontakRef.model_validate(permintaan.lokasi_sumber),
             tanggal_butuh=permintaan.tanggal_butuh,
             catatan=permintaan.catatan,
             alasan_penolakan=permintaan.alasan_penolakan,
@@ -324,12 +286,8 @@ class PermintaanService(DokumenService[Permintaan]):
         items = [
             PermintaanItemResponse(
                 id=row.id,
-                produk=PermintaanProduk(
-                    id=row.produk.id,
-                    sku=row.produk.sku,
-                    nama=row.produk.nama,
-                    satuan=row.produk.satuan,
-                    jenis=row.produk.kategori.jenis,
+                produk=PermintaanProduk.of(
+                    row.produk,
                     harga_beli=row.produk.harga_beli,
                     stok_sumber=stok_map.get(row.produk_id, 0),
                 ),

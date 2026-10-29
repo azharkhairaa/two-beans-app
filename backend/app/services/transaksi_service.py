@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.clock import Clock
-from app.core.errors import Conflict, NotFound, ValidationFailed
+from app.core.errors import Conflict, ValidationFailed
 from app.models import (
     TRANSAKSI_REASONS,
     KategoriType,
@@ -28,7 +28,7 @@ from app.schemas.transaksi import (
     TransaksiSummary,
     TransaksiUpdate,
 )
-from app.services.base import CrudService, DokumenService
+from app.services.base import DokumenService
 from app.services.mutasi_stok import MutasiStok, MutationSource, StockChange
 
 class TransaksiSort(StrEnum):
@@ -120,34 +120,20 @@ class TransaksiService(DokumenService[Transaksi]):
             query = query.where(Transaksi.tanggal >= filters.dari)
         if filters.sampai:
             query = query.where(Transaksi.tanggal <= filters.sampai)
-        if filters.q:
-            columns = (Transaksi.kode, Transaksi.keterangan)
-            query = query.where(
-                or_(*(CrudService.contains(column, filters.q) for column in columns))
-            )
-        column = getattr(Transaksi, filters.sort.value)
-        desc = filters.arah == SortDirection.DESC
-        order = (
-            (column.desc(), Transaksi.id.desc()) if desc else (column.asc(), Transaksi.id.asc())
-        )
-        return self.paginate(query.order_by(*order), params, self.to_summary)
+        query = self.apply_search(query, (Transaksi.kode, Transaksi.keterangan), filters.q)
+        query = self.apply_sort(query, getattr(Transaksi, filters.sort.value), filters.arah)
+        return self.paginate(query, params, self.to_summary)
 
     def detail(self, item_id: int) -> TransaksiDetailResponse:
-        query = (
-            select(Transaksi)
-            .options(
-                joinedload(Transaksi.lokasi),
-                joinedload(Transaksi.dibuat_oleh),
-                joinedload(Transaksi.diposting_oleh),
-                selectinload(Transaksi.detail)
-                .joinedload(TransaksiDetail.produk)
-                .joinedload(Produk.kategori),
-            )
-            .where(Transaksi.id == item_id)
+        transaksi = self.get_or_404(
+            item_id,
+            joinedload(Transaksi.lokasi),
+            joinedload(Transaksi.dibuat_oleh),
+            joinedload(Transaksi.diposting_oleh),
+            selectinload(Transaksi.detail)
+            .joinedload(TransaksiDetail.produk)
+            .joinedload(Produk.kategori),
         )
-        transaksi = self.db.scalar(query)
-        if transaksi is None or not self.can_access(transaksi):
-            raise NotFound("Transaksi tidak ditemukan")
         return self.to_detail(transaksi)
 
     def create(self, data: TransaksiInput) -> TransaksiDetailResponse:
@@ -249,14 +235,7 @@ class TransaksiService(DokumenService[Transaksi]):
         items = [
             TransaksiItemResponse(
                 id=row.id,
-                produk=TransaksiProduk(
-                    id=row.produk.id,
-                    sku=row.produk.sku,
-                    nama=row.produk.nama,
-                    satuan=row.produk.satuan,
-                    jenis=row.produk.kategori.jenis,
-                    harga_beli=row.produk.harga_beli,
-                ),
+                produk=TransaksiProduk.of(row.produk, harga_beli=row.produk.harga_beli),
                 jumlah=row.jumlah,
             )
             for row in transaksi.detail

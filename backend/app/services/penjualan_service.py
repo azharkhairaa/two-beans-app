@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import or_, select
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.core.clock import Clock
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import ValidationFailed
 from app.models import (
     Customer,
     Lokasi,
@@ -15,11 +15,9 @@ from app.models import (
     PenjualanStatus,
     Produk,
     StokMutasiType,
-    User,
 )
-from app.policies.dokumen_policy import PenjualanPolicy
-from app.schemas.common import Page, PageParams, SortDirection
-from app.schemas.pengiriman import PengirimanLokasi
+from app.policies.dokumen_policy import DokumenPolicy
+from app.schemas.common import LokasiKontakRef, Page, PageParams, SortDirection
 from app.schemas.penjualan import (
     CustomerRef,
     PenjualanDetailResponse,
@@ -28,14 +26,13 @@ from app.schemas.penjualan import (
     PenjualanProduk,
     PenjualanSummary,
 )
-from app.services.base import CrudService, DokumenService, SqlMoney
+from app.services.base import DokumenService, SqlMoney
 from app.services.mutasi_stok import MutasiStok, MutationSource, StockChange
 
 class PenjualanSort(StrEnum):
     TANGGAL = "tanggal"
     KODE = "kode"
     TOTAL = "total"
-
 
 @dataclass(frozen=True)
 class PenjualanFilter:
@@ -48,14 +45,16 @@ class PenjualanFilter:
     sort: PenjualanSort = PenjualanSort.TANGGAL
     arah: SortDirection = SortDirection.DESC
 
+class PenjualanRules:
+    # BR-26: penjualan dari gudang wajib memilih customer aktif, di outlet boleh kosong
+    @staticmethod
+    def requires_customer(lokasi: Lokasi) -> bool:
+        return lokasi.jenis in DokumenPolicy.WAREHOUSE_TYPES
 
 class PenjualanService(DokumenService[Penjualan]):
     model = Penjualan
     label = "Penjualan"
-
-    def __init__(self, db: Session, user: User):
-        super().__init__(db, user)
-        self.penjualan_policy = PenjualanPolicy(user)
+    rules = PenjualanRules()
 
     def search(self, filters: PenjualanFilter, params: PageParams) -> Page:
         query = self.restrict(
@@ -77,11 +76,7 @@ class PenjualanService(DokumenService[Penjualan]):
             query = query.where(Penjualan.tanggal >= filters.dari)
         if filters.sampai:
             query = query.where(Penjualan.tanggal <= filters.sampai)
-        if filters.q:
-            columns = (Penjualan.kode, Penjualan.catatan)
-            query = query.where(
-                or_(*(CrudService.contains(column, filters.q) for column in columns))
-            )
+        query = self.apply_search(query, (Penjualan.kode, Penjualan.catatan), filters.q)
         if filters.sort == PenjualanSort.TOTAL:
             column = (
                 select(
@@ -93,29 +88,20 @@ class PenjualanService(DokumenService[Penjualan]):
             )
         else:
             column = getattr(Penjualan, filters.sort.value)
-        desc = filters.arah == SortDirection.DESC
-        order = (
-            (column.desc(), Penjualan.id.desc()) if desc else (column.asc(), Penjualan.id.asc())
-        )
-        return self.paginate(query.order_by(*order), params, self.to_summary)
+        query = self.apply_sort(query, column, filters.arah)
+        return self.paginate(query, params, self.to_summary)
 
     def detail(self, item_id: int) -> PenjualanDetailResponse:
-        query = (
-            select(Penjualan)
-            .options(
-                joinedload(Penjualan.lokasi),
-                joinedload(Penjualan.customer),
-                joinedload(Penjualan.dibuat_oleh),
-                joinedload(Penjualan.diposting_oleh),
-                selectinload(Penjualan.detail)
-                .joinedload(PenjualanDetail.produk)
-                .joinedload(Produk.kategori),
-            )
-            .where(Penjualan.id == item_id)
+        penjualan = self.get_or_404(
+            item_id,
+            joinedload(Penjualan.lokasi),
+            joinedload(Penjualan.customer),
+            joinedload(Penjualan.dibuat_oleh),
+            joinedload(Penjualan.diposting_oleh),
+            selectinload(Penjualan.detail)
+            .joinedload(PenjualanDetail.produk)
+            .joinedload(Produk.kategori),
         )
-        penjualan = self.db.scalar(query)
-        if penjualan is None or not self.can_access(penjualan):
-            raise NotFound("Penjualan tidak ditemukan")
         return self.to_detail(penjualan)
 
     def create(self, data: PenjualanInput) -> PenjualanDetailResponse:
@@ -183,9 +169,8 @@ class PenjualanService(DokumenService[Penjualan]):
     ) -> list[PenjualanDetail]:
         products, product_errors = self.check_products(data.items)
         errors: dict[str, str] = {}
-        # BR-26: penjualan dari gudang wajib memilih customer aktif, di outlet boleh kosong
         if data.customer_id is None:
-            if PenjualanPolicy.requires_customer(lokasi):
+            if self.rules.requires_customer(lokasi):
                 errors["customer_id"] = "Penjualan dari gudang wajib memilih customer"
         else:
             customer = self.db.get(Customer, data.customer_id)
@@ -228,7 +213,7 @@ class PenjualanService(DokumenService[Penjualan]):
             kode=penjualan.kode,
             status=penjualan.status,
             tanggal=penjualan.tanggal,
-            lokasi=PengirimanLokasi.model_validate(penjualan.lokasi),
+            lokasi=LokasiKontakRef.model_validate(penjualan.lokasi),
             customer=(
                 CustomerRef.model_validate(penjualan.customer) if penjualan.customer else None
             ),
@@ -251,14 +236,7 @@ class PenjualanService(DokumenService[Penjualan]):
         items = [
             PenjualanItemResponse(
                 id=row.id,
-                produk=PenjualanProduk(
-                    id=row.produk.id,
-                    sku=row.produk.sku,
-                    nama=row.produk.nama,
-                    satuan=row.produk.satuan,
-                    jenis=row.produk.kategori.jenis,
-                    harga_jual=row.produk.harga_jual,
-                ),
+                produk=PenjualanProduk.of(row.produk, harga_jual=row.produk.harga_jual),
                 jumlah=row.jumlah,
                 harga_satuan=row.harga_satuan,
                 subtotal=row.jumlah * row.harga_satuan,

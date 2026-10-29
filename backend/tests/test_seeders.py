@@ -97,7 +97,6 @@ def test_local_database_seeded_without_flag(db, capsys):
     assert "produk" in output and DEMO_PASSWORD in output
     assert db.scalar(select(func.count()).select_from(User)) == 8
 
-
 def test_stok_matches_ledger_and_demo_states_exist(db, seeded):
     stok_rows = db.scalars(select(Stok)).all()
     statuses = {row.status_stok.value for row in stok_rows}

@@ -1,16 +1,16 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from datetime import date
 from typing import Any
 
 from pydantic import BaseModel
-from sqlalchemy import BigInteger, ColumnElement, Select, cast, func, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import BigInteger, ColumnElement, Select, cast, func, or_, select
+from sqlalchemy.orm import Load, Session, joinedload
 
 from app.core.clock import Clock
 from app.core.errors import DataInUse, InvalidStatus, NotFound, ValidationFailed
-from app.models import DOCUMENT_NUMBER_SEQUENCE, Base, Lokasi, Produk, User
+from app.models import DOCUMENT_NUMBER_SEQUENCE, Base, Lokasi, LokasiType, Produk, User
 from app.policies.lokasi_policy import LokasiPolicy
-from app.schemas.common import ActiveFilter, Page, PageParams
+from app.schemas.common import ActiveFilter, Page, PageParams, SortDirection
 
 class SqlMoney:
     # jumlah x harga dihitung bigint supaya tidak overflow int4 (Desain Database 8.2)
@@ -128,8 +128,9 @@ class DokumenService[M: Base]:
         number = self.db.scalar(DOCUMENT_NUMBER_SEQUENCE.next_value())
         return f"{prefix}-{day:%y%m%d}-{number:04d}"
 
-    def get_or_404(self, item_id: int, for_update: bool = False) -> M:
-        query = select(self.model).where(self.model.id == item_id)
+    def get_or_404(self, item_id: int, *options: Load, for_update: bool = False) -> M:
+        # options eager load dipakai detail(), for_update dipakai aksi yang mengubah dokumen
+        query = select(self.model).options(*options).where(self.model.id == item_id)
         if for_update:
             query = query.with_for_update(of=self.model).execution_options(populate_existing=True)
         obj = self.db.scalar(query)
@@ -144,6 +145,18 @@ class DokumenService[M: Base]:
     def restrict(self, query: Select, *columns: ColumnElement[int]) -> Select:
         target = columns or (self.model.lokasi_id,)
         return self.policy.restrict(query, *target)
+
+    @staticmethod
+    def apply_search(query: Select, columns: Sequence[Any], q: str | None) -> Select:
+        if not q:
+            return query
+        return query.where(or_(*(CrudService.contains(column, q) for column in columns)))
+
+    def apply_sort(self, query: Select, column: Any, arah: SortDirection) -> Select:
+        # id menjadi pemecah seri supaya urutan antarhalaman tetap stabil
+        if arah == SortDirection.DESC:
+            return query.order_by(column.desc(), self.model.id.desc())
+        return query.order_by(column.asc(), self.model.id.asc())
 
     def ensure_status(self, obj: M, *allowed: str) -> None:
         # BR-03: dokumen final tidak bisa diubah, dihapus atau diproses ulang
@@ -168,6 +181,15 @@ class DokumenService[M: Base]:
         if not lokasi.aktif:
             raise ValidationFailed(errors={field: "Lokasi sudah tidak aktif"})
         return lokasi
+
+    def resolve_gudang_utama(self, field: str = "lokasi_id") -> Lokasi:
+        # sumber permintaan dan tujuan pembelian selalu gudang utama yang aktif
+        gudang_utama = self.db.scalar(
+            select(Lokasi).where(Lokasi.jenis == LokasiType.GUDANG_UTAMA, Lokasi.aktif.is_(True))
+        )
+        if gudang_utama is None:
+            raise ValidationFailed(errors={field: "Gudang utama tidak ditemukan"})
+        return gudang_utama
 
     def check_products(self, items: Sequence[Any]) -> tuple[dict[int, Produk], dict[str, str]]:
         ids = {item.produk_id for item in items}
@@ -200,3 +222,32 @@ class DokumenService[M: Base]:
         total = self.db.scalar(select(func.count()).select_from(query.order_by(None).subquery()))
         rows = self.db.scalars(query.limit(params.per_page).offset(params.offset)).all()
         return Page.of([convert(row) for row in rows], total, params)
+
+class DetailMatcher:
+    # baris konfirmasi terima atau setujui dipasangkan ke baris dokumen lewat produk_id
+    def __init__(self, label: str, details: Sequence[Any]):
+        self.label = label.lower()
+        self.rows = {row.produk_id: row for row in details}
+        self.matched: dict[int, Any] = {}
+        self.errors: dict[str, str] = {}
+
+    def pairs(self, items: Sequence[Any]) -> Iterator[tuple[str, Any, Any]]:
+        # produk asing atau ganda dicatat di sini, urutannya tetap selang-seling dengan error jumlah
+        for index, item in enumerate(items):
+            field = f"items.{index}"
+            row = self.rows.get(item.produk_id)
+            if row is None:
+                self.errors[f"{field}.produk_id"] = f"Produk tidak ada di {self.label} ini"
+            elif item.produk_id in self.matched:
+                self.errors[f"{field}.produk_id"] = "Produk tidak boleh duplikat dalam satu dokumen"
+            else:
+                self.matched[item.produk_id] = item
+                yield field, item, row
+
+    @property
+    def complete(self) -> bool:
+        return set(self.rows) == set(self.matched)
+
+    def raise_if_invalid(self) -> None:
+        if self.errors:
+            raise ValidationFailed(errors=self.errors)

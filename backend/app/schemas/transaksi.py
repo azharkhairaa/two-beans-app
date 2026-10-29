@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.core.sanitize import SingleLineText
 from app.models import TransaksiType
+from app.schemas.common import ProdukRef
 from app.schemas.fields import (
     BlankToNone,
     DocumentDate,
@@ -37,12 +38,7 @@ class TransaksiUpdate(BaseModel):
 class TransaksiInput(TransaksiUpdate):
     jenis: TransaksiType
 
-class TransaksiProduk(BaseModel):
-    id: int
-    sku: str
-    nama: str
-    satuan: str
-    jenis: str
+class TransaksiProduk(ProdukRef):
     harga_beli: int
 
 class TransaksiItemResponse(BaseModel):

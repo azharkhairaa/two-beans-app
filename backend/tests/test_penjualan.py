@@ -110,7 +110,6 @@ def setup(db, factory):
         "kurir": kurir,
     }
 
-
 def payload(setup, **changes):
     base = {
         "tanggal": Clock.today().isoformat(),
@@ -119,14 +118,12 @@ def payload(setup, **changes):
     }
     return base | changes
 
-
 def balance(db, lokasi_id: int, produk_id: int) -> int | None:
     return db.scalar(
         select(Stok.jumlah).where(
             Stok.lokasi_id == lokasi_id, Stok.produk_id == produk_id
         )
     )
-
 
 def test_outlet_sale_without_customer_and_default_harga_jual(setup, login_as):
     client = login_as("outlet@example.com")
@@ -168,7 +165,6 @@ def test_outlet_sale_without_customer_and_default_harga_jual(setup, login_as):
 
     assert client.delete(f"/api/penjualan/{data['id']}").status_code == 204
     assert client.get(f"/api/penjualan/{data['id']}").status_code == 404
-
 
 def test_posting_reduces_stock_and_records_mutasi_penjualan(
     db, factory, setup, login_as
@@ -223,7 +219,6 @@ def test_posting_reduces_stock_and_records_mutasi_penjualan(
             {"detail": "Penjualan sudah diposting"},
         )
 
-
 def test_posting_insufficient_stock_rolls_back(db, factory, setup, login_as):
     outlet, biji, alat = setup["outlet"], setup["biji"], setup["alat"]
     factory.add(Stok(lokasi_id=outlet.id, produk_id=biji.id, jumlah=5))
@@ -249,7 +244,6 @@ def test_posting_insufficient_stock_rolls_back(db, factory, setup, login_as):
     db.expire_all()
     assert (balance(db, outlet.id, biji.id), balance(db, outlet.id, alat.id)) == (5, 1)
     assert client.get(f"/api/penjualan/{pj['id']}").json()["status"] == "draf"
-
 
 def test_validation_rules_warehouse_customer_and_zero_price(
     db, factory, setup, login_as, client
@@ -300,7 +294,6 @@ def test_validation_rules_warehouse_customer_and_zero_price(
     assert standar_nol.status_code == 422 and standar_nol.json()["errors"] == {
         "items.0.harga_satuan": "Produk belum memiliki harga jual standar, isi harga satuan"
     }
-
 
 def test_location_scope_and_sorting_by_total(setup, login_as, client):
     assert login_as("kurir@example.com").get("/api/penjualan").status_code == 403

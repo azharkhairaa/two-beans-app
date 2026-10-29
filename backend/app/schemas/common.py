@@ -1,8 +1,11 @@
 from enum import StrEnum
 from math import ceil
+from typing import Self
 
 from fastapi import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+
+from app.models import Produk
 
 class SortDirection(StrEnum):
     ASC = "asc"
@@ -48,3 +51,39 @@ class OptionResponse(BaseModel):
     # pilihan ringkas untuk dropdown formulir
     id: int
     nama: str
+
+class LokasiKontakRef(BaseModel):
+    # lokasi yang dirujuk dokumen, alamat dan telepon ikut untuk surat jalan dan nota
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kode: str
+    nama: str
+    jenis: str
+    alamat: str | None
+    telepon: str | None
+
+class UserRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+class ProdukRef(BaseModel):
+    # identitas produk di baris dokumen, harga dan stok ditambahkan schema dokumennya
+    id: int
+    sku: str
+    nama: str
+    satuan: str
+    jenis: str
+
+    @classmethod
+    def of(cls, produk: Produk, **extra: int | None) -> Self:
+        return cls(
+            id=produk.id,
+            sku=produk.sku,
+            nama=produk.nama,
+            satuan=produk.satuan,
+            jenis=produk.kategori.jenis,
+            **extra,
+        )

@@ -196,7 +196,6 @@ def test_secret_key_change_invalidates_token():
     other = SessionManager(replace(settings, secret_key="kunci-lain-yang-juga-panjang-sekali-0123456789"))
     assert other.token_hash("token") != session_manager.token_hash("token")
 
-
 def test_account_locked_for_15_minutes_after_five_failed_logins(client, db, factory):
     user = factory.user("terkunci@example.com")
     db.commit()
@@ -240,7 +239,6 @@ def test_account_locked_for_15_minutes_after_five_failed_logins(client, db, fact
         assert unlocked_user.failed_logins == 0
         assert unlocked_user.locked_until is None
 
-
 def test_change_password_updates_hash_and_revokes_other_sessions(client, db, factory):
     user = factory.user("admin@example.com")
     now = datetime.now(UTC)
@@ -261,7 +259,7 @@ def test_change_password_updates_hash_and_revokes_other_sessions(client, db, fac
     csrf = login(client, "admin@example.com").json()["csrf_token"]
     headers = {"X-CSRF-Token": csrf}
 
-    # 1. password saat ini salah -> 422
+    # password saat ini salah -> 422
     wrong_curr = client.put(
         "/api/auth/password",
         json={
@@ -274,7 +272,7 @@ def test_change_password_updates_hash_and_revokes_other_sessions(client, db, fac
     assert wrong_curr.status_code == 422
     assert wrong_curr.json()["errors"] == {"current_password": "Password saat ini salah"}
 
-    # 2. konfirmasi tidak sama -> 422
+    # konfirmasi tidak sama -> 422
     mismatch = client.put(
         "/api/auth/password",
         json={
@@ -289,7 +287,7 @@ def test_change_password_updates_hash_and_revokes_other_sessions(client, db, fac
         "new_password_confirmation": "Konfirmasi password tidak sama"
     }
 
-    # 3. password baru sama dengan password saat ini -> 422
+    # password baru sama dengan password saat ini -> 422
     same_pw = client.put(
         "/api/auth/password",
         json={
@@ -304,7 +302,7 @@ def test_change_password_updates_hash_and_revokes_other_sessions(client, db, fac
         "new_password": "Password baru harus berbeda dari password saat ini"
     }
 
-    # 4. berhasil ubah password -> 204, sesi aktif tetap jalan, sesi lain tercabut
+    # ubah password berhasil -> 204, sesi aktif tetap jalan dan sesi lain tercabut
     ok = client.put(
         "/api/auth/password",
         json={

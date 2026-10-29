@@ -2,15 +2,13 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.clock import Clock
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import ValidationFailed
 from app.models import (
     KategoriType,
-    Lokasi,
-    LokasiType,
     Pembelian,
     PembelianDetail,
     PembelianStatus,
@@ -20,26 +18,25 @@ from app.models import (
     User,
 )
 from app.policies.dokumen_policy import PembelianPolicy
-from app.schemas.common import Page, PageParams, SortDirection
+from app.schemas.common import LokasiKontakRef, Page, PageParams, SortDirection, UserRef
 from app.schemas.pembelian import (
     PembelianDetailResponse,
     PembelianInput,
     PembelianItemInput,
     PembelianItemResponse,
     PembelianPesanInput,
+    PembelianProduk,
     PembelianSummary,
     PembelianTerimaInput,
     SupplierRef,
 )
-from app.schemas.pengiriman import PengirimanLokasi, PengirimanProduk, UserRef
-from app.services.base import CrudService, DokumenService
+from app.services.base import CrudService, DetailMatcher, DokumenService
 from app.services.mutasi_stok import MutasiStok, MutationSource, StockChange
 
 class PembelianSort(StrEnum):
     CREATED_AT = "created_at"
     TANGGAL_PESAN = "tanggal_pesan"
     KODE = "kode"
-
 
 @dataclass(frozen=True)
 class PembelianFilter:
@@ -51,20 +48,20 @@ class PembelianFilter:
     sort: PembelianSort = PembelianSort.CREATED_AT
     arah: SortDirection = SortDirection.DESC
 
-
 class PembelianService(DokumenService[Pembelian]):
     model = Pembelian
     label = "Pembelian"
 
     def __init__(self, db: Session, user: User):
         super().__init__(db, user)
-        self.pembelian_policy = PembelianPolicy(user)
+        # semua aksi pembelian khusus pengelola, jadi 403 muncul sebelum dokumen dicari (404/409)
+        PembelianPolicy(user).ensure_can_manage()
 
     def can_access(self, obj: Pembelian) -> bool:
-        return self.pembelian_policy.can_manage()
+        # pembelian tidak dibatasi lokasi, hak kelola sudah diperiksa saat service dibuat
+        return True
 
     def search(self, filters: PembelianFilter, params: PageParams) -> Page:
-        self.pembelian_policy.ensure_can_manage()
         query = select(Pembelian).options(
             joinedload(Pembelian.supplier),
             joinedload(Pembelian.lokasi),
@@ -87,41 +84,25 @@ class PembelianService(DokumenService[Pembelian]):
                 func.coalesce(Pembelian.tanggal_pesan, CrudService.local_date(Pembelian.created_at))
                 <= filters.sampai
             )
-        if filters.q:
-            columns = (Pembelian.kode, Pembelian.catatan)
-            query = query.where(
-                or_(*(CrudService.contains(column, filters.q) for column in columns))
-            )
-        column = getattr(Pembelian, filters.sort.value)
-        desc = filters.arah == SortDirection.DESC
-        order = (
-            (column.desc(), Pembelian.id.desc()) if desc else (column.asc(), Pembelian.id.asc())
-        )
-        return self.paginate(query.order_by(*order), params, self.to_summary)
+        query = self.apply_search(query, (Pembelian.kode, Pembelian.catatan), filters.q)
+        query = self.apply_sort(query, getattr(Pembelian, filters.sort.value), filters.arah)
+        return self.paginate(query, params, self.to_summary)
 
     def detail(self, item_id: int) -> PembelianDetailResponse:
-        self.pembelian_policy.ensure_can_manage()
-        query = (
-            select(Pembelian)
-            .options(
-                joinedload(Pembelian.supplier),
-                joinedload(Pembelian.lokasi),
-                joinedload(Pembelian.dibuat_oleh),
-                joinedload(Pembelian.dipesan_oleh),
-                joinedload(Pembelian.diterima_oleh),
-                selectinload(Pembelian.detail)
-                .joinedload(PembelianDetail.produk)
-                .joinedload(Produk.kategori),
-            )
-            .where(Pembelian.id == item_id)
+        pembelian = self.get_or_404(
+            item_id,
+            joinedload(Pembelian.supplier),
+            joinedload(Pembelian.lokasi),
+            joinedload(Pembelian.dibuat_oleh),
+            joinedload(Pembelian.dipesan_oleh),
+            joinedload(Pembelian.diterima_oleh),
+            selectinload(Pembelian.detail)
+            .joinedload(PembelianDetail.produk)
+            .joinedload(Produk.kategori),
         )
-        pembelian = self.db.scalar(query)
-        if pembelian is None:
-            raise NotFound("Pembelian tidak ditemukan")
         return self.to_detail(pembelian)
 
     def create(self, data: PembelianInput) -> PembelianDetailResponse:
-        self.pembelian_policy.ensure_can_manage()
         gudang_utama = self.resolve_gudang_utama()
         self.validate_draft(data)
         pembelian = Pembelian(
@@ -139,7 +120,6 @@ class PembelianService(DokumenService[Pembelian]):
         return self.detail(pembelian.id)
 
     def update(self, item_id: int, data: PembelianInput) -> PembelianDetailResponse:
-        self.pembelian_policy.ensure_can_manage()
         pembelian = self.get_or_404(item_id, for_update=True)
         self.ensure_status(pembelian, PembelianStatus.DRAF)
         self.validate_draft(data)
@@ -151,7 +131,6 @@ class PembelianService(DokumenService[Pembelian]):
         return self.detail(pembelian.id)
 
     def delete(self, item_id: int) -> None:
-        self.pembelian_policy.ensure_can_manage()
         pembelian = self.get_or_404(item_id, for_update=True)
         self.ensure_status(pembelian, PembelianStatus.DRAF)
         self.db.delete(pembelian)
@@ -160,7 +139,6 @@ class PembelianService(DokumenService[Pembelian]):
     def pesan(
         self, item_id: int, data: PembelianPesanInput | None = None
     ) -> PembelianDetailResponse:
-        self.pembelian_policy.ensure_can_manage()
         pembelian = self.get_or_404(item_id, for_update=True)
         self.ensure_status(pembelian, PembelianStatus.DRAF)
         tanggal_pesan = (
@@ -190,7 +168,6 @@ class PembelianService(DokumenService[Pembelian]):
         return self.detail(pembelian.id)
 
     def batal(self, item_id: int) -> PembelianDetailResponse:
-        self.pembelian_policy.ensure_can_manage()
         pembelian = self.get_or_404(item_id, for_update=True)
         self.ensure_status(pembelian, PembelianStatus.DRAF, PembelianStatus.DIPESAN)
         pembelian.status = PembelianStatus.DIBATALKAN
@@ -198,7 +175,6 @@ class PembelianService(DokumenService[Pembelian]):
         return self.detail(pembelian.id)
 
     def terima(self, item_id: int, data: PembelianTerimaInput) -> PembelianDetailResponse:
-        self.pembelian_policy.ensure_can_manage()
         pembelian = self.get_or_404(item_id, for_update=True)
         self.ensure_status(pembelian, PembelianStatus.DIPESAN)
         received_map = self.validate_terima(pembelian, data)
@@ -229,16 +205,6 @@ class PembelianService(DokumenService[Pembelian]):
         self.db.commit()
         return self.detail(pembelian.id)
 
-    def resolve_gudang_utama(self) -> Lokasi:
-        gudang_utama = self.db.scalar(
-            select(Lokasi).where(
-                Lokasi.jenis == LokasiType.GUDANG_UTAMA, Lokasi.aktif.is_(True)
-            )
-        )
-        if gudang_utama is None:
-            raise ValidationFailed(errors={"lokasi_id": "Gudang utama tidak ditemukan"})
-        return gudang_utama
-
     def validate_draft(self, data: PembelianInput) -> None:
         products, product_errors = self.check_products(data.items)
         errors: dict[str, str] = {}
@@ -260,35 +226,24 @@ class PembelianService(DokumenService[Pembelian]):
         if errors:
             raise ValidationFailed(errors=errors)
 
-    @staticmethod
-    def validate_terima(pembelian: Pembelian, data: PembelianTerimaInput) -> dict[int, int]:
-        detail_by_produk = {row.produk_id: row for row in pembelian.detail}
-        errors: dict[str, str] = {}
-        received_map: dict[int, int] = {}
-        for index, item in enumerate(data.items):
-            row = detail_by_produk.get(item.produk_id)
-            if row is None:
-                errors[f"items.{index}.produk_id"] = "Produk tidak ada di pembelian ini"
-                continue
-            if item.produk_id in received_map:
-                errors[f"items.{index}.produk_id"] = (
-                    "Produk tidak boleh duplikat dalam satu dokumen"
-                )
-                continue
-            received_map[item.produk_id] = item.jumlah_diterima
+    def validate_terima(self, pembelian: Pembelian, data: PembelianTerimaInput) -> dict[int, int]:
+        matcher = DetailMatcher(self.label, pembelian.detail)
+        for field, item, row in matcher.pairs(data.items):
             if item.jumlah_diterima > row.jumlah:
-                errors[f"items.{index}.jumlah_diterima"] = (
+                matcher.errors[f"{field}.jumlah_diterima"] = (
                     f"Maksimal sebesar jumlah dipesan ({row.jumlah})"
                 )
-        if set(detail_by_produk) != set(received_map):
-            errors.setdefault("items", "Semua produk di pembelian wajib dikonfirmasi")
+        received_map = {
+            produk_id: item.jumlah_diterima for produk_id, item in matcher.matched.items()
+        }
+        if not matcher.complete:
+            matcher.errors.setdefault("items", "Semua produk di pembelian wajib dikonfirmasi")
         elif received_map and all(jumlah == 0 for jumlah in received_map.values()):
-            errors["items"] = (
+            matcher.errors["items"] = (
                 "Minimal satu produk harus diterima lebih dari 0. "
                 "Gunakan aksi batal bila pesanan tidak jadi diterima"
             )
-        if errors:
-            raise ValidationFailed(errors=errors)
+        matcher.raise_if_invalid()
         return received_map
 
     @staticmethod
@@ -315,7 +270,7 @@ class PembelianService(DokumenService[Pembelian]):
             kode=pembelian.kode,
             status=pembelian.status,
             supplier=SupplierRef.model_validate(pembelian.supplier),
-            lokasi=PengirimanLokasi.model_validate(pembelian.lokasi),
+            lokasi=LokasiKontakRef.model_validate(pembelian.lokasi),
             tanggal_pesan=pembelian.tanggal_pesan,
             tanggal_perkiraan=pembelian.tanggal_perkiraan,
             catatan=pembelian.catatan,
@@ -344,14 +299,7 @@ class PembelianService(DokumenService[Pembelian]):
         items = [
             PembelianItemResponse(
                 id=row.id,
-                produk=PengirimanProduk(
-                    id=row.produk.id,
-                    sku=row.produk.sku,
-                    nama=row.produk.nama,
-                    satuan=row.produk.satuan,
-                    jenis=row.produk.kategori.jenis,
-                    harga_beli=row.produk.harga_beli,
-                ),
+                produk=PembelianProduk.of(row.produk, harga_beli=row.produk.harga_beli),
                 jumlah=row.jumlah,
                 harga_satuan=row.harga_satuan,
                 subtotal=row.jumlah * row.harga_satuan,

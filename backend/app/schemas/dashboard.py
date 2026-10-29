@@ -2,8 +2,8 @@ from datetime import date
 
 from pydantic import BaseModel
 
+from app.schemas.common import LokasiKontakRef
 from app.schemas.fields import UtcDateTime
-from app.schemas.pengiriman import PengirimanLokasi
 
 class DashboardRingkasan(BaseModel):
     nilai_persediaan: int
@@ -20,7 +20,6 @@ class DashboardRingkasan(BaseModel):
     masuk_hari_ini: int = 0
     keluar_hari_ini: int = 0
 
-
 class DashboardLokasiItem(BaseModel):
     id: int
     kode: str
@@ -33,14 +32,12 @@ class DashboardLokasiItem(BaseModel):
     nota_30_hari: int
     omzet_30_hari: int
 
-
 class DashboardCustomerItem(BaseModel):
     id: int | None = None
     nama: str
     jenis: str | None = None
     nota: int
     total: int
-
 
 class DashboardStokKritisItem(BaseModel):
     lokasi_id: int
@@ -54,14 +51,12 @@ class DashboardStokKritisItem(BaseModel):
     stok_minimum: int
     status_stok: str
 
-
 class DashboardTugasItem(BaseModel):
     jenis: str
     id: int
     kode: str
     keterangan: str
     tanggal: str | None = None
-
 
 class DashboardAktivitasItem(BaseModel):
     id: int
@@ -77,14 +72,13 @@ class DashboardAktivitasItem(BaseModel):
     dokumen_kode: str | None = None
     oleh: str
 
-
 class DeliverymanPengirimanItem(BaseModel):
     id: int
     kode: str
     status: str
     tanggal_kirim: date
-    lokasi_asal: PengirimanLokasi
-    lokasi_tujuan: PengirimanLokasi
+    lokasi_asal: LokasiKontakRef
+    lokasi_tujuan: LokasiKontakRef
     kendaraan_jenis: str | None
     kendaraan_nomor: str | None
     jumlah_item: int
@@ -93,10 +87,9 @@ class DeliverymanPengirimanItem(BaseModel):
     dikirim_pada: UtcDateTime | None = None
     diterima_pada: UtcDateTime | None = None
 
-
 class DashboardResponse(BaseModel):
     peran: str
-    lokasi: PengirimanLokasi | None = None
+    lokasi: LokasiKontakRef | None = None
     ringkasan: DashboardRingkasan | None = None
     per_lokasi: list[DashboardLokasiItem] = []
     customer_teratas: list[DashboardCustomerItem] = []
@@ -106,13 +99,11 @@ class DashboardResponse(BaseModel):
     pengiriman_aktif: list[DeliverymanPengirimanItem] = []
     riwayat: list[DeliverymanPengirimanItem] = []
 
-
 class MonitoringLokasiHeader(BaseModel):
     id: int
     kode: str
     nama: str
     jenis: str
-
 
 class MonitoringProdukInfo(BaseModel):
     id: int
@@ -123,7 +114,6 @@ class MonitoringProdukInfo(BaseModel):
     kategori_nama: str
     harga_beli: int
 
-
 class MonitoringSel(BaseModel):
     lokasi_id: int
     jumlah: int
@@ -132,13 +122,11 @@ class MonitoringSel(BaseModel):
     status_stok: str
     nilai: int
 
-
 class MonitoringBaris(BaseModel):
     produk: MonitoringProdukInfo
     sel: list[MonitoringSel]
     total: int
     nilai: int
-
 
 class MonitoringTotalLokasi(BaseModel):
     lokasi_id: int
@@ -147,7 +135,6 @@ class MonitoringTotalLokasi(BaseModel):
     jumlah: int
     nilai: int
 
-
 class MonitoringResponse(BaseModel):
     lokasi: list[MonitoringLokasiHeader]
     baris: list[MonitoringBaris]
@@ -155,12 +142,10 @@ class MonitoringResponse(BaseModel):
     total_jumlah: int
     total_nilai: int
 
-
 class TrenHariItem(BaseModel):
     tanggal: date
     masuk: int
     keluar: int
-
 
 class TrenResponse(BaseModel):
     hari: int

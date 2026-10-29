@@ -72,7 +72,7 @@ class RiwayatSeeder(Seeder):
         return self.context.customer[name].id
 
     def seed_pembelian_and_roasting(self) -> None:
-        # 10 PO diterima + 1 PO dipesan + 1 PO draf = 12 pembelian
+        # 12 pembelian: 10 PO diterima, 1 PO dipesan dan 1 PO draf
         po_plans = [
             (
                 58,
@@ -220,7 +220,7 @@ class RiwayatSeeder(Seeder):
                     ),
                 )
 
-        # PO ke-11: berstatus dipesan (PO terbuka untuk indikator dashboard)
+        # PO ke-11 berstatus dipesan sebagai PO terbuka untuk indikator dashboard
         tgl_open, dt_open = self.day(2, 10, 0)
         with Clock.at(dt_open):
             po_open = service.create(
@@ -250,7 +250,7 @@ class RiwayatSeeder(Seeder):
                 ),
             )
 
-        # PO ke-12: berstatus draf
+        # PO ke-12 dibiarkan draf
         _, dt_today = self.day(0, 8, 30)
         with Clock.at(dt_today):
             service.create(
@@ -273,7 +273,7 @@ class RiwayatSeeder(Seeder):
                 )
             )
 
-        # 12 pasang transaksi roasting di GU-01 (24 transaksi: 12 keluar green bean + 12 masuk roasted bean)
+        # 12 pasang roasting di GU-01: keluar green bean lalu masuk roasted bean (24 transaksi)
         roast_batches = [
             (
                 52,
@@ -436,8 +436,8 @@ class RiwayatSeeder(Seeder):
                 tx_gu.posting(masuk.id)
 
     def seed_permintaan_and_pengiriman(self) -> None:
-        # 15 Permintaan (10 selesai, 1 dikirim, 1 draf pengiriman, 2 diajukan, 1 ditolak)
-        # + 13 Pengiriman langsung = 25 Pengiriman
+        # 15 permintaan (10 selesai, 1 dikirim, 1 draf pengiriman, 2 diajukan, 1 ditolak)
+        # ditambah 13 pengiriman langsung sehingga total pengiriman 25
         pm_gu = PermintaanService(self.db, self.mgr_gu)
         kr_gu = PengirimanService(self.db, self.mgr_gu)
 
@@ -651,7 +651,7 @@ class RiwayatSeeder(Seeder):
                     ),
                 )
 
-        # Permintaan ke-11: disetujui dan pengiriman sedang dalam perjalanan (status dikirim)
+        # permintaan ke-11 disetujui dan pengirimannya masih dalam perjalanan
         tgl_11, dt_11 = self.day(1, 10, 0)
         with Clock.at(dt_11):
             pm_transit = PermintaanService(self.db, self.mgr_ot1).create(
@@ -692,7 +692,7 @@ class RiwayatSeeder(Seeder):
                 ),
             )
 
-        # Permintaan ke-12: disetujui dan pengiriman masih berstatus draf
+        # permintaan ke-12 disetujui tetapi pengirimannya masih draf
         tgl_12, dt_12 = self.day(0, 9, 0)
         with Clock.at(dt_12):
             pm_draf_kr = PermintaanService(self.db, self.mgr_ot2).create(
@@ -727,7 +727,7 @@ class RiwayatSeeder(Seeder):
                 ),
             )
 
-        # Permintaan ke-13 dan ke-14: masih berstatus diajukan (menunggu persetujuan GU-01)
+        # permintaan ke-13 dan ke-14 masih diajukan, menunggu persetujuan GU-01
         _, dt_13 = self.day(1, 14, 0)
         with Clock.at(dt_13):
             PermintaanService(self.db, self.mgr_gc1).create(
@@ -761,7 +761,7 @@ class RiwayatSeeder(Seeder):
                 )
             )
 
-        # Permintaan ke-15: berstatus ditolak
+        # permintaan ke-15 ditolak
         _, dt_15 = self.day(14, 11, 0)
         with Clock.at(dt_15):
             pm_tolak = PermintaanService(self.db, self.mgr_ot2).create(
@@ -782,7 +782,7 @@ class RiwayatSeeder(Seeder):
                 ),
             )
 
-        # 13 Pengiriman langsung (11 diterima + 1 dikirim + 1 draf = 13, total pengiriman = 25)
+        # 13 pengiriman langsung: 11 diterima, 1 dikirim dan 1 draf
         direct_shipments = [
             (
                 37,
@@ -933,7 +933,7 @@ class RiwayatSeeder(Seeder):
                     ),
                 )
 
-        # Pengiriman langsung ke-12: sedang dikirim (dalam perjalanan ke GC-01)
+        # pengiriman langsung ke-12 masih dalam perjalanan ke GC-01
         tgl_kr12, dt_kr12 = self.day(1, 15, 30)
         with Clock.at(dt_kr12):
             kr_transit2 = kr_gu.create(
@@ -956,7 +956,7 @@ class RiwayatSeeder(Seeder):
             )
             kr_gu.kirim(kr_transit2.id)
 
-        # Pengiriman langsung ke-13: masih berstatus draf
+        # pengiriman langsung ke-13 dibiarkan draf
         tgl_kr13, dt_kr13 = self.day(0, 11, 0)
         with Clock.at(dt_kr13):
             kr_gu.create(
@@ -976,7 +976,7 @@ class RiwayatSeeder(Seeder):
             )
 
     def seed_branch_and_outlet_transactions(self) -> None:
-        # 24 transaksi roasting sudah dibuat, tambah 16 transaksi operasional (14 diposting + 2 draf) = 40 transaksi
+        # 16 transaksi operasional (14 diposting, 2 draf) melengkapi 24 roasting menjadi 40
         tx_plans = [
             (
                 38,
@@ -1125,7 +1125,7 @@ class RiwayatSeeder(Seeder):
                 )
                 service.posting(tx.id)
 
-        # 2 Transaksi draf (1 di GU-01, 1 di OT-01)
+        # 2 transaksi draf, satu di GU-01 dan satu di OT-01
         tgl_today, dt_today = self.day(0, 11, 30)
         with Clock.at(dt_today):
             TransaksiService(self.db, self.mgr_gu).create(
@@ -1156,8 +1156,8 @@ class RiwayatSeeder(Seeder):
             )
 
     def seed_penjualan(self) -> None:
-        # 60 Penjualan (58 diposting + 2 draf) tersebar di GU-01, GC-01, GC-02, OT-01, OT-02 dan OT-03
-        # gudang selalu memakai customer aktif, outlet campuran customer terdaftar dan pembeli Umum
+        # 60 penjualan (58 diposting, 2 draf) tersebar di semua gudang dan outlet
+        # gudang selalu memakai customer aktif, outlet campuran customer terdaftar dan pembeli umum
         gu_catalog = [
             ("BK-ARB-GAYO-1000", 2, 390000),
             ("BK-BLD-HOUSE-1000", 3, 310000),
@@ -1262,7 +1262,7 @@ class RiwayatSeeder(Seeder):
                 )
                 service.posting(pj.id)
 
-        # 2 Penjualan berstatus draf (1 di GU-01, 1 di OT-01) = total 60 penjualan
+        # 2 penjualan draf, satu di GU-01 dan satu di OT-01
         tgl_today, dt_today = self.day(0, 13, 0)
         with Clock.at(dt_today):
             PenjualanService(self.db, self.mgr_gu).create(
@@ -1293,7 +1293,7 @@ class RiwayatSeeder(Seeder):
             )
 
     def seed_stok_minimum_and_rak(self) -> None:
-        # atur stok_minimum dan kode rak di setiap lokasi, termasuk beberapa item Menipis dan Habis
+        # stok_minimum dan rak per lokasi, sebagian sengaja menipis atau habis untuk demo
         stok_service = StokService(self.db, self.admin)
         settings = [
             # GU-01
@@ -1308,7 +1308,7 @@ class RiwayatSeeder(Seeder):
             ("GU-01", "BK-BLD-HOUSE-1000", 20, "B-04"),
             ("GU-01", "AL-V60-02", 15, "C-01"),
             ("GU-01", "ME-ESPRESSO-1G", 8, "C-02"),
-            # GC-01 (beberapa menipis & 1 habis untuk demo)
+            # GC-01, beberapa menipis dan satu habis
             ("GC-01", "BK-ARB-GAYO-200", 25, "A-01"),
             ("GC-01", "BK-BLD-HOUSE-250", 20, "A-02"),
             ("GC-01", "BK-EXC-MERANTI-200", 15, "A-03"),
@@ -1319,7 +1319,7 @@ class RiwayatSeeder(Seeder):
             ("GC-02", "BK-ARB-PREANGER-250", 20, "A-02"),
             ("GC-02", "BK-BLD-ESPRESSO-500", 15, "A-03"),
             ("GC-02", "AL-FRENCH-600", 12, "B-01"),
-            # OT-01 (beberapa menipis & 1 habis)
+            # OT-01, beberapa menipis dan satu habis
             ("OT-01", "BK-ARB-GAYO-200", 35, "R-01"),
             ("OT-01", "BK-ARB-KINTAMANI-200", 15, "R-02"),
             ("OT-01", "BK-BLD-HOUSE-250", 20, "R-03"),

@@ -3,13 +3,13 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.common import LokasiKontakRef, ProdukRef
 from app.schemas.fields import (
     DocumentDate,
     ForeignId,
     OptionalAddress,
     UtcDateTime,
 )
-from app.schemas.pengiriman import PengirimanLokasi
 
 class PenjualanItemInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -17,7 +17,6 @@ class PenjualanItemInput(BaseModel):
     produk_id: ForeignId
     jumlah: Annotated[int, Field(ge=1, le=100_000, strict=True)]
     harga_satuan: Annotated[int, Field(ge=1, le=1_000_000_000, strict=True)] | None = None
-
 
 class PenjualanInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -28,7 +27,6 @@ class PenjualanInput(BaseModel):
     catatan: OptionalAddress = None
     items: Annotated[list[PenjualanItemInput], Field(min_length=1, max_length=50)]
 
-
 class CustomerRef(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -38,15 +36,8 @@ class CustomerRef(BaseModel):
     telepon: str | None
     alamat: str | None
 
-
-class PenjualanProduk(BaseModel):
-    id: int
-    sku: str
-    nama: str
-    satuan: str
-    jenis: str
+class PenjualanProduk(ProdukRef):
     harga_jual: int
-
 
 class PenjualanItemResponse(BaseModel):
     id: int
@@ -55,13 +46,12 @@ class PenjualanItemResponse(BaseModel):
     harga_satuan: int
     subtotal: int
 
-
 class PenjualanSummary(BaseModel):
     id: int
     kode: str
     status: str
     tanggal: date
-    lokasi: PengirimanLokasi
+    lokasi: LokasiKontakRef
     customer: CustomerRef | None
     nama_customer: str
     catatan: str | None
@@ -72,7 +62,6 @@ class PenjualanSummary(BaseModel):
     diposting_pada: UtcDateTime | None
     created_at: UtcDateTime
     updated_at: UtcDateTime
-
 
 class PenjualanDetailResponse(PenjualanSummary):
     items: list[PenjualanItemResponse]

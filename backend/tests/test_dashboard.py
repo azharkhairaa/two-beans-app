@@ -39,7 +39,6 @@ def login_as(client, email: str) -> str:
     assert res.status_code == 200
     return res.json()["csrf_token"]
 
-
 @pytest.fixture
 def seeded_dashboard(db, factory):
     kat_biji = factory.add(Kategori(nama="Single Origin", jenis=KategoriType.ROASTED_BEAN))
@@ -78,17 +77,17 @@ def seeded_dashboard(db, factory):
     mgr_ot = factory.user("mgr.ot@twobeans.id", role=UserRole.MANAGER_OUTLET, lokasi=ot)
     kurir = factory.user("kurir1@twobeans.id", role=UserRole.DELIVERYMAN)
 
-    # Stok di GU-01 (aman & menipis) dan OT-01 (menipis & habis)
+    # stok GU-01 aman dan menipis, stok OT-01 menipis dan habis
     factory.add(Stok(lokasi=gu, produk=prod_gayo, jumlah=40, stok_minimum=20, rak="A-01"))
     factory.add(Stok(lokasi=gu, produk=prod_v60, jumlah=5, stok_minimum=5, rak="B-01"))
     factory.add(Stok(lokasi=ot, produk=prod_gayo, jumlah=8, stok_minimum=10, rak="R-01"))
     factory.add(Stok(lokasi=ot, produk=prod_v60, jumlah=0, stok_minimum=2, rak="R-02"))
 
-    # Mutasi hari ini akan dibuat bersama dokumennya di bawah
+    # mutasi hari ini ikut tercatat bersama dokumennya di bawah
     now = Clock.now()
     today = Clock.today()
 
-    # Pengiriman berstatus dikirim (dalam perjalanan)
+    # pengiriman berstatus dikirim (dalam perjalanan)
     kirim = factory.add(
         Pengiriman(
             kode="KR-261028-0001",
@@ -108,7 +107,7 @@ def seeded_dashboard(db, factory):
         PengirimanDetail(pengiriman=kirim, produk=prod_gayo, jumlah_dikirim=10)
     )
 
-    # Pembelian berstatus dipesan (PO terbuka)
+    # pembelian berstatus dipesan (PO terbuka)
     sup = factory.add(Supplier(nama="Koperasi Gayo"))
     po = factory.add(
         Pembelian(
@@ -128,7 +127,7 @@ def seeded_dashboard(db, factory):
         )
     )
 
-    # Permintaan berstatus diajukan
+    # permintaan berstatus diajukan
     pm = factory.add(
         Permintaan(
             kode="PM-261028-0001",
@@ -141,7 +140,7 @@ def seeded_dashboard(db, factory):
     )
     factory.add(PermintaanDetail(permintaan=pm, produk=prod_gayo, jumlah_diminta=12))
 
-    # Penjualan diposting (GU-01 ke Kafe Senja, OT-01 ke Umum)
+    # penjualan diposting: GU-01 ke Kafe Senja, OT-01 ke pembeli umum
     cust = factory.add(Customer(nama="Kafe Senja", jenis=CustomerType.KAFE))
     pj_gu = factory.add(
         Penjualan(
@@ -216,7 +215,6 @@ def seeded_dashboard(db, factory):
         "kurir": kurir,
     }
 
-
 def test_dashboard_admin_matches_sql_queries_and_monitoring_matrix(
     client, db, seeded_dashboard
 ):
@@ -229,7 +227,7 @@ def test_dashboard_admin_matches_sql_queries_and_monitoring_matrix(
     today = Clock.today()
     since = today - timedelta(days=29)
 
-    # Bandingkan dengan query SQL Desain Database 8.2
+    # dibandingkan dengan query SQL Desain Database 8.2
     sql_8_2 = db.execute(
         text(
             """
@@ -250,7 +248,7 @@ def test_dashboard_admin_matches_sql_queries_and_monitoring_matrix(
     expected_nilai_persediaan = sum(int(r.nilai) for r in sql_8_2)
     assert body["ringkasan"]["nilai_persediaan"] == expected_nilai_persediaan
 
-    # Bandingkan dengan query SQL Desain Database 8.4
+    # dibandingkan dengan query SQL Desain Database 8.4
     sql_8_4 = db.execute(
         text(
             """
@@ -269,7 +267,7 @@ def test_dashboard_admin_matches_sql_queries_and_monitoring_matrix(
     assert body["ringkasan"]["nilai_dalam_perjalanan"] == int(sql_8_4.nilai_dalam_perjalanan)
     assert body["ringkasan"]["nilai_po_terbuka"] == int(sql_8_4.nilai_po_terbuka)
 
-    # Bandingkan dengan query SQL Desain Database 8.6
+    # dibandingkan dengan query SQL Desain Database 8.6
     sql_8_6 = db.execute(
         text(
             """
@@ -289,7 +287,7 @@ def test_dashboard_admin_matches_sql_queries_and_monitoring_matrix(
     assert [c["nama"] for c in body["customer_teratas"]] == [r.customer for r in sql_8_6]
     assert body["ringkasan"]["omzet_30_hari"] == sum(int(r.total) for r in sql_8_6)
 
-    # Matriks monitoring total_nilai sama dengan nilai_persediaan di dashboard
+    # total_nilai matriks monitoring sama dengan nilai_persediaan dashboard
     mon_res = client.get("/api/dashboard/monitoring")
     assert mon_res.status_code == 200
     mon = mon_res.json()
@@ -297,9 +295,8 @@ def test_dashboard_admin_matches_sql_queries_and_monitoring_matrix(
     assert len(mon["lokasi"]) == 2
     assert len(mon["baris"]) == 2
 
-
 def test_dashboard_roles_and_tren_isolation(client, seeded_dashboard):
-    # 1. Manager Outlet hanya melihat lokasi OT-01 dan tugas penerimaan pengiriman
+    # manager outlet hanya melihat lokasi OT-01 dan tugas penerimaan pengiriman
     login_as(client, "mgr.ot@twobeans.id")
     res_ot = client.get("/api/dashboard")
     assert res_ot.status_code == 200
@@ -310,7 +307,7 @@ def test_dashboard_roles_and_tren_isolation(client, seeded_dashboard):
     assert data_ot["ringkasan"]["omzet_30_hari"] == 4 * 95000
     assert any(t["jenis"] == "terima_pengiriman" for t in data_ot["tugas"])
 
-    # Manager Outlet meminta tren lokasinya sendiri -> 200, meminta lokasi GU-01 -> 404
+    # manager outlet meminta tren lokasinya sendiri -> 200, lokasi GU-01 -> 404
     tren_ok = client.get("/api/dashboard/tren?hari=14")
     assert tren_ok.status_code == 200
     assert len(tren_ok.json()["data"]) == 14
@@ -320,7 +317,7 @@ def test_dashboard_roles_and_tren_isolation(client, seeded_dashboard):
     tren_forbidden = client.get(f"/api/dashboard/tren?hari=14&lokasi_id={gu_id}")
     assert tren_forbidden.status_code == 404
 
-    # 2. Deliveryman melihat pengiriman aktifnya dan ditolak di monitoring
+    # deliveryman melihat pengiriman aktifnya dan ditolak di monitoring
     login_as(client, "kurir1@twobeans.id")
     res_dm = client.get("/api/dashboard")
     assert res_dm.status_code == 200
@@ -331,7 +328,6 @@ def test_dashboard_roles_and_tren_isolation(client, seeded_dashboard):
 
     assert client.get("/api/dashboard/monitoring").status_code == 403
     assert client.get("/api/dashboard/tren").status_code == 403
-
 
 def test_large_values_inactive_products_and_unknown_status(client, db, seeded_dashboard):
     # 48 x Rp45 juta melewati batas int4, produk nonaktif yang masih berstok tetap dihitung

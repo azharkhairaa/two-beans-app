@@ -98,7 +98,6 @@ def setup(db, factory):
         "kurir2": kurir2,
     }
 
-
 def payload(setup, **changes):
     base = {
         "lokasi_tujuan_id": setup["outlet"].id,
@@ -108,14 +107,12 @@ def payload(setup, **changes):
     }
     return base | changes
 
-
 def balance(db, lokasi_id: int, produk_id: int) -> int | None:
     return db.scalar(
         select(Stok.jumlah).where(
             Stok.lokasi_id == lokasi_id, Stok.produk_id == produk_id
         )
     )
-
 
 def test_draft_create_update_and_delete(setup, login_as):
     client = login_as("gudang@example.com")
@@ -154,7 +151,6 @@ def test_draft_create_update_and_delete(setup, login_as):
 
     assert client.delete(f"/api/pengiriman/{data['id']}").status_code == 204
     assert client.get(f"/api/pengiriman/{data['id']}").status_code == 404
-
 
 def test_delete_draft_linked_to_permintaan_cancels_and_reopens_permintaan(
     db, factory, setup, login_as
@@ -203,7 +199,6 @@ def test_delete_draft_linked_to_permintaan_cancels_and_reopens_permintaan(
     assert refreshed_pm.status == PermintaanStatus.DIAJUKAN
     assert refreshed_pm.diproses_oleh_id is None and refreshed_pm.diproses_pada is None
     assert refreshed_pm.detail[0].jumlah_disetujui is None
-
 
 def test_kirim_and_terima_updates_stock_and_completes_permintaan(
     db, factory, setup, login_as, client
@@ -310,7 +305,6 @@ def test_kirim_and_terima_updates_stock_and_completes_permintaan(
     ).all()
     assert mutasi == [(gudang.id, "kirim", -10), (outlet.id, "terima", 9)]
 
-
 def test_kirim_insufficient_stock_rolls_back(db, factory, setup, login_as):
     gudang, biji, alat = setup["gudang"], setup["biji"], setup["alat"]
     factory.add(Stok(lokasi_id=gudang.id, produk_id=biji.id, jumlah=10))
@@ -339,7 +333,6 @@ def test_kirim_insufficient_stock_rolls_back(db, factory, setup, login_as):
     db.expire_all()
     assert (balance(db, gudang.id, biji.id), balance(db, gudang.id, alat.id)) == (10, 1)
     assert client.get(f"/api/pengiriman/{draft['id']}").json()["status"] == "draf"
-
 
 def test_validation_rules_for_draft_kirim_and_terima(db, factory, setup, login_as):
     gudang, outlet, biji, alat = (
@@ -468,7 +461,6 @@ def test_validation_rules_for_draft_kirim_and_terima(db, factory, setup, login_a
         "items.0.jumlah_diterima": "Maksimal sebesar jumlah dikirim (5)"
     }
 
-
 def test_role_and_location_access_and_status_transitions(
     db, factory, setup, login_as, client
 ):
@@ -486,7 +478,7 @@ def test_role_and_location_access_and_status_transitions(
     assert outlet_client.post("/api/pengiriman", json=payload(setup)).status_code == 403
     client.cookies.clear()
 
-    # manager gudang utama membuat 2 pengiriman: satu untuk kurir1 ke outlet, satu untuk kurir2 ke cabang
+    # gudang utama membuat dua pengiriman: kurir1 ke outlet dan kurir2 ke cabang
     gudang_client = login_as("gudang@example.com")
     kr_outlet = gudang_client.post(
         "/api/pengiriman",
@@ -541,7 +533,7 @@ def test_role_and_location_access_and_status_transitions(
         kr_outlet["id"]
     ]
 
-    # kirim kr_outlet oleh manager gudang asal, lalu cek bahwa gudang asal tidak boleh menerima (403)
+    # gudang asal mengirim kr_outlet tetapi tidak boleh ikut menerimanya (403)
     client.cookies.clear()
     gudang_client = login_as("gudang@example.com")
     assert (
@@ -566,7 +558,7 @@ def test_role_and_location_access_and_status_transitions(
             {"detail": "Pengiriman sudah dikirim"},
         )
 
-    # deliveryman hanya melihat pengiriman yang ditugaskan kepadanya dan tidak bisa melakukan aksi tulis
+    # deliveryman hanya melihat pengiriman tugasnya dan tidak punya aksi tulis
     client.cookies.clear()
     kurir1_client = login_as("kurir1@example.com")
     daftar_kurir = kurir1_client.get("/api/pengiriman").json()

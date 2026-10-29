@@ -20,7 +20,6 @@ from app.schemas.auth import LoginRequest, PasswordChangeRequest, RegisterReques
 
 log = logging.getLogger("uvicorn.error")
 
-
 class AuthService:
     MAX_FAILED_LOGINS = 5
     LOCK_DURATION = timedelta(minutes=15)

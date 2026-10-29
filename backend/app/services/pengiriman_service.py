@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.clock import Clock
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import ValidationFailed
 from app.models import (
     Lokasi,
     Pengiriman,
@@ -21,21 +21,20 @@ from app.models import (
     UserStatus,
 )
 from app.policies.dokumen_policy import PengirimanPolicy
-from app.schemas.common import Page, PageParams, SortDirection
+from app.schemas.common import LokasiKontakRef, Page, PageParams, SortDirection, UserRef
 from app.schemas.pengiriman import (
     PengirimanDetailResponse,
     PengirimanInput,
     PengirimanItemInput,
     PengirimanItemResponse,
     PengirimanKirimInput,
-    PengirimanLokasi,
     PengirimanProduk,
     PengirimanSummary,
     PengirimanTerimaInput,
+    PengirimanTerimaItemInput,
     PermintaanRef,
-    UserRef,
 )
-from app.services.base import CrudService, DokumenService
+from app.services.base import DetailMatcher, DokumenService
 from app.services.mutasi_stok import MutasiStok, MutationSource, StockChange
 
 class PengirimanSort(StrEnum):
@@ -91,38 +90,24 @@ class PengirimanService(DokumenService[Pengiriman]):
             query = query.where(Pengiriman.tanggal_kirim >= filters.dari)
         if filters.sampai:
             query = query.where(Pengiriman.tanggal_kirim <= filters.sampai)
-        if filters.q:
-            columns = (Pengiriman.kode, Pengiriman.catatan)
-            query = query.where(
-                or_(*(CrudService.contains(column, filters.q) for column in columns))
-            )
-        column = getattr(Pengiriman, filters.sort.value)
-        desc = filters.arah == SortDirection.DESC
-        order = (
-            (column.desc(), Pengiriman.id.desc()) if desc else (column.asc(), Pengiriman.id.asc())
-        )
-        return self.paginate(query.order_by(*order), params, self.summary_for_user)
+        query = self.apply_search(query, (Pengiriman.kode, Pengiriman.catatan), filters.q)
+        query = self.apply_sort(query, getattr(Pengiriman, filters.sort.value), filters.arah)
+        return self.paginate(query, params, self.summary_for_user)
 
     def detail(self, item_id: int) -> PengirimanDetailResponse:
-        query = (
-            select(Pengiriman)
-            .options(
-                joinedload(Pengiriman.lokasi_asal),
-                joinedload(Pengiriman.lokasi_tujuan),
-                joinedload(Pengiriman.permintaan),
-                joinedload(Pengiriman.deliveryman),
-                joinedload(Pengiriman.dibuat_oleh),
-                joinedload(Pengiriman.dikirim_oleh),
-                joinedload(Pengiriman.diterima_oleh),
-                selectinload(Pengiriman.detail)
-                .joinedload(PengirimanDetail.produk)
-                .joinedload(Produk.kategori),
-            )
-            .where(Pengiriman.id == item_id)
+        pengiriman = self.get_or_404(
+            item_id,
+            joinedload(Pengiriman.lokasi_asal),
+            joinedload(Pengiriman.lokasi_tujuan),
+            joinedload(Pengiriman.permintaan),
+            joinedload(Pengiriman.deliveryman),
+            joinedload(Pengiriman.dibuat_oleh),
+            joinedload(Pengiriman.dikirim_oleh),
+            joinedload(Pengiriman.diterima_oleh),
+            selectinload(Pengiriman.detail)
+            .joinedload(PengirimanDetail.produk)
+            .joinedload(Produk.kategori),
         )
-        pengiriman = self.db.scalar(query)
-        if pengiriman is None or not self.can_access(pengiriman):
-            raise NotFound("Pengiriman tidak ditemukan")
         result = self.to_detail(pengiriman)
         if not self.pengiriman_policy.is_deliveryman:
             return result
@@ -330,35 +315,23 @@ class PengirimanService(DokumenService[Pengiriman]):
         elif kurir.status != UserStatus.AKTIF:
             errors["deliveryman_id"] = "Deliveryman sudah tidak aktif"
 
-    @staticmethod
-    def validate_terima(pengiriman: Pengiriman, data: PengirimanTerimaInput) -> dict[int, object]:
-        detail_by_produk = {row.produk_id: row for row in pengiriman.detail}
-        errors: dict[str, str] = {}
-        received_map: dict[int, object] = {}
-        for index, item in enumerate(data.items):
-            row = detail_by_produk.get(item.produk_id)
-            if row is None:
-                errors[f"items.{index}.produk_id"] = "Produk tidak ada di pengiriman ini"
-                continue
-            if item.produk_id in received_map:
-                errors[f"items.{index}.produk_id"] = (
-                    "Produk tidak boleh duplikat dalam satu dokumen"
-                )
-                continue
-            received_map[item.produk_id] = item
+    def validate_terima(
+        self, pengiriman: Pengiriman, data: PengirimanTerimaInput
+    ) -> dict[int, PengirimanTerimaItemInput]:
+        matcher = DetailMatcher(self.label, pengiriman.detail)
+        for field, item, row in matcher.pairs(data.items):
             if item.jumlah_diterima > row.jumlah_dikirim:
-                errors[f"items.{index}.jumlah_diterima"] = (
+                matcher.errors[f"{field}.jumlah_diterima"] = (
                     f"Maksimal sebesar jumlah dikirim ({row.jumlah_dikirim})"
                 )
             elif item.jumlah_diterima < row.jumlah_dikirim and not item.catatan:
-                errors[f"items.{index}.catatan"] = (
+                matcher.errors[f"{field}.catatan"] = (
                     "Catatan wajib diisi bila jumlah diterima kurang dari jumlah dikirim"
                 )
-        if set(detail_by_produk) != set(received_map):
-            errors.setdefault("items", "Semua produk di pengiriman wajib dikonfirmasi")
-        if errors:
-            raise ValidationFailed(errors=errors)
-        return received_map
+        if not matcher.complete:
+            matcher.errors.setdefault("items", "Semua produk di pengiriman wajib dikonfirmasi")
+        matcher.raise_if_invalid()
+        return matcher.matched
 
     @staticmethod
     def build_details(items: list[PengirimanItemInput]) -> list[PengirimanDetail]:
@@ -376,8 +349,8 @@ class PengirimanService(DokumenService[Pengiriman]):
             id=pengiriman.id,
             kode=pengiriman.kode,
             status=pengiriman.status,
-            lokasi_asal=PengirimanLokasi.model_validate(pengiriman.lokasi_asal),
-            lokasi_tujuan=PengirimanLokasi.model_validate(pengiriman.lokasi_tujuan),
+            lokasi_asal=LokasiKontakRef.model_validate(pengiriman.lokasi_asal),
+            lokasi_tujuan=LokasiKontakRef.model_validate(pengiriman.lokasi_tujuan),
             permintaan=(
                 PermintaanRef.model_validate(pengiriman.permintaan)
                 if pengiriman.permintaan
@@ -416,14 +389,7 @@ class PengirimanService(DokumenService[Pengiriman]):
         items = [
             PengirimanItemResponse(
                 id=row.id,
-                produk=PengirimanProduk(
-                    id=row.produk.id,
-                    sku=row.produk.sku,
-                    nama=row.produk.nama,
-                    satuan=row.produk.satuan,
-                    jenis=row.produk.kategori.jenis,
-                    harga_beli=row.produk.harga_beli,
-                ),
+                produk=PengirimanProduk.of(row.produk, harga_beli=row.produk.harga_beli),
                 jumlah_dikirim=row.jumlah_dikirim,
                 jumlah_diterima=row.jumlah_diterima,
                 selisih=(

@@ -111,7 +111,6 @@ def setup(db, factory):
         "kurir": kurir,
     }
 
-
 def payload(setup, **changes):
     base = {
         "supplier_id": setup["supplier"].id,
@@ -127,14 +126,12 @@ def payload(setup, **changes):
     }
     return base | changes
 
-
 def balance(db, lokasi_id: int, produk_id: int) -> int | None:
     return db.scalar(
         select(Stok.jumlah).where(
             Stok.lokasi_id == lokasi_id, Stok.produk_id == produk_id
         )
     )
-
 
 def test_draft_create_update_and_delete(setup, login_as):
     client = login_as("gudang@example.com")
@@ -172,7 +169,6 @@ def test_draft_create_update_and_delete(setup, login_as):
 
     assert client.delete(f"/api/pembelian/{data['id']}").status_code == 204
     assert client.get(f"/api/pembelian/{data['id']}").status_code == 404
-
 
 def test_pesan_and_terima_updates_stock_and_harga_beli(db, setup, login_as):
     client = login_as("gudang@example.com")
@@ -238,7 +234,6 @@ def test_pesan_and_terima_updates_stock_and_harga_beli(db, setup, login_as):
     ).all()
     assert mutasi == [(green.id, "pembelian", 48), (alat.id, "pembelian", 5)]
 
-
 def test_batal_from_draf_and_from_dipesan(setup, login_as):
     client = login_as("admin@example.com")
     po_draf = client.post("/api/pembelian", json=payload(setup)).json()
@@ -261,7 +256,6 @@ def test_batal_from_draf_and_from_dipesan(setup, login_as):
             409,
             {"detail": "Pembelian sudah dibatalkan"},
         )
-
 
 def test_validation_rules_for_roasted_bean_supplier_and_terima(
     db, factory, setup, login_as
@@ -324,7 +318,6 @@ def test_validation_rules_for_roasted_bean_supplier_and_terima(
             "Gunakan aksi batal bila pesanan tidak jadi diterima"
         )
     }
-
 
 def test_role_and_location_access(setup, login_as, client):
     for email in ("cabang@example.com", "outlet@example.com", "kurir@example.com"):
