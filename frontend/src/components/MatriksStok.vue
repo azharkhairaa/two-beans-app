@@ -12,6 +12,8 @@ const props = defineProps({
   showValues: { type: Boolean, default: true },
   // lokasi yang kartu stock-nya boleh dibuka, sel lain hanya menampilkan jumlah
   canOpen: { type: Function, default: () => true },
+  // lokasi user yang login, kolomnya ditandai supaya stock miliknya mudah dikenali
+  ownLokasiId: { type: Number, default: null },
 })
 
 const emit = defineEmits(['select-cell'])
@@ -82,7 +84,9 @@ function handleSelect(produk, lok) {
               :key="lok.id"
               scope="col"
               class="matrix-loc-header"
+              :class="{ 'matrix-own-col': lok.id === ownLokasiId }"
             >
+              <span v-if="lok.id === ownLokasiId" class="matrix-own-tag">Lokasi Anda</span>
               <span class="matrix-loc-code">{{ lok.kode }}</span>
               <span class="matrix-loc-name">{{ lok.nama }}</span>
               <span class="matrix-loc-type">{{ LOKASI_TYPE_LABELS[lok.jenis] || lok.jenis }}</span>
@@ -110,6 +114,7 @@ function handleSelect(produk, lok) {
               v-for="lok in lokasi"
               :key="lok.id"
               class="matrix-td"
+              :class="{ 'matrix-own-col': lok.id === ownLokasiId }"
             >
               <button
                 type="button"
@@ -147,6 +152,7 @@ function handleSelect(produk, lok) {
               v-for="lok in lokasi"
               :key="lok.id"
               class="matrix-foot-cell"
+              :class="{ 'matrix-own-col': lok.id === ownLokasiId }"
             >
               <strong class="num">{{ formatRupiah(getTotalLokasi(lok.id).nilai) }}</strong>
             </td>

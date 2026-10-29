@@ -258,6 +258,7 @@ onMounted(() => {
         :total-nilai="matrix.total_nilai"
         :show-values="matrix.nilai_terlihat"
         :can-open="canOpenKartu"
+        :own-lokasi-id="auth.user?.lokasi?.id ?? null"
         @select-cell="openKartuStok"
       />
     </template>
