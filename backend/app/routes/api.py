@@ -143,7 +143,7 @@ ROUTES = [
     Route("POST", "/pembelian/{id}/pesan", pembelian.pesan, Access.MANAGER,
           "Kirim pesanan pembelian ke supplier", tag="pembelian"),
     Route("POST", "/pembelian/{id}/terima", pembelian.terima, Access.MANAGER,
-          "Terima barang pembelian dan perbarui harga beli", tag="pembelian"),
+          "Terima barang pembelian dan perbarui HPP produk", tag="pembelian"),
     Route("POST", "/pembelian/{id}/batal", pembelian.batal, Access.MANAGER,
           "Batalkan pembelian berstatus draf atau dipesan", tag="pembelian"),
     *resource("/penjualan", penjualan, "penjualan",

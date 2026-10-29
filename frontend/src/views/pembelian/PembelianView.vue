@@ -70,7 +70,7 @@ onMounted(async () => {
   if (route.query.id) {
     openDetail({ id: Number(route.query.id) })
   }
-  // dari tombol "Buat PO" di peringatan stock menipis dashboard, harga awal = harga beli terakhir
+  // dari tombol "Buat PO" di peringatan stock menipis dashboard, harga awal = HPP produk saat ini
   await prefill.consume(async ({ produkId, jumlah }) => {
     await openCreate()
     const produk = productOptions.value.find((item) => item.id === produkId)
@@ -314,7 +314,7 @@ const {
   submit: (id, payload) => pembelianApi.terima(id, payload),
   successMessage: (res) =>
     `Pembelian ${res.kode} diterima. ` +
-    'Stock Gudang Utama bertambah dan harga beli produk telah diperbarui.',
+    'Stock Gudang Utama bertambah dan HPP produk telah diperbarui.',
   onSaved: async (res) => {
     if (detailOpen.value && detailData.value?.id === res.id) detailData.value = res
     await load()
@@ -923,7 +923,7 @@ async function onConfirmExecute() {
           Konfirmasi penerimaan barang dari supplier
           <strong>{{ terimaTarget.supplier?.nama }}</strong> di
           <strong>{{ terimaTarget.lokasi?.nama }}</strong>. Stock Gudang Utama akan langsung
-          bertambah sebesar jumlah diterima dan harga beli produk akan diperbarui mengikuti harga PO
+          bertambah sebesar jumlah diterima dan HPP produk akan diperbarui mengikuti harga PO
           ini.
         </p>
 

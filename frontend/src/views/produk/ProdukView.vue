@@ -313,7 +313,7 @@ async function onConfirmDelete() {
           >
             <option value="nama">Nama</option>
             <option value="sku">SKU</option>
-            <option value="harga_beli">Harga beli</option>
+            <option value="harga_beli">HPP</option>
             <option value="harga_jual">Harga jual</option>
             <option value="updated_at">Diperbarui</option>
           </select>
@@ -354,7 +354,7 @@ async function onConfirmDelete() {
             <th>Nama &amp; Merek</th>
             <th>Kategori</th>
             <th>Spesifikasi</th>
-            <th class="num">Harga Beli</th>
+            <th class="num">HPP</th>
             <th class="num">Harga Jual</th>
             <th>Status</th>
             <th class="col-actions">Aksi</th>
@@ -385,7 +385,7 @@ async function onConfirmDelete() {
                 </span>
               </div>
             </td>
-            <td data-label="Harga Beli" class="num mono">{{ formatRupiah(row.harga_beli) }}</td>
+            <td data-label="HPP" class="num mono">{{ formatRupiah(row.harga_beli) }}</td>
             <td data-label="Harga Jual" class="num mono">{{ formatRupiah(row.harga_jual) }}</td>
             <td data-label="Status">
               <BadgeStatus :status="row.aktif ? 'aktif' : 'nonaktif'" />
@@ -588,8 +588,8 @@ async function onConfirmDelete() {
         <div class="form-row-2">
           <FormField
             id="prd-harga-beli"
-            label="Harga beli standar (Rp)"
-            hint="Diperbarui otomatis saat pembelian supplier diterima"
+            label="HPP per satuan (Rp)"
+            hint="Ikut harga PO terakhir saat pembelian diterima, roasted bean diisi manual"
             :error="errors.harga_beli"
           >
             <template #default="{ describedBy }">
@@ -707,7 +707,7 @@ async function onConfirmDelete() {
             <dd class="mono">{{ detailData.berat_gram }} gram</dd>
           </div>
           <div>
-            <dt>Harga Beli / Jual</dt>
+            <dt>HPP / Harga Jual</dt>
             <dd class="mono">
               {{ formatRupiah(detailData.harga_beli) }} / {{ formatRupiah(detailData.harga_jual) }}
             </dd>

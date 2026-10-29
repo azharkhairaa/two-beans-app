@@ -188,7 +188,7 @@ function priceRefs(row) {
     return [`Standar ${formatRupiah(product.harga_jual)}`, `HPP ${formatRupiah(product.harga_beli)}`]
   }
   if (props.defaultPriceField === 'harga_beli') {
-    return [`Harga beli terakhir ${formatRupiah(product.harga_beli)}`]
+    return [`HPP saat ini ${formatRupiah(product.harga_beli)}`]
   }
   return []
 }

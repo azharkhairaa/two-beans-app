@@ -55,7 +55,7 @@ class Produk(TimestampMixin, Base):
     tingkat_sangrai: Mapped[str | None] = mapped_column(String(12))
     # wajib untuk green bean dan roasted bean, kosong untuk jenis lain (dijaga ProdukService)
     jenis_kopi: Mapped[str | None] = mapped_column(String(10))
-    # rupiah per satuan, harga beli diperbarui dari pembelian terakhir
+    # HPP rupiah per satuan (nama kolom lama dipertahankan), ikut harga PO terakhir
     harga_beli: Mapped[int] = mapped_column(server_default=text("0"))
     harga_jual: Mapped[int] = mapped_column(server_default=text("0"))
     deskripsi: Mapped[str | None] = mapped_column(String(1000))
