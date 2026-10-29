@@ -216,7 +216,7 @@ onMounted(() => {
         untuk admin dan gudang utama, nilai lokasi Anda ada di dashboard.
       </p>
       <div v-else class="summary-strip">
-        <div class="summary-item">
+        <div class="summary-item summary-item-total">
           <span class="detail-label">Total Nilai Persediaan</span>
           <strong class="detail-value num" :title="formatRupiah(matrix.total_nilai)">
             {{ formatRupiahCompact(matrix.total_nilai) }}

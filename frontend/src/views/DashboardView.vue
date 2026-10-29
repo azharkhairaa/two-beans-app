@@ -3,6 +3,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 import AppIcon from '@/components/AppIcon'
 import BadgeStatus from '@/components/BadgeStatus.vue'
+import ChartTooltip from '@/components/ChartTooltip.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import KartuStokModal from '@/components/KartuStokModal.vue'
@@ -105,6 +106,9 @@ watch(
   },
 )
 
+const hoverBar = ref(null)
+const hoveredBar = computed(() => barChartModel.value.bars[hoverBar.value] ?? null)
+
 // perhitungan grafik batang nilai persediaan dan omzet 30 hari per lokasi
 const barChartModel = computed(() => {
   const rows = dashboard.value?.per_lokasi || []
@@ -129,7 +133,8 @@ const barChartModel = computed(() => {
   const barGap = 6
 
   const bars = rows.map((row, idx) => {
-    const centerX = chartLeft + groupWidth * idx + groupWidth / 2
+    const groupX = chartLeft + groupWidth * idx
+    const centerX = groupX + groupWidth / 2
     const nilai = Number(row.nilai || 0)
     const omzet = Number(row.omzet_30_hari || 0)
     const nilaiHeight = Math.max(nilai > 0 ? 3 : 0, Math.round((nilai / niceMax) * plotHeight))
@@ -137,6 +142,7 @@ const barChartModel = computed(() => {
 
     return {
       ...row,
+      groupX,
       centerX,
       nilaiX: centerX - barWidth - barGap / 2,
       nilaiY: chartBottom - nilaiHeight,
@@ -157,6 +163,7 @@ const barChartModel = computed(() => {
   return {
     bars,
     ticks,
+    groupWidth,
     chartLeft,
     chartRight,
     chartTop,
@@ -415,54 +422,85 @@ onMounted(() => {
             </div>
 
             <div class="chart-svg-wrap">
-              <svg
-                class="chart-svg"
-                viewBox="0 0 680 256"
-                role="img"
-                aria-label="Grafik batang nilai persediaan dan omzet 30 hari per lokasi"
-              >
-                <g v-for="t in barChartModel.ticks" :key="t.val">
-                  <line
-                    :x1="barChartModel.chartLeft"
-                    :y1="t.y"
-                    :x2="barChartModel.chartRight"
-                    :y2="t.y"
-                    class="chart-grid-line"
-                  />
-                  <text :x="barChartModel.chartLeft - 8" :y="t.y + 4" text-anchor="end" class="chart-axis-text">
-                    {{ t.label }}
-                  </text>
-                </g>
+              <div class="chart-plot">
+                <svg
+                  class="chart-svg"
+                  viewBox="0 0 680 256"
+                  role="img"
+                  aria-label="Grafik batang nilai persediaan dan omzet 30 hari per lokasi"
+                  @pointerleave="hoverBar = null"
+                >
+                  <g v-for="t in barChartModel.ticks" :key="t.val">
+                    <line
+                      :x1="barChartModel.chartLeft"
+                      :y1="t.y"
+                      :x2="barChartModel.chartRight"
+                      :y2="t.y"
+                      class="chart-grid-line"
+                    />
+                    <text :x="barChartModel.chartLeft - 8" :y="t.y + 4" text-anchor="end" class="chart-axis-text">
+                      {{ t.label }}
+                    </text>
+                  </g>
 
-                <g v-for="bar in barChartModel.bars" :key="bar.id">
-                  <rect
-                    :x="bar.nilaiX"
-                    :y="bar.nilaiY"
-                    :width="bar.barWidth"
-                    :height="bar.nilaiHeight"
-                    rx="3"
-                    class="chart-bar-kopi"
-                  >
-                    <title>{{ bar.kode }} ({{ bar.nama }}) - Nilai Persediaan: {{ formatRupiah(bar.nilai) }}</title>
-                  </rect>
-                  <rect
-                    :x="bar.omzetX"
-                    :y="bar.omzetY"
-                    :width="bar.barWidth"
-                    :height="bar.omzetHeight"
-                    rx="3"
-                    class="chart-bar-biru"
-                  >
-                    <title>{{ bar.kode }} ({{ bar.nama }}) - Omzet 30 Hari: {{ formatRupiah(bar.omzet_30_hari) }}</title>
-                  </rect>
-                  <text :x="bar.centerX" :y="barChartModel.chartBottom + 18" text-anchor="middle" class="chart-axis-code">
-                    {{ bar.kode }}
-                  </text>
-                  <text :x="bar.centerX" :y="barChartModel.chartBottom + 32" text-anchor="middle" class="chart-axis-sub">
-                    {{ bar.sku_ada }} SKU
-                  </text>
-                </g>
-              </svg>
+                  <g v-for="(bar, idx) in barChartModel.bars" :key="bar.id">
+                    <!-- latar tipis menandai kolom lokasi yang sedang disorot -->
+                    <rect
+                      v-if="hoverBar === idx"
+                      :x="bar.groupX"
+                      :y="barChartModel.chartTop"
+                      :width="barChartModel.groupWidth"
+                      :height="barChartModel.chartBottom - barChartModel.chartTop"
+                      class="chart-hover-band"
+                    />
+                    <rect
+                      :x="bar.nilaiX"
+                      :y="bar.nilaiY"
+                      :width="bar.barWidth"
+                      :height="bar.nilaiHeight"
+                      rx="3"
+                      class="chart-bar-kopi"
+                    />
+                    <rect
+                      :x="bar.omzetX"
+                      :y="bar.omzetY"
+                      :width="bar.barWidth"
+                      :height="bar.omzetHeight"
+                      rx="3"
+                      class="chart-bar-biru"
+                    />
+                    <text :x="bar.centerX" :y="barChartModel.chartBottom + 18" text-anchor="middle" class="chart-axis-code">
+                      {{ bar.kode }}
+                    </text>
+                    <text :x="bar.centerX" :y="barChartModel.chartBottom + 32" text-anchor="middle" class="chart-axis-sub">
+                      {{ bar.sku_ada }} SKU
+                    </text>
+                    <!-- area sentuh selebar kolom lokasi, lebih besar dari batangnya -->
+                    <rect
+                      :x="bar.groupX"
+                      :y="barChartModel.chartTop"
+                      :width="barChartModel.groupWidth"
+                      :height="barChartModel.chartBottom - barChartModel.chartTop + 36"
+                      class="chart-hit"
+                      tabindex="0"
+                      :aria-label="`${bar.kode} ${bar.nama}: nilai persediaan ${formatRupiah(bar.nilai)}, omzet 30 hari ${formatRupiah(bar.omzet_30_hari)}`"
+                      @pointerenter="hoverBar = idx"
+                      @focus="hoverBar = idx"
+                      @blur="hoverBar = null"
+                    />
+                  </g>
+                </svg>
+                <ChartTooltip
+                  v-if="hoveredBar"
+                  :x="hoveredBar.centerX"
+                  :view-width="680"
+                  :title="`${hoveredBar.kode} · ${hoveredBar.nama} · ${hoveredBar.sku_ada} SKU`"
+                  :rows="[
+                    { key: 'kopi', value: formatRupiah(hoveredBar.nilai), label: 'nilai persediaan' },
+                    { key: 'biru', value: formatRupiah(hoveredBar.omzet_30_hari), label: 'omzet 30 hari' },
+                  ]"
+                />
+              </div>
             </div>
 
             <details class="chart-alt-details">

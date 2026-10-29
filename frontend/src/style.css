@@ -1407,7 +1407,26 @@ select.input-sm {
   padding: 12px 14px;
   border: 1px solid var(--garis);
   border-radius: var(--radius-kontrol);
+  background: var(--permukaan);
+  box-shadow: 0 1px 3px rgb(44 29 26 / 8%);
+}
+
+/* di dalam modal latarnya sudah putih, kartu kembali krem tipis */
+.modal-body .summary-item {
   background: color-mix(in srgb, var(--susu) 65%, white);
+  box-shadow: none;
+}
+
+/* kartu total yang merangkum kartu lain diberi warna utama */
+.summary-item-total {
+  border-color: var(--kopi);
+  background: var(--kopi);
+}
+
+.summary-item-total .detail-label,
+.summary-item-total .detail-value,
+.summary-item-total .field-hint {
+  color: #ffffff;
 }
 
 .detail-label {
@@ -2304,6 +2323,95 @@ select.input-sm {
   fill: #a61b1b;
   stroke: #ffffff;
   stroke-width: 1.5;
+}
+
+/* lapisan hover grafik: crosshair di grafik garis, area sentuh dan latar sorot di grafik batang */
+.chart-plot {
+  position: relative;
+}
+
+.chart-svg-interactive {
+  cursor: crosshair;
+}
+
+.chart-svg-interactive:focus-visible,
+.chart-hit:focus-visible {
+  outline: 2px solid var(--kopi);
+  outline-offset: 2px;
+}
+
+.chart-crosshair {
+  stroke: var(--kopi);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.chart-hover-band {
+  fill: color-mix(in srgb, var(--kopi) 8%, transparent);
+}
+
+/* bubble nilai: angka tebal lebih dulu, nama seri sesudahnya, kunci berupa garis warna seri */
+.chart-tooltip {
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--garis);
+  border-radius: var(--radius-kontrol);
+  background: var(--permukaan);
+  box-shadow: 0 6px 18px rgb(44 29 26 / 16%);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.chart-tooltip-title {
+  font-weight: 600;
+  color: var(--kopi);
+}
+
+.chart-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--kopi);
+}
+
+.chart-tooltip-row strong {
+  font-size: 13px;
+  color: var(--espresso);
+}
+
+.chart-key {
+  flex: none;
+  width: 14px;
+  border-top: 2px solid;
+}
+
+.chart-key-masuk {
+  border-color: #1e6b34;
+}
+
+.chart-key-keluar {
+  border-top-style: dashed;
+  border-color: #a61b1b;
+}
+
+.chart-key-kopi {
+  border-top-width: 3px;
+  border-color: #4a3b39;
+}
+
+.chart-key-biru {
+  border-top-width: 3px;
+  border-color: #1d4f91;
 }
 
 .chart-alt-details {

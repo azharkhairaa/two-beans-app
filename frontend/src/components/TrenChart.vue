@@ -1,6 +1,7 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
+import ChartTooltip from '@/components/ChartTooltip.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import { formatDate, formatNumber } from '@/utils/format'
 
@@ -16,6 +17,7 @@ const props = defineProps({
 const emit = defineEmits(['retry'])
 
 const CHART = { left: 64, right: 656, top: 24, bottom: 204 }
+const VIEW_WIDTH = 680
 
 function signed(value) {
   return value >= 0 ? `+${formatNumber(value)}` : formatNumber(value)
@@ -59,6 +61,40 @@ const model = computed(() => {
 
   return { points, masukPath: path('masukY'), keluarPath: path('keluarY'), ticks, ...frame }
 })
+
+const hoverIndex = ref(null)
+const hovered = computed(() => model.value.points[hoverIndex.value] ?? null)
+
+const tooltipRows = computed(() => [
+  { key: 'masuk', value: formatNumber(hovered.value.masuk), label: 'unit masuk' },
+  { key: 'keluar', value: formatNumber(hovered.value.keluar), label: 'unit keluar' },
+])
+
+// crosshair mengunci ke tanggal terdekat dari posisi kursor, bukan harus tepat di garis
+function onPointerMove(event) {
+  const points = model.value.points
+  if (!points.length) return
+  const rect = event.currentTarget.getBoundingClientRect()
+  const x = ((event.clientX - rect.left) / rect.width) * VIEW_WIDTH
+  let nearest = 0
+  points.forEach((pt, idx) => {
+    if (Math.abs(pt.x - x) < Math.abs(points[nearest].x - x)) nearest = idx
+  })
+  hoverIndex.value = nearest
+}
+
+// keyboard: fokus menampilkan hari terakhir, panah kiri dan kanan pindah tanggal
+function onKeydown(event) {
+  const last = model.value.points.length - 1
+  if (last < 0 || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return
+  event.preventDefault()
+  const step = event.key === 'ArrowRight' ? 1 : -1
+  hoverIndex.value = Math.min(last, Math.max(0, (hoverIndex.value ?? last) + step))
+}
+
+function onFocus() {
+  if (hoverIndex.value === null) hoverIndex.value = model.value.points.length - 1
+}
 </script>
 
 <template>
@@ -79,52 +115,72 @@ const model = computed(() => {
     <span>Memuat tren mutasi harian...</span>
   </div>
   <div v-else class="chart-svg-wrap">
-    <svg
-      class="chart-svg"
-      viewBox="0 0 680 240"
-      role="img"
-      :aria-label="chartLabel"
-    >
-      <g v-for="t in model.ticks" :key="t.val">
+    <div class="chart-plot">
+      <svg
+        class="chart-svg chart-svg-interactive"
+        viewBox="0 0 680 240"
+        role="img"
+        tabindex="0"
+        :aria-label="`${chartLabel}. Gunakan panah kiri dan kanan untuk membaca nilai per hari`"
+        @pointermove="onPointerMove"
+        @pointerleave="hoverIndex = null"
+        @focus="onFocus"
+        @blur="hoverIndex = null"
+        @keydown="onKeydown"
+      >
+        <g v-for="t in model.ticks" :key="t.val">
+          <line
+            :x1="model.chartLeft"
+            :y1="t.y"
+            :x2="model.chartRight"
+            :y2="t.y"
+            class="chart-grid-line"
+          />
+          <text :x="model.chartLeft - 8" :y="t.y + 4" text-anchor="end" class="chart-axis-text">
+            {{ t.label }}
+          </text>
+        </g>
+
         <line
-          :x1="model.chartLeft"
-          :y1="t.y"
-          :x2="model.chartRight"
-          :y2="t.y"
-          class="chart-grid-line"
+          v-if="hovered"
+          :x1="hovered.x"
+          :y1="CHART.top"
+          :x2="hovered.x"
+          :y2="CHART.bottom"
+          class="chart-crosshair"
         />
-        <text :x="model.chartLeft - 8" :y="t.y + 4" text-anchor="end" class="chart-axis-text">
-          {{ t.label }}
-        </text>
-      </g>
 
-      <path :d="model.masukPath" class="chart-line-masuk" />
-      <path :d="model.keluarPath" class="chart-line-keluar" />
+        <path :d="model.masukPath" class="chart-line-masuk" />
+        <path :d="model.keluarPath" class="chart-line-keluar" />
 
-      <g v-for="pt in model.points" :key="pt.tanggal">
-        <circle :cx="pt.x" :cy="pt.masukY" r="3.5" class="chart-dot-masuk">
-          <title>{{ formatDate(pt.tanggal) }} - Masuk: {{ formatNumber(pt.masuk) }} unit</title>
-        </circle>
-        <rect
-          :x="pt.x - 3"
-          :y="pt.keluarY - 3"
-          width="6"
-          height="6"
-          class="chart-dot-keluar"
-        >
-          <title>{{ formatDate(pt.tanggal) }} - Keluar: {{ formatNumber(pt.keluar) }} unit</title>
-        </rect>
-        <text
-          v-if="pt.showLabel"
-          :x="pt.x"
-          :y="model.chartBottom + 20"
-          text-anchor="middle"
-          class="chart-axis-sub"
-        >
-          {{ pt.shortDate }}
-        </text>
-      </g>
-    </svg>
+        <g v-for="pt in model.points" :key="pt.tanggal">
+          <circle :cx="pt.x" :cy="pt.masukY" :r="pt === hovered ? 5.5 : 3.5" class="chart-dot-masuk" />
+          <rect
+            :x="pt.x - (pt === hovered ? 4.5 : 3)"
+            :y="pt.keluarY - (pt === hovered ? 4.5 : 3)"
+            :width="pt === hovered ? 9 : 6"
+            :height="pt === hovered ? 9 : 6"
+            class="chart-dot-keluar"
+          />
+          <text
+            v-if="pt.showLabel"
+            :x="pt.x"
+            :y="model.chartBottom + 20"
+            text-anchor="middle"
+            class="chart-axis-sub"
+          >
+            {{ pt.shortDate }}
+          </text>
+        </g>
+      </svg>
+      <ChartTooltip
+        v-if="hovered"
+        :x="hovered.x"
+        :view-width="VIEW_WIDTH"
+        :title="formatDate(hovered.tanggal)"
+        :rows="tooltipRows"
+      />
+    </div>
   </div>
 
   <details class="chart-alt-details">
