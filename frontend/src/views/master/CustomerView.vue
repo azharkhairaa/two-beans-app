@@ -386,7 +386,8 @@ async function onConfirmDelete() {
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
         <button type="submit" form="customer-form" class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Menyimpan...' : 'Simpan' }}
+          <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting ? 'Menyimpan...' : 'Simpan' }}</span>
         </button>
       </template>
     </BaseModal>

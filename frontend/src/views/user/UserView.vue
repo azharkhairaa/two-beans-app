@@ -148,9 +148,9 @@ function openDelete(row, isReject = false) {
   confirmAction.value = {
     type: 'delete',
     user: row,
-    title: isReject ? 'Tolak Pendaftaran Akun' : 'Hapus Akun Pengguna',
+    title: isReject ? 'Tolak Registrasi Akun' : 'Hapus Akun Pengguna',
     message: isReject
-      ? `Tolak dan hapus pendaftaran akun ${row.name} (${row.email})?`
+      ? `Tolak dan hapus registrasi akun ${row.name} (${row.email})?`
       : `Hapus akun ${row.name} (${row.email})? Akun yang sudah pernah membuat dokumen hanya dapat dinonaktifkan.`,
     confirmLabel: isReject ? 'Tolak & Hapus' : 'Hapus',
     variant: 'danger',
@@ -190,7 +190,7 @@ function isSelf(row) {
     <header class="page-header">
       <div>
         <h2 class="page-heading">Manajemen User</h2>
-        <p class="page-subtitle">Persetujuan pendaftaran akun baru, pengaturan peran dan penempatan lokasi</p>
+        <p class="page-subtitle">Persetujuan registrasi akun baru, pengaturan peran dan penempatan lokasi</p>
       </div>
     </header>
 
@@ -438,7 +438,8 @@ function isSelf(row) {
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
         <button type="submit" form="user-role-form" class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Menyimpan...' : isApprovalMode ? 'Setujui & Aktifkan' : 'Simpan' }}
+          <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting ? 'Menyimpan...' : isApprovalMode ? 'Setujui & Aktifkan' : 'Simpan' }}</span>
         </button>
       </template>
     </BaseModal>

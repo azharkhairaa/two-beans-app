@@ -66,9 +66,10 @@ async function onSubmit() {
         </template>
       </FormField>
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        {{ submitting ? 'Memproses...' : 'Login' }}
+        <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+        <span>{{ submitting ? 'Memproses...' : 'Login' }}</span>
       </button>
     </form>
-    <p class="auth-footer">Belum punya akun? <RouterLink :to="{ name: 'register' }">Daftar</RouterLink></p>
+    <p class="auth-footer">Belum punya akun? <RouterLink :to="{ name: 'register' }">Registrasi</RouterLink></p>
   </AuthLayout>
 </template>

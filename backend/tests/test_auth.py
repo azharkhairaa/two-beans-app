@@ -26,7 +26,7 @@ def only_session(db) -> UserSession:
 def test_register_creates_pending_account_without_session(client, db):
     response = client.post("/api/auth/register", json=REGISTER)
     assert response.status_code == 201
-    assert response.json() == {"pesan": "Pendaftaran terkirim. Akun bisa dipakai setelah disetujui admin."}
+    assert response.json() == {"pesan": "Registrasi terkirim. Akun bisa dipakai setelah disetujui admin."}
     user = db.scalars(select(User)).one()
     assert (user.email, user.status, user.role, user.lokasi_id) == ("calon.manager@example.com", "menunggu", None, None)
     assert user.password_hash != "kopi2026" and password_hasher.verify("kopi2026", user.password_hash)

@@ -148,8 +148,9 @@ onMounted(() => {
       </div>
       <div class="action-group">
         <button type="button" class="btn btn-secondary" :disabled="loading" @click="fetchMatrix">
-          <AppIcon name="refresh" :size="18" />
-          <span>Muat ulang</span>
+          <span v-if="loading" class="btn-spinner" aria-hidden="true"></span>
+          <AppIcon v-else name="refresh" :size="18" />
+          <span>{{ loading ? 'Memuat...' : 'Muat ulang' }}</span>
         </button>
       </div>
     </header>

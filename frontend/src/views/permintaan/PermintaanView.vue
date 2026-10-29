@@ -718,13 +718,16 @@ async function onConfirmBatal() {
           Batal
         </button>
         <button type="submit" form="permintaan-form" class="btn btn-primary" :disabled="submitting">
-          {{
-            submitting
-              ? 'Menyimpan...'
-              : editingId
-                ? 'Simpan perubahan'
-                : 'Ajukan permintaan'
-          }}
+          <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+          <span>
+            {{
+              submitting
+                ? 'Menyimpan...'
+                : editingId
+                  ? 'Simpan perubahan'
+                  : 'Ajukan permintaan'
+            }}
+          </span>
         </button>
       </template>
     </BaseModal>

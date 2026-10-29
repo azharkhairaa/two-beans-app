@@ -968,7 +968,8 @@ async function onConfirmDelete() {
           :disabled="submitting"
           @click="onSave('draf')"
         >
-          {{ submitting && saveMode === 'draf' ? 'Menyimpan...' : 'Simpan draf' }}
+          <span v-if="submitting && saveMode === 'draf'" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting && saveMode === 'draf' ? 'Menyimpan...' : 'Simpan draf' }}</span>
         </button>
         <button
           type="button"
@@ -976,7 +977,8 @@ async function onConfirmDelete() {
           :disabled="submitting"
           @click="onSave('kirim')"
         >
-          {{ submitting && saveMode === 'kirim' ? 'Mengirim...' : 'Simpan lalu kirim' }}
+          <span v-if="submitting && saveMode === 'kirim'" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting && saveMode === 'kirim' ? 'Mengirim...' : 'Simpan lalu kirim' }}</span>
         </button>
       </template>
     </BaseModal>

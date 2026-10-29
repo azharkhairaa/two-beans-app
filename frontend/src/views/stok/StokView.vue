@@ -419,7 +419,8 @@ function openKartu(row) {
           class="btn btn-primary"
           :disabled="submitting"
         >
-          {{ submitting ? 'Menyimpan...' : 'Simpan' }}
+          <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting ? 'Menyimpan...' : 'Simpan' }}</span>
         </button>
       </template>
     </BaseModal>

@@ -21,7 +21,7 @@ class AuthController:
     ) -> MessageResponse:
         AuthService(db).register(body)
         return MessageResponse(
-            pesan="Pendaftaran terkirim. Akun bisa dipakai setelah disetujui admin."
+            pesan="Registrasi terkirim. Akun bisa dipakai setelah disetujui admin."
         )
 
     def login(

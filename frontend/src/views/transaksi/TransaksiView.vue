@@ -581,7 +581,8 @@ async function onConfirmExecute() {
       <template #footer>
         <button type="button" class="btn btn-secondary" @click="modalOpen = false">Batal</button>
         <button type="submit" form="transaksi-form" class="btn btn-primary" :disabled="submitting">
-          {{ submitting ? 'Menyimpan...' : 'Simpan Draf' }}
+          <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting ? 'Menyimpan...' : 'Simpan Draf' }}</span>
         </button>
       </template>
     </BaseModal>

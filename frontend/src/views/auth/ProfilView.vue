@@ -194,7 +194,8 @@ async function onSubmit() {
 
           <div class="action-group">
             <button type="submit" class="btn btn-primary" :disabled="submitting">
-              <AppIcon name="lock" :size="18" />
+              <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+              <AppIcon v-else name="lock" :size="18" />
               <span>{{ submitting ? 'Menyimpan...' : 'Simpan password baru' }}</span>
             </button>
           </div>

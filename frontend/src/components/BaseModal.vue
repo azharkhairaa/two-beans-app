@@ -83,28 +83,30 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="modal-backdrop" @mousedown.self="emit('close')">
-      <div
-        ref="dialogRef"
-        class="modal-dialog"
-        :class="`modal-${size}`"
-        role="dialog"
-        aria-modal="true"
-        :aria-labelledby="titleId"
-      >
-        <header class="modal-header">
-          <h2 :id="titleId" class="modal-title">{{ title }}</h2>
-          <button type="button" class="btn-icon" aria-label="Tutup dialog" @click="emit('close')">
-            <AppIcon name="x" :size="18" />
-          </button>
-        </header>
-        <div class="modal-body">
-          <slot />
+    <Transition name="modal-fade">
+      <div v-if="open" class="modal-backdrop" @mousedown.self="emit('close')">
+        <div
+          ref="dialogRef"
+          class="modal-dialog"
+          :class="`modal-${size}`"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="titleId"
+        >
+          <header class="modal-header">
+            <h2 :id="titleId" class="modal-title">{{ title }}</h2>
+            <button type="button" class="btn-icon" aria-label="Tutup dialog" @click="emit('close')">
+              <AppIcon name="close" :size="18" />
+            </button>
+          </header>
+          <div class="modal-body">
+            <slot />
+          </div>
+          <footer v-if="$slots.footer" class="modal-footer">
+            <slot name="footer" />
+          </footer>
         </div>
-        <footer v-if="$slots.footer" class="modal-footer">
-          <slot name="footer" />
-        </footer>
       </div>
-    </div>
+    </Transition>
   </Teleport>
 </template>

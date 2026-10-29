@@ -116,11 +116,33 @@ textarea {
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.btn-secondary .btn-spinner {
+  border-color: color-mix(in srgb, var(--kopi) 25%, transparent);
+  border-top-color: var(--kopi);
 }
 
 .btn-primary {
@@ -977,6 +999,39 @@ select.input-sm {
   color: var(--abu);
 }
 
+.loading-state {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.loading-state-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.loading-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--kopi);
+}
+
+.skeleton-list {
+  display: grid;
+  gap: 10px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid color-mix(in srgb, var(--kopi) 20%, transparent);
+  border-top-color: var(--kopi);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+
 .skeleton-row,
 .skeleton-cell {
   height: 18px;
@@ -1022,6 +1077,96 @@ select.input-sm {
   border-radius: var(--radius-kartu);
   background: var(--permukaan);
   box-shadow: 0 16px 40px rgb(44 29 26 / 24%);
+}
+
+/* transisi modal */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-fade-enter-active .modal-dialog,
+.modal-fade-leave-active .modal-dialog {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-from .modal-dialog,
+.modal-fade-leave-to .modal-dialog {
+  opacity: 0;
+  transform: scale(0.96) translateY(-8px);
+}
+
+/* indikator progress atas & transisi halaman */
+.top-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9999;
+  background: linear-gradient(90deg, var(--kopi), #b45309, var(--espresso));
+  background-size: 200% 100%;
+  animation: progress-slide 1s linear infinite;
+  box-shadow: 0 0 8px rgba(74, 59, 57, 0.4);
+}
+
+.top-progress-bar-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 3px;
+  box-shadow: 0 0 10px #b45309, 0 0 5px #b45309;
+}
+
+@keyframes progress-slide {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.chart-loading-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 200px;
+  color: var(--abu);
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .modal-sm {

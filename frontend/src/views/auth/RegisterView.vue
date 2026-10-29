@@ -24,7 +24,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <AuthLayout title="Daftar akun">
+  <AuthLayout title="Registrasi akun">
     <template v-if="done">
       <p class="alert alert-success" role="status">{{ done }}</p>
       <RouterLink :to="{ name: 'login' }" class="btn btn-primary btn-block">Ke halaman login</RouterLink>
@@ -94,7 +94,8 @@ async function onSubmit() {
         </FormField>
         <p class="form-note">Akun bisa dipakai setelah admin menetapkan peran dan lokasi.</p>
         <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-          {{ submitting ? 'Mengirim...' : 'Daftar' }}
+          <span v-if="submitting" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting ? 'Mengirim...' : 'Registrasi' }}</span>
         </button>
       </form>
     </template>

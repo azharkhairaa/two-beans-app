@@ -37,7 +37,8 @@ const emit = defineEmits(['confirm', 'close'])
         :disabled="loading"
         @click="emit('confirm')"
       >
-        {{ loading ? 'Memproses...' : confirmLabel }}
+        <span v-if="loading" class="btn-spinner" aria-hidden="true"></span>
+        <span>{{ loading ? 'Memproses...' : confirmLabel }}</span>
       </button>
     </template>
   </BaseModal>

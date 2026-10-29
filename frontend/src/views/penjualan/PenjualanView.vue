@@ -714,7 +714,8 @@ async function onConfirmExecute() {
           :disabled="submitting"
           @click="onSave('draf')"
         >
-          {{ submitting && saveMode === 'draf' ? 'Menyimpan...' : 'Simpan draf' }}
+          <span v-if="submitting && saveMode === 'draf'" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting && saveMode === 'draf' ? 'Menyimpan...' : 'Simpan draf' }}</span>
         </button>
         <button
           type="button"
@@ -722,7 +723,8 @@ async function onConfirmExecute() {
           :disabled="submitting"
           @click="onSave('posting')"
         >
-          {{ submitting && saveMode === 'posting' ? 'Memposting...' : 'Simpan lalu posting' }}
+          <span v-if="submitting && saveMode === 'posting'" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ submitting && saveMode === 'posting' ? 'Memposting...' : 'Simpan lalu posting' }}</span>
         </button>
       </template>
     </BaseModal>
@@ -829,7 +831,8 @@ async function onConfirmExecute() {
           class="btn btn-primary"
           :disabled="customerForm.submitting.value"
         >
-          {{ customerForm.submitting.value ? 'Menyimpan...' : 'Simpan & pilih customer' }}
+          <span v-if="customerForm.submitting.value" class="btn-spinner" aria-hidden="true"></span>
+          <span>{{ customerForm.submitting.value ? 'Menyimpan...' : 'Simpan & pilih customer' }}</span>
         </button>
       </template>
     </BaseModal>

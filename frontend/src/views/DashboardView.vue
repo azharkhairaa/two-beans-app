@@ -319,8 +319,9 @@ onMounted(() => {
         </template>
 
         <button type="button" class="btn btn-secondary" :disabled="loading" @click="loadDashboard">
-          <AppIcon name="refresh" :size="18" />
-          <span>Muat ulang</span>
+          <span v-if="loading" class="btn-spinner" aria-hidden="true"></span>
+          <AppIcon v-else name="refresh" :size="18" />
+          <span>{{ loading ? 'Memuat...' : 'Muat ulang' }}</span>
         </button>
       </div>
     </header>
@@ -612,6 +613,10 @@ onMounted(() => {
             </div>
 
             <ErrorState v-if="trenError" :message="trenError" @retry="loadTren" />
+            <div v-else-if="trenLoading" class="chart-loading-overlay">
+              <span class="loading-spinner" aria-hidden="true"></span>
+              <span>Memuat tren mutasi harian...</span>
+            </div>
             <div v-else class="chart-svg-wrap">
               <svg
                 class="chart-svg"
@@ -901,6 +906,10 @@ onMounted(() => {
             </div>
 
             <ErrorState v-if="trenError" :message="trenError" @retry="loadTren" />
+            <div v-else-if="trenLoading" class="chart-loading-overlay">
+              <span class="loading-spinner" aria-hidden="true"></span>
+              <span>Memuat tren mutasi harian...</span>
+            </div>
             <div v-else class="chart-svg-wrap">
               <svg
                 class="chart-svg"
