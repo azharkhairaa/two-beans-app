@@ -74,6 +74,7 @@ class PenjualanDetail(Base):
         UniqueConstraint("penjualan_id", "produk_id"),
         CheckConstraint("jumlah > 0", name="jumlah"),
         CheckConstraint("harga_satuan > 0", name="harga_satuan"),
+        CheckConstraint("harga_beli >= 0", name="harga_beli"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
@@ -86,6 +87,8 @@ class PenjualanDetail(Base):
     jumlah: Mapped[int]
     # harga jual saat penjualan, tidak ikut berubah bila harga produk diubah
     harga_satuan: Mapped[int]
+    # HPP saat disimpan dan diposting, dasar margin yang tidak berubah oleh pembelian berikutnya
+    harga_beli: Mapped[int] = mapped_column(server_default="0")
 
     penjualan: Mapped["Penjualan"] = relationship(back_populates="detail")
     produk: Mapped["Produk"] = relationship()

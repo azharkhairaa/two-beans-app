@@ -219,6 +219,31 @@ def test_posting_reduces_stock_and_records_mutasi_penjualan(
             {"detail": "Penjualan sudah diposting"},
         )
 
+def test_margin_uses_hpp_locked_at_posting(db, factory, setup, login_as):
+    gudang, biji = setup["gudang"], setup["biji"]
+    factory.add(Stok(lokasi_id=gudang.id, produk_id=biji.id, jumlah=30))
+    db.commit()
+    client = login_as("gudang@example.com")
+    body = payload(
+        setup, customer_id=setup["customer"].id,
+        items=[{"produk_id": biji.id, "jumlah": 10, "harga_satuan": 85000}],
+    )
+    draft = client.post("/api/penjualan", json=body).json()
+    assert (draft["items"][0]["harga_beli"], draft["margin"]) == (65000, 10 * 20000)
+
+    # harga beli naik sebelum posting, HPP yang terkunci adalah harga saat barang keluar
+    biji.harga_beli = 70000
+    db.commit()
+    posted = client.post(f"/api/penjualan/{draft['id']}/posting").json()
+    assert (posted["total_hpp"], posted["margin"]) == (10 * 70000, 10 * 15000)
+    assert posted["items"][0]["margin"] == 10 * 15000
+
+    # pembelian berikutnya mengubah harga beli produk, margin penjualan lama tetap
+    biji.harga_beli = 90000
+    db.commit()
+    again = client.get(f"/api/penjualan/{draft['id']}").json()
+    assert (again["items"][0]["harga_beli"], again["margin"]) == (70000, 10 * 15000)
+
 def test_posting_insufficient_stock_rolls_back(db, factory, setup, login_as):
     outlet, biji, alat = setup["outlet"], setup["biji"], setup["alat"]
     factory.add(Stok(lokasi_id=outlet.id, produk_id=biji.id, jumlah=5))

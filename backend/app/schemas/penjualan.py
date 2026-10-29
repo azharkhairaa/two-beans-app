@@ -45,6 +45,9 @@ class PenjualanItemResponse(BaseModel):
     jumlah: int
     harga_satuan: int
     subtotal: int
+    # HPP per unit yang tersimpan di baris, margin = (harga satuan - HPP) x jumlah
+    harga_beli: int
+    margin: int
 
 class PenjualanSummary(BaseModel):
     id: int
@@ -57,6 +60,8 @@ class PenjualanSummary(BaseModel):
     catatan: str | None
     jumlah_item: int
     total: int
+    total_hpp: int
+    margin: int
     dibuat_oleh: str
     diposting_oleh: str | None
     diposting_pada: UtcDateTime | None

@@ -158,6 +158,9 @@ class PenjualanService(DokumenService[Penjualan]):
         MutasiStok(self.db, self.user).apply(
             changes, MutationSource(StokMutasiType.PENJUALAN, penjualan.id)
         )
+        # HPP dikunci saat barang keluar, harga beli yang berubah sesudah draf ikut terpakai
+        for row in penjualan.detail:
+            row.harga_beli = row.produk.harga_beli
         penjualan.status = PenjualanStatus.DIPOSTING
         penjualan.diposting_oleh_id = self.user.id
         penjualan.diposting_pada = Clock.now()
@@ -199,6 +202,7 @@ class PenjualanService(DokumenService[Penjualan]):
                     produk_id=item.produk_id,
                     jumlah=item.jumlah,
                     harga_satuan=harga_satuan,
+                    harga_beli=produk.harga_beli,
                 )
             )
         if errors:
@@ -208,6 +212,7 @@ class PenjualanService(DokumenService[Penjualan]):
     @staticmethod
     def to_summary(penjualan: Penjualan) -> PenjualanSummary:
         total = sum(row.jumlah * row.harga_satuan for row in penjualan.detail)
+        total_hpp = sum(row.jumlah * row.harga_beli for row in penjualan.detail)
         return PenjualanSummary(
             id=penjualan.id,
             kode=penjualan.kode,
@@ -221,6 +226,8 @@ class PenjualanService(DokumenService[Penjualan]):
             catatan=penjualan.catatan,
             jumlah_item=len(penjualan.detail),
             total=total,
+            total_hpp=total_hpp,
+            margin=total - total_hpp,
             dibuat_oleh=penjualan.dibuat_oleh.name,
             diposting_oleh=(
                 penjualan.diposting_oleh.name if penjualan.diposting_oleh else None
@@ -240,6 +247,8 @@ class PenjualanService(DokumenService[Penjualan]):
                 jumlah=row.jumlah,
                 harga_satuan=row.harga_satuan,
                 subtotal=row.jumlah * row.harga_satuan,
+                harga_beli=row.harga_beli,
+                margin=row.jumlah * (row.harga_satuan - row.harga_beli),
             )
             for row in penjualan.detail
         ]
