@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import AppIcon from '@/components/AppIcon'
 import BadgeStatus from '@/components/BadgeStatus.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import EmptyState from '@/components/EmptyState.vue'
@@ -8,16 +9,37 @@ import ErrorState from '@/components/ErrorState.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import PaginationBar from '@/components/PaginationBar.vue'
 import { produkApi } from '@/services'
+import { useAuthStore } from '@/stores/auth'
 import { MUTASI_TYPE_LABELS } from '@/utils/constants'
 import { formatDateTime, formatNumber } from '@/utils/format'
+import { canRestock, restockLink } from '@/utils/restock'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
   produk: { type: Object, default: null },
   lokasi: { type: Object, default: null },
+  // stock saat ini { jumlah, stokMinimum, status, lokasiJenis, produkJenis }, opsional
+  stok: { type: Object, default: null },
 })
 
 const emit = defineEmits(['close'])
+const auth = useAuthStore()
+
+// stock menipis atau habis di lokasi yang boleh dikelola user diberi tombol isi ulang
+const restock = computed(() => {
+  const stok = props.stok
+  if (!stok || !props.produk || !props.lokasi) return null
+  if (!['menipis', 'habis'].includes(stok.status)) return null
+  if (!canRestock(auth.user, props.lokasi.id)) return null
+  return restockLink({
+    lokasiId: props.lokasi.id,
+    lokasiJenis: stok.lokasiJenis,
+    produkId: props.produk.id,
+    produkJenis: stok.produkJenis,
+    jumlah: stok.jumlah,
+    stokMinimum: stok.stokMinimum,
+  })
+})
 
 const items = ref([])
 const meta = ref({ page: 1, per_page: 15, total: 0, total_pages: 1 })
@@ -76,7 +98,15 @@ watch(
           <span class="mono">{{ lokasi.kode }}</span> - {{ lokasi.nama }}
         </div>
       </div>
-      <div v-if="produk?.satuan">
+      <div v-if="stok">
+        <span class="detail-label">Stock saat ini</span>
+        <div class="font-semibold kartu-stock-now">
+          <span class="mono">{{ formatNumber(stok.jumlah) }} {{ produk?.satuan }}</span>
+          <BadgeStatus :value="stok.status" />
+        </div>
+        <span class="field-hint">Batas minimum {{ formatNumber(stok.stokMinimum) }}</span>
+      </div>
+      <div v-else-if="produk?.satuan">
         <span class="detail-label">Satuan</span>
         <div class="font-semibold mono">{{ produk.satuan }}</div>
       </div>
@@ -130,6 +160,10 @@ watch(
 
     <template #footer>
       <button type="button" class="btn btn-secondary" @click="emit('close')">Tutup</button>
+      <RouterLink v-if="restock" :to="restock.to" class="btn btn-post" @click="emit('close')">
+        <AppIcon :name="restock.icon" :size="16" />
+        <span>{{ restock.label }}</span>
+      </RouterLink>
     </template>
   </BaseModal>
 </template>

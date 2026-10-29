@@ -306,6 +306,11 @@ def test_dashboard_roles_and_tren_isolation(client, seeded_dashboard):
     assert len(data_ot["per_lokasi"]) == 1
     assert data_ot["ringkasan"]["omzet_30_hari"] == 4 * 95000
     assert any(t["jenis"] == "terima_pengiriman" for t in data_ot["tugas"])
+    # jenis lokasi dan produk dipakai frontend untuk memilih tombol isi ulang stock
+    assert {(s["sku"], s["lokasi_jenis"], s["produk_jenis"]) for s in data_ot["stok_kritis"]} == {
+        ("BK-ARB-GAYO-200", "outlet", "roasted_bean"),
+        ("AL-V60-02", "outlet", "peralatan"),
+    }
 
     # manager outlet meminta tren lokasinya sendiri -> 200, lokasi GU-01 -> 404
     tren_ok = client.get("/api/dashboard/tren?hari=14")

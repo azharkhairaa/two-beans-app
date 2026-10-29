@@ -1383,6 +1383,13 @@ select.input-sm {
   gap: 16px;
 }
 
+/* jumlah stock dan badge statusnya sejajar di ringkasan kartu stock */
+.kartu-stock-now {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .detail-highlight {
   display: flex;
   flex-wrap: wrap;
@@ -2142,14 +2149,48 @@ select.input-sm {
   box-shadow: 0 1px 3px rgba(234, 88, 12, 0.3);
 }
 
+/* kartu berdampingan setinggi isinya sendiri, tidak ditarik setinggi kartu sebelahnya */
 .dash-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 20px;
 }
 
 .dash-grid-2 > * {
   min-width: 0;
+}
+
+/* daftar stock kritis dibatasi tingginya dan bisa digulir, judul kolom tetap terlihat */
+.dash-scroll {
+  max-height: 440px;
+  overflow-y: auto;
+}
+
+.dash-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.dash-lokasi-nama {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* sisa dan status satu kolom, tombol aksi ditumpuk supaya tabel muat setengah layar */
+.dash-sisa {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.col-actions .dash-action-stack {
+  flex-direction: column;
+  align-items: stretch;
+  width: auto;
 }
 
 .task-list {

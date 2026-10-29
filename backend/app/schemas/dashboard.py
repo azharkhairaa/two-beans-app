@@ -43,7 +43,10 @@ class DashboardStokKritisItem(BaseModel):
     lokasi_id: int
     lokasi: str
     lokasi_nama: str
+    # jenis lokasi dan produk menentukan cara isi ulang: permintaan, PO atau hasil roasting
+    lokasi_jenis: str
     produk_id: int
+    produk_jenis: str
     sku: str
     nama: str
     satuan: str

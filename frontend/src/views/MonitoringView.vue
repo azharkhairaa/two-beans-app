@@ -49,6 +49,7 @@ const kartuModal = reactive({
   open: false,
   produk: null,
   lokasi: null,
+  stok: null,
 })
 
 const hasActiveFilter = computed(
@@ -112,9 +113,10 @@ function resetFilters() {
   filters.status_stok = 'semua'
 }
 
-function openKartuStok({ produk, lokasi }) {
+function openKartuStok({ produk, lokasi, stok }) {
   kartuModal.produk = produk
   kartuModal.lokasi = lokasi
+  kartuModal.stok = stok
   kartuModal.open = true
 }
 
@@ -267,6 +269,7 @@ onMounted(() => {
       :open="kartuModal.open"
       :produk="kartuModal.produk"
       :lokasi="kartuModal.lokasi"
+      :stok="kartuModal.stok"
       @close="closeKartuStok"
     />
   </section>

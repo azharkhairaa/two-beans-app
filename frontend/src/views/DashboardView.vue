@@ -28,6 +28,7 @@ import {
   formatRupiah,
   formatRupiahCompact,
 } from '@/utils/format'
+import { restockLink } from '@/utils/restock'
 
 const auth = useAuthStore()
 
@@ -47,6 +48,7 @@ const kartuModal = reactive({
   open: false,
   produk: null,
   lokasi: null,
+  stok: null,
 })
 
 const isDeliveryman = computed(() => auth.user?.role === ROLES.DELIVERYMAN)
@@ -198,6 +200,17 @@ function tugasActionLabel(jenis) {
   return 'Buka dokumen'
 }
 
+function restockAction(item) {
+  return restockLink({
+    lokasiId: item.lokasi_id,
+    lokasiJenis: item.lokasi_jenis,
+    produkId: item.produk_id,
+    produkJenis: item.produk_jenis,
+    jumlah: item.jumlah,
+    stokMinimum: item.stok_minimum,
+  })
+}
+
 function openKartuFromKritis(item) {
   kartuModal.produk = {
     id: item.produk_id,
@@ -209,6 +222,13 @@ function openKartuFromKritis(item) {
     id: item.lokasi_id,
     kode: item.lokasi,
     nama: item.lokasi_nama,
+  }
+  kartuModal.stok = {
+    jumlah: item.jumlah,
+    stokMinimum: item.stok_minimum,
+    status: item.status_stok,
+    lokasiJenis: item.lokasi_jenis,
+    produkJenis: item.produk_jenis,
   }
   kartuModal.open = true
 }
@@ -869,14 +889,13 @@ onMounted(() => {
               description="Tidak ada produk yang berstatus menipis atau habis."
             />
 
-            <div v-else class="table-wrap">
+            <div v-else class="table-wrap dash-scroll">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th scope="col">Lokasi</th>
                     <th scope="col">Produk</th>
-                    <th scope="col" class="num">Sisa Stock</th>
-                    <th scope="col">Status</th>
+                    <th scope="col">Sisa</th>
                     <th scope="col" class="col-actions">Aksi</th>
                   </tr>
                 </thead>
@@ -887,31 +906,42 @@ onMounted(() => {
                   >
                     <td data-label="Lokasi">
                       <strong>{{ item.lokasi }}</strong>
-                      <div class="field-hint">{{ item.lokasi_nama }}</div>
+                      <div class="field-hint dash-lokasi-nama" :title="item.lokasi_nama">
+                        {{ item.lokasi_nama }}
+                      </div>
                     </td>
                     <td data-label="Produk">
                       <div><strong>{{ item.nama }}</strong></div>
-                      <div class="field-hint mono">SKU: {{ item.sku }} | Batas Min: {{ formatNumber(item.stok_minimum) }} {{ item.satuan }}</div>
+                      <div class="field-hint mono">{{ item.sku }}</div>
                     </td>
-                    <td data-label="Sisa Stock" class="num">
-                      <span
-                        class="stock-sisa-pill"
-                        :class="item.jumlah === 0 ? 'stock-sisa-habis' : 'stock-sisa-menipis'"
-                      >
-                        Sisa: {{ formatNumber(item.jumlah) }}
-                      </span>
-                    </td>
-                    <td data-label="Status">
-                      <BadgeStatus :value="item.status_stok" />
+                    <td data-label="Sisa">
+                      <div class="dash-sisa">
+                        <span
+                          class="stock-sisa-pill"
+                          :class="item.jumlah === 0 ? 'stock-sisa-habis' : 'stock-sisa-menipis'"
+                        >
+                          Sisa: {{ formatNumber(item.jumlah) }}
+                        </span>
+                        <BadgeStatus :value="item.status_stok" />
+                        <span class="field-hint">
+                          min {{ formatNumber(item.stok_minimum) }} {{ item.satuan }}
+                        </span>
+                      </div>
                     </td>
                     <td class="col-actions">
-                      <button
-                        type="button"
-                        class="btn btn-get btn-small"
-                        @click="openKartuFromKritis(item)"
-                      >
-                        Stock Card
-                      </button>
+                      <div class="action-group dash-action-stack">
+                        <RouterLink :to="restockAction(item).to" class="btn btn-post btn-small">
+                          <AppIcon :name="restockAction(item).icon" :size="15" />
+                          <span>{{ restockAction(item).label }}</span>
+                        </RouterLink>
+                        <button
+                          type="button"
+                          class="btn btn-get-outline btn-small"
+                          @click="openKartuFromKritis(item)"
+                        >
+                          Stock Card
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -1147,6 +1177,7 @@ onMounted(() => {
       :open="kartuModal.open"
       :produk="kartuModal.produk"
       :lokasi="kartuModal.lokasi"
+      :stok="kartuModal.stok"
       @close="closeKartuModal"
     />
   </section>

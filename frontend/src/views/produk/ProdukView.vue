@@ -183,8 +183,17 @@ const {
 const kartuOpen = ref(false)
 const kartuLokasi = ref(null)
 
-function openKartuFromDetail(lokasi) {
-  kartuLokasi.value = lokasi
+const kartuStok = ref(null)
+
+function openKartuFromDetail(stok) {
+  kartuLokasi.value = stok.lokasi
+  kartuStok.value = {
+    jumlah: stok.jumlah,
+    stokMinimum: stok.stok_minimum,
+    status: stok.status_stok,
+    lokasiJenis: stok.lokasi.jenis,
+    produkJenis: detailData.value?.kategori?.jenis,
+  }
   kartuOpen.value = true
 }
 
@@ -752,7 +761,7 @@ async function onConfirmDelete() {
                     v-if="st.nilai !== null"
                     type="button"
                     class="btn btn-get btn-sm"
-                    @click="openKartuFromDetail(st.lokasi)"
+                    @click="openKartuFromDetail(st)"
                   >
                     Stock Card
                   </button>
@@ -771,6 +780,7 @@ async function onConfirmDelete() {
       :open="kartuOpen"
       :produk="detailData"
       :lokasi="kartuLokasi"
+      :stok="kartuStok"
       @close="kartuOpen = false"
     />
 

@@ -38,6 +38,8 @@ class LokasiRef(BaseModel):
     id: int
     kode: str
     nama: str
+    # jenis lokasi menentukan cara isi ulang stock dari kartu stock
+    jenis: str
 
 class ProdukResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

@@ -18,6 +18,7 @@ import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { useLokasiOptions, useOptions } from '@/composables/useOptions'
+import { usePrefillQuery } from '@/composables/usePrefillQuery'
 import { useTerimaForm } from '@/composables/useTerimaForm'
 import { pembelianApi, produkApi, supplierApi } from '@/services'
 import { useToastStore } from '@/stores/toast'
@@ -61,12 +62,20 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
   }
 )
 
+const prefill = usePrefillQuery()
+
 onMounted(async () => {
   await Promise.all([loadSuppliers(), loadLokasi()])
   await load()
   if (route.query.id) {
     openDetail({ id: Number(route.query.id) })
   }
+  // dari tombol "Buat PO" di peringatan stock menipis dashboard, harga awal = harga beli terakhir
+  await prefill.consume(async ({ produkId, jumlah }) => {
+    await openCreate()
+    const produk = productOptions.value.find((item) => item.id === produkId)
+    values.items = [{ produk_id: produkId, jumlah, harga_satuan: produk?.harga_beli || '' }]
+  })
 })
 
 async function loadPurchasableProducts() {

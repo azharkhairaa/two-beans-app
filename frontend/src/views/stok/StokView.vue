@@ -118,8 +118,17 @@ async function onSaveSetting() {
 const kartuOpen = ref(false)
 const kartuProduk = ref(null)
 
+const kartuStok = ref(null)
+
 function openKartu(row) {
   kartuProduk.value = row.produk
+  kartuStok.value = {
+    jumlah: row.jumlah,
+    stokMinimum: row.stok_minimum,
+    status: row.status_stok,
+    lokasiJenis: currentLokasi.value?.jenis,
+    produkJenis: row.produk.jenis,
+  }
   kartuOpen.value = true
 }
 </script>
@@ -409,6 +418,7 @@ function openKartu(row) {
       :open="kartuOpen"
       :produk="kartuProduk"
       :lokasi="currentLokasi"
+      :stok="kartuStok"
       @close="kartuOpen = false"
     />
   </section>

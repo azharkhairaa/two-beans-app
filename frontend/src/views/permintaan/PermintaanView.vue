@@ -18,6 +18,7 @@ import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { useLokasiOptions } from '@/composables/useOptions'
+import { usePrefillQuery } from '@/composables/usePrefillQuery'
 import { permintaanApi, produkApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -71,12 +72,20 @@ const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFi
   }
 )
 
+const prefill = usePrefillQuery()
+
 onMounted(async () => {
   await loadLokasi()
   await load()
   if (route.query.id) {
     openDetail({ id: Number(route.query.id) })
   }
+  // dari tombol "Ajukan permintaan" di peringatan stock menipis dashboard
+  await prefill.consume(async ({ lokasiId, produkId, jumlah }) => {
+    await openCreate()
+    if (auth.isAdmin && lokasiId) values.lokasi_peminta_id = lokasiId
+    values.items = [{ produk_id: produkId, jumlah }]
+  })
 })
 
 function canEditOrCancelRow(row) {

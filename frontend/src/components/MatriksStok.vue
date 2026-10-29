@@ -39,18 +39,23 @@ function cellClass(status) {
   return 'matrix-cell matrix-cell-aman'
 }
 
-function handleSelect(produk, lok) {
+// sel yang diklik dikirim bersama stock-nya supaya kartu stock bisa menawarkan isi ulang
+function handleSelect(row, lok) {
+  const sel = getSel(row, lok.id)
   emit('select-cell', {
     produk: {
-      id: produk.id,
-      sku: produk.sku,
-      nama: produk.nama,
-      satuan: produk.satuan,
+      id: row.produk.id,
+      sku: row.produk.sku,
+      nama: row.produk.nama,
+      satuan: row.produk.satuan,
     },
-    lokasi: {
-      id: lok.id,
-      kode: lok.kode,
-      nama: lok.nama,
+    lokasi: { id: lok.id, kode: lok.kode, nama: lok.nama },
+    stok: {
+      jumlah: sel.jumlah,
+      stokMinimum: sel.stok_minimum,
+      status: sel.status_stok,
+      lokasiJenis: lok.jenis,
+      produkJenis: row.produk.jenis,
     },
   })
 }
@@ -121,7 +126,7 @@ function handleSelect(produk, lok) {
                 :class="cellClass(getSel(row, lok.id).status_stok)"
                 :disabled="!canOpen(lok.id)"
                 :aria-label="`${row.produk.nama} di ${lok.nama}: stock ${getSel(row, lok.id).jumlah} ${row.produk.satuan}, minimum ${getSel(row, lok.id).stok_minimum}, status ${STOK_STATUS_LABELS[getSel(row, lok.id).status_stok] || getSel(row, lok.id).status_stok}${canOpen(lok.id) ? '. Klik untuk Stock Card' : ''}`"
-                @click="handleSelect(row.produk, lok)"
+                @click="handleSelect(row, lok)"
               >
                 <span class="matrix-cell-qty num">
                   {{ formatNumber(getSel(row, lok.id).jumlah) }}

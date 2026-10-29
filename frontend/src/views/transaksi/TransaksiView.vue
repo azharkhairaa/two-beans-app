@@ -16,6 +16,7 @@ import { useDetail } from '@/composables/useDetail'
 import { useForm } from '@/composables/useForm'
 import { useList } from '@/composables/useList'
 import { useLokasiOptions } from '@/composables/useOptions'
+import { usePrefillQuery } from '@/composables/usePrefillQuery'
 import { produkApi, transaksiApi } from '@/services'
 import { useAuthStore } from '@/stores/auth'
 import { useToastStore } from '@/stores/toast'
@@ -39,8 +40,16 @@ const toast = useToastStore()
 
 const { items: lokasiList, load: loadLokasi } = useLokasiOptions()
 
-onMounted(() => {
-  if (auth.isAdmin) loadLokasi()
+const prefill = usePrefillQuery()
+
+onMounted(async () => {
+  if (auth.isAdmin) await loadLokasi()
+  // dari tombol "Catat roasting" di peringatan stock menipis dashboard (hasil roasting masuk)
+  await prefill.consume(async ({ lokasiId, produkId, jumlah }) => {
+    await openCreate()
+    if (auth.isAdmin && lokasiId) await onLokasiChange(lokasiId)
+    values.items = [{ produk_id: produkId, jumlah }]
+  })
 })
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(

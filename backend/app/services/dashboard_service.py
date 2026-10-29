@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.clock import Clock
 from app.models import (
     Customer,
+    Kategori,
     Lokasi,
     LokasiType,
     Pembelian,
@@ -371,9 +372,10 @@ class DashboardService:
     def query_stok_kritis(self, lokasi_id: int | None) -> list[DashboardStokKritisItem]:
         severity = case((Stok.jumlah == 0, 0), else_=1)
         query = (
-            select(Stok, Lokasi, Produk)
+            select(Stok, Lokasi, Produk, Kategori.jenis)
             .join(Lokasi, Lokasi.id == Stok.lokasi_id)
             .join(Produk, Produk.id == Stok.produk_id)
+            .join(Kategori, Kategori.id == Produk.kategori_id)
             .where(
                 Lokasi.aktif.is_(True),
                 Produk.aktif.is_(True),
@@ -390,7 +392,9 @@ class DashboardService:
                 lokasi_id=lokasi.id,
                 lokasi=lokasi.kode,
                 lokasi_nama=lokasi.nama,
+                lokasi_jenis=lokasi.jenis,
                 produk_id=produk.id,
+                produk_jenis=kategori_jenis,
                 sku=produk.sku,
                 nama=produk.nama,
                 satuan=produk.satuan,
@@ -398,7 +402,7 @@ class DashboardService:
                 stok_minimum=stok.stok_minimum,
                 status_stok=stok.status_stok.value,
             )
-            for stok, lokasi, produk in rows
+            for stok, lokasi, produk, kategori_jenis in rows
         ]
 
     def query_tugas(self, lokasi: Lokasi | None) -> list[DashboardTugasItem]:
