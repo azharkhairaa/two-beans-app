@@ -49,7 +49,7 @@ def test_register_password_limits_in_bytes(client):
     errors = client.post("/api/auth/register", json=REGISTER | {"password": "kopi1"}).json()["errors"]
     assert errors["password"] == "Minimal 8 karakter"
     errors = client.post("/api/auth/register", json=REGISTER | {"password": "kopi1" + "é" * 34}).json()["errors"]
-    assert errors["password"] == "Maksimal 72 byte"
+    assert errors["password"] == "Maksimal 72 karakter"
 
 def test_register_duplicate_email_ignoring_case(client, db, factory):
     factory.user("calon.manager@example.com")

@@ -24,7 +24,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <AuthLayout title="Registrasi akun">
+  <AuthLayout title="Registrasi akun Manager">
     <template v-if="done">
       <p class="alert alert-success" role="status">{{ done }}</p>
       <RouterLink :to="{ name: 'login' }" class="btn btn-primary btn-block">Ke halaman login</RouterLink>
@@ -62,7 +62,7 @@ async function onSubmit() {
         <FormField
           id="password"
           label="Password"
-          hint="8 sampai 72 byte, berisi huruf dan angka"
+          hint="Minimal 8 karakter, kombinasi huruf dan angka"
           :error="errors.password"
         >
           <template #default="{ describedBy }">

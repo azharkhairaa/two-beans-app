@@ -97,7 +97,7 @@ class FieldRules:
         if size < 8:
             raise ValueError("Minimal 8 karakter")
         if size > 72:
-            raise ValueError("Maksimal 72 byte")
+            raise ValueError("Maksimal 72 karakter")
         if not (cls.LETTER.search(value) and cls.DIGIT.search(value)):
             raise ValueError("Harus berisi huruf dan angka")
         return value

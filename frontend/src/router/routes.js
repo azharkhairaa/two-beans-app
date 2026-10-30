@@ -21,7 +21,7 @@ export const routes = [
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
-    meta: { title: 'Registrasi', public: true, visitorOnly: true },
+    meta: { title: 'Registrasi akun Manager', public: true, visitorOnly: true },
   },
   {
     path: '/',

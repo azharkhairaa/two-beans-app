@@ -134,7 +134,7 @@ async function onSubmit() {
           <FormField
             id="new_password"
             label="Password Baru"
-            hint="8 sampai 72 byte, wajib berisi huruf dan angka serta berbeda dari password lama"
+            hint="Minimal 8 karakter, kombinasi huruf dan angka serta berbeda dari password lama"
             :error="errors.new_password"
           >
             <template #default="{ describedBy }">
