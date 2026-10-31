@@ -92,6 +92,25 @@ def test_lokasi_summary_and_active_filter(db, factory, setup, login_as):
     assert "OT-09" in rows
     assert [row["kode"] for row in client.get("/api/lokasi", params={"aktif": "true"}).json()] == ["GU-01", "OT-01"]
 
+def test_lokasi_value_only_for_admin_and_gudang_utama(db, factory, setup, login_as, client):
+    produk = factory.produk()
+    gudang, outlet = setup["gudang"], setup["outlet"]
+    factory.add(Stok(lokasi_id=gudang.id, produk_id=produk.id, jumlah=10))
+    factory.add(Stok(lokasi_id=outlet.id, produk_id=produk.id, jumlah=5))
+    factory.user("mgr.gu@example.com", UserRole.MANAGER_GUDANG, lokasi=gudang)
+    db.commit()
+    expected = {"GU-01": 10 * 65000, "OT-01": 5 * 65000}
+    for email in ("admin@example.com", "mgr.gu@example.com"):
+        rows = login_as(email).get("/api/lokasi").json()
+        assert {row["kode"]: row["ringkasan"]["nilai"] for row in rows} == expected
+        client.cookies.clear()
+    # manager outlet tetap melihat jumlah SKU lokasi lain tetapi nilainya null
+    manager = login_as("manager@example.com")
+    rows = {row["kode"]: row["ringkasan"] for row in manager.get("/api/lokasi").json()}
+    assert rows["OT-01"]["nilai"] == 5 * 65000
+    assert rows["GU-01"] == {"sku_ada": 1, "menipis": 0, "habis": 0, "nilai": None}
+    assert manager.get(f"/api/lokasi/{gudang.id}").json()["ringkasan"]["nilai"] is None
+
 def test_lokasi_access_by_role(setup, login_as, client):
     assert client.get("/api/lokasi").status_code == 401
     manager = login_as("manager@example.com")

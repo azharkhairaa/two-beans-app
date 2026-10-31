@@ -2,6 +2,7 @@ from sqlalchemy import Select, func, select
 
 from app.core.errors import Conflict
 from app.models import Lokasi, LokasiType, Produk, Stok
+from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import ActiveFilter
 from app.schemas.lokasi import LokasiInput, LokasiResponse
 from app.services.base import CrudService, SqlMoney
@@ -27,14 +28,21 @@ class LokasiService(CrudService[Lokasi]):
             .group_by(Lokasi.id)
         )
 
-    def summaries(self, aktif: ActiveFilter) -> list[LokasiResponse]:
+    def summaries(self, aktif: ActiveFilter, policy: LokasiPolicy) -> list[LokasiResponse]:
         query = self.active_filter(self.summary_query(), Lokasi.aktif, aktif).order_by(Lokasi.kode)
-        return [LokasiResponse.of(*row) for row in self.db.execute(query)]
+        return [self.to_response(row, policy) for row in self.db.execute(query)]
 
-    def detail(self, item_id: int) -> LokasiResponse:
+    def detail(self, item_id: int, policy: LokasiPolicy) -> LokasiResponse:
         self.get_or_404(item_id)
         row = self.db.execute(self.summary_query().where(Lokasi.id == item_id)).one()
-        return LokasiResponse.of(*row)
+        return self.to_response(row, policy)
+
+    @staticmethod
+    def to_response(row, policy: LokasiPolicy) -> LokasiResponse:
+        # nilai lokasi lain hanya untuk admin dan manager gudang utama, sama dengan monitoring
+        lokasi, sku_ada, menipis, habis, nilai = row
+        visible = nilai if policy.can_see_detail(lokasi.id) else None
+        return LokasiResponse.of(lokasi, sku_ada, menipis, habis, visible)
 
     def update(self, lokasi: Lokasi, data: LokasiInput) -> Lokasi:
         if data.jenis != lokasi.jenis and self.usage(lokasi):

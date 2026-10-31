@@ -45,11 +45,15 @@ def test_register_validation_messages(client):
         "password_confirmation": "Konfirmasi password tidak sama",
     }
 
-def test_register_password_limits_in_bytes(client):
-    errors = client.post("/api/auth/register", json=REGISTER | {"password": "kopi1"}).json()["errors"]
-    assert errors["password"] == "Minimal 8 karakter"
-    errors = client.post("/api/auth/register", json=REGISTER | {"password": "kopi1" + "é" * 34}).json()["errors"]
-    assert errors["password"] == "Maksimal 72 karakter"
+def test_register_password_limits_in_characters_and_bytes(client):
+    def password_error(password):
+        return client.post("/api/auth/register", json=REGISTER | {"password": password}).json()["errors"]["password"]
+    assert password_error("kopi1") == "Minimal 8 karakter"
+    # 7 karakter tetap ditolak walaupun 8 byte
+    assert password_error("kopié12") == "Minimal 8 karakter"
+    assert password_error("kopi1" * 15) == "Maksimal 72 karakter"
+    # 39 karakter tetapi 73 byte, melewati batas bcrypt
+    assert password_error("kopi1" + "é" * 34) == "Terlalu panjang, huruf beraksen dihitung lebih dari satu karakter"
 
 def test_register_duplicate_email_ignoring_case(client, db, factory):
     factory.user("calon.manager@example.com")

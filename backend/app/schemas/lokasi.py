@@ -40,7 +40,8 @@ class LokasiRingkasan(BaseModel):
     sku_ada: int
     menipis: int
     habis: int
-    nilai: int
+    # null untuk lokasi lain bila user bukan admin atau manager gudang utama
+    nilai: int | None
 
 class LokasiResponse(LokasiSummary):
     alamat: str | None
@@ -51,7 +52,9 @@ class LokasiResponse(LokasiSummary):
     ringkasan: LokasiRingkasan
 
     @classmethod
-    def of(cls, lokasi, sku_ada: int, menipis: int, habis: int, nilai: int) -> "LokasiResponse":
+    def of(
+        cls, lokasi, sku_ada: int, menipis: int, habis: int, nilai: int | None
+    ) -> "LokasiResponse":
         fields = {name: getattr(lokasi, name) for name in cls.model_fields if name != "ringkasan"}
         ringkasan = LokasiRingkasan(sku_ada=sku_ada, menipis=menipis, habis=habis, nilai=nilai)
         return cls(**fields, ringkasan=ringkasan)

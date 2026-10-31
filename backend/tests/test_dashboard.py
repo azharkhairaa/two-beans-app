@@ -362,7 +362,6 @@ def test_large_values_inactive_products_and_unknown_status(client, db, seeded_da
         res = client.get(path, params={"status_stok": "xyz"})
         assert res.status_code == 422 and "status_stok" in res.json()["errors"]
 
-
 def test_monitoring_values_only_for_admin_and_gudang_utama(client, seeded_dashboard):
     # manager gudang utama memantau nilai semua lokasi
     login_as(client, "mgr.gu@twobeans.id")

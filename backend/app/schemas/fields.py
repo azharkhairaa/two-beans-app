@@ -92,12 +92,13 @@ class FieldRules:
 
     @classmethod
     def password(cls, value: str) -> str:
-        # password tidak dibersihkan, panjang dihitung dalam byte karena batas bcrypt 72 byte
-        size = len(value.encode())
-        if size < 8:
+        # password tidak dibersihkan, panjang dihitung per karakter lalu dicek batas bcrypt 72 byte
+        if len(value) < 8:
             raise ValueError("Minimal 8 karakter")
-        if size > 72:
+        if len(value) > 72:
             raise ValueError("Maksimal 72 karakter")
+        if len(value.encode()) > 72:
+            raise ValueError("Terlalu panjang, huruf beraksen dihitung lebih dari satu karakter")
         if not (cls.LETTER.search(value) and cls.DIGIT.search(value)):
             raise ValueError("Harus berisi huruf dan angka")
         return value

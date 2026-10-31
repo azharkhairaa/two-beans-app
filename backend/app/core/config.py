@@ -86,7 +86,8 @@ class EnvReader:
                 continue
             parts = urlsplit(origin)
             # origin hanya skema dan host, tanpa path atau query
-            if parts.scheme not in ("http", "https") or origin != f"{parts.scheme}://{parts.netloc}":
+            canonical = f"{parts.scheme}://{parts.netloc}"
+            if parts.scheme not in ("http", "https") or origin != canonical:
                 self.error.append(f"{name} load origin tidak valid: {origin}")
             origins.append(origin)
         return origins
