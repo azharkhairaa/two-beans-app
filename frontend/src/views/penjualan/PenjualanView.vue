@@ -122,8 +122,9 @@ async function loadProductOptions() {
   }
   try {
     productOptions.value = await produkApi.options({ lokasi_id: lokasiId })
-  } catch {
+  } catch (err) {
     productOptions.value = []
+    toast.show(err?.message || 'Gagal memuat daftar produk.', 'error')
   }
 }
 

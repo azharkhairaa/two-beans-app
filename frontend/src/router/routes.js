@@ -5,7 +5,7 @@ import { LOKASI_TYPES, MANAGER_ROLES, ROLES } from '@/utils/constants'
 const placeholder = () => import('@/views/PlaceholderView.vue')
 const ADMIN_ONLY = [ROLES.ADMIN]
 
-// meta.menu: label, ikon, kelompok dan urutan di sidebar. meta.roles dan meta.lokasiTypes dicek RouteAccess
+// meta.menu mengatur sidebar, meta.roles dan meta.lokasiTypes dicek RouteAccess
 function page(path, name, title, access = {}, menu = null, component = placeholder) {
   return { path, name, component, meta: { title, ...access, menu } }
 }

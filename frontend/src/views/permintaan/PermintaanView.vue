@@ -125,8 +125,9 @@ async function loadGudangUtamaProducts() {
   }
   try {
     productOptions.value = await produkApi.options({ lokasi_id: sumberId })
-  } catch {
+  } catch (err) {
     productOptions.value = []
+    toast.show(err?.message || 'Gagal memuat daftar produk.', 'error')
   }
 }
 
@@ -660,7 +661,7 @@ async function onConfirmBatal() {
             </div>
           </div>
 
-          <!-- permintaan selalu ke gudang utama (BR-08), ditampilkan agar peminta tahu tujuannya -->
+          <!-- permintaan selalu ke gudang utama (BR-08), tujuannya ditampilkan untuk peminta -->
           <div class="field">
             <span class="field-label">Tujuan permintaan</span>
             <div class="doc-item-readonly" aria-readonly="true">

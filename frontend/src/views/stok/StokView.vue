@@ -76,8 +76,9 @@ async function openNewSetting() {
   if (!produkOptions.value.length) {
     try {
       produkOptions.value = await produkApi.options()
-    } catch {
+    } catch (err) {
       produkOptions.value = []
+      toast.show(err?.message || 'Gagal memuat daftar produk.', 'error')
     }
   }
   fill({

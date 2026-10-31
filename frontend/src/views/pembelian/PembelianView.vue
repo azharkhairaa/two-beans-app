@@ -85,8 +85,9 @@ async function loadPurchasableProducts() {
     const all = await produkApi.options(params)
     // BR-11: pembelian ke supplier hanya untuk green bean, peralatan dan bahan habis pakai
     productOptions.value = all.filter((p) => p.jenis !== 'roasted_bean')
-  } catch {
+  } catch (err) {
     productOptions.value = []
+    toast.show(err?.message || 'Gagal memuat daftar produk.', 'error')
   }
 }
 

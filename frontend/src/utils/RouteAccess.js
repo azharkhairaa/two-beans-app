@@ -1,7 +1,7 @@
 import { ROLES } from './constants'
 
 export class RouteAccess {
-  // dipakai guard router dan sidebar sehingga aturan peran dan jenis lokasi cukup ditulis di meta route
+  // dipakai guard router dan sidebar, aturan peran dan jenis lokasi cukup ditulis di meta route
   static allows(meta, user) {
     if (!user) return false
     if (meta.roles && !meta.roles.includes(user.role)) return false
