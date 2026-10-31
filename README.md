@@ -109,6 +109,8 @@ python -m app.seeders
 uvicorn app.main:app --reload --port 8000
 ```
 
+Sebagai ganti migration dan seeder, database juga bisa dipulihkan dari dump `database/two_beans.sql` ke database kosong dengan `psql -U postgres -d two_beans -f database/two_beans.sql` dari root repo.
+
 Seeder mengosongkan semua tabel lalu mengisi lokasi, akun demo, produk dan riwayat 60 hari. API berjalan di http://localhost:8000 dan Swagger di http://localhost:8000/docs.
 
 ### 2. Frontend
