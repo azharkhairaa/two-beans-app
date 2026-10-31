@@ -193,6 +193,18 @@ def test_customer_total_30_days_and_usage(db, factory, setup, login_as):
     db.commit()
     client = login_as("admin@example.com")
     assert client.get(f"/api/customer/{customer.id}").json()["total_pembelian_30_hari"] == 100000
+    client.cookies.clear()
+    # manager lokasi lain tidak ikut melihat omzet outlet itu
+    gudang = setup["gudang"]
+    factory.user("mgr.gu@example.com", UserRole.MANAGER_GUDANG, lokasi=gudang)
+    db.commit()
+    other = login_as("mgr.gu@example.com")
+    assert other.get(f"/api/customer/{customer.id}").json()["total_pembelian_30_hari"] == 0
+    other.cookies.clear()
+    own = login_as("manager@example.com")
+    assert own.get(f"/api/customer/{customer.id}").json()["total_pembelian_30_hari"] == 100000
+    own.cookies.clear()
+    client = login_as("admin@example.com")
     response = client.delete(f"/api/customer/{customer.id}")
     assert response.status_code == 409 and response.json()["detail"].startswith("Customer masih dipakai 3 penjualan")
 

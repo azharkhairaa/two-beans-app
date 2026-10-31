@@ -94,6 +94,9 @@ class MonitoringService:
         baris_list: list[MonitoringBaris] = []
         nilai_per_lokasi = {lokasi.id: 0 for lokasi in lokasi_rows}
         show_values = self.lokasi_policy.sees_all_values
+        detail_lokasi = {
+            lokasi.id for lokasi in lokasi_rows if self.lokasi_policy.can_see_detail(lokasi.id)
+        }
 
         for produk in produk_rows:
             sel_list: list[MonitoringSel] = []
@@ -118,7 +121,7 @@ class MonitoringService:
                         lokasi_id=lokasi.id,
                         jumlah=jumlah,
                         stok_minimum=minimum,
-                        rak=rak,
+                        rak=rak if lokasi.id in detail_lokasi else None,
                         status_stok=status,
                         nilai=jumlah * produk.harga_beli if show_values else None,
                     )

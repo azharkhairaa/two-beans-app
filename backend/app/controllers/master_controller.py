@@ -2,7 +2,9 @@ from fastapi import Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import CustomerType
+from app.models import CustomerType, User
+from app.policies.access import current_user
+from app.policies.lokasi_policy import LokasiPolicy
 from app.schemas.common import ActiveFilter, OptionResponse, Page, PageParams, SortDirection
 from app.schemas.master import (
     CustomerDetail,
@@ -93,8 +95,10 @@ class CustomerController:
     def options(self, db: Session = Depends(get_db)) -> list[CustomerOption]:
         return [CustomerOption.model_validate(c) for c in CustomerService(db).options()]
 
-    def show(self, id: int, db: Session = Depends(get_db)) -> CustomerDetail:
-        return CustomerService(db).detail(id)
+    def show(
+        self, id: int, user: User = Depends(current_user), db: Session = Depends(get_db)
+    ) -> CustomerDetail:
+        return CustomerService(db).detail(id, LokasiPolicy(user))
 
     def store(self, body: CustomerInput, db: Session = Depends(get_db)) -> CustomerResponse:
         return CustomerResponse.model_validate(CustomerService(db).create(body))

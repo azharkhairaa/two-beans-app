@@ -378,6 +378,11 @@ def test_monitoring_values_only_for_admin_and_gudang_utama(client, seeded_dashbo
     assert {row["nilai"] for row in mon_ot["baris"]} == {None}
     assert {sel["nilai"] for row in mon_ot["baris"] for sel in row["sel"]} == {None}
     assert {item["nilai"] for item in mon_ot["total_per_lokasi"]} == {None}
+    # rak hanya terlihat di lokasi sendiri, rak gudang utama disembunyikan
+    rak_ot = {sel["lokasi_id"]: sel["rak"] for row in mon_ot["baris"] for sel in row["sel"] if sel["rak"]}
+    assert set(rak_ot) == {seeded_dashboard["ot"].id}
+    rak_gu = {sel["rak"] for row in mon_gu["baris"] for sel in row["sel"] if sel["rak"]}
+    assert {"A-01", "B-01", "R-01"} <= rak_gu
     jumlah_gu = [
         sel["jumlah"] for row in mon_ot["baris"] for sel in row["sel"]
         if sel["lokasi_id"] == seeded_dashboard["gu"].id

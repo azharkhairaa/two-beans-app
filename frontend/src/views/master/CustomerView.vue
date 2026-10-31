@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 
 import AppIcon from '@/components/AppIcon'
 import BadgeStatus from '@/components/BadgeStatus.vue'
@@ -20,6 +20,10 @@ import { CUSTOMER_TYPE_LABELS } from '@/utils/constants'
 import { formatDate, formatRupiah } from '@/utils/format'
 
 const auth = useAuthStore()
+// manager hanya menerima omzet lokasinya sendiri dari API
+const omzetLabel = computed(() =>
+  auth.isAdmin ? 'Total Pembelian 30 Hari Terakhir' : 'Pembelian 30 Hari di Lokasi Anda',
+)
 const toast = useToastStore()
 
 const { items, meta, loading, error, filters, load, setPage, setPerPage, applyFilters, resetFilters } = useList(
@@ -392,7 +396,7 @@ async function onConfirmDelete() {
       <LoadingState v-if="detailLoading" :rows="3" />
       <div v-else-if="detailData" class="detail-grid">
         <div class="detail-highlight">
-          <span class="detail-label">Total Pembelian 30 Hari Terakhir</span>
+          <span class="detail-label">{{ omzetLabel }}</span>
           <strong class="detail-value mono">
             {{ formatRupiah(detailData.total_pembelian_30_hari || 0) }}
           </strong>

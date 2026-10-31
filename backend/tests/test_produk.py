@@ -112,8 +112,8 @@ def test_detail_stock_per_lokasi_and_in_transit(db, factory, setup, login_as):
     assert (data["total_stok"], data["total_nilai"], data["dalam_perjalanan"]) == (64, 64 * 65000, 10)
     # manager outlet tetap melihat jumlah semua lokasi, nilai rupiah hanya lokasinya sendiri
     data = login_as("manager@example.com").get(f"/api/produk/{produk.id}").json()
-    assert [(s["lokasi"]["kode"], s["jumlah"], s["nilai"]) for s in data["stok"]] == [
-        ("GU-01", 40, None), ("OT-01", 24, 24 * 65000)]
+    assert [(s["lokasi"]["kode"], s["jumlah"], s["nilai"], s["rak"]) for s in data["stok"]] == [
+        ("GU-01", 40, None, None), ("OT-01", 24, 24 * 65000, None)]
     assert (data["total_stok"], data["total_nilai"]) == (64, None)
 
 def test_list_filters_and_options(db, factory, setup, login_as):

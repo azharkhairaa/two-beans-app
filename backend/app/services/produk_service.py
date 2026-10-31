@@ -113,16 +113,16 @@ class ProdukService(CrudService[Produk]):
         rows = self.db.scalars(
             select(Stok).options(joinedload(Stok.lokasi)).where(Stok.produk_id == produk.id)
         ).all()
-        stok = [
-            StokLokasi(
+        stok = []
+        for row in sorted(rows, key=lambda row: row.lokasi.kode):
+            # nilai dan rak lokasi lain hanya untuk admin dan manager gudang utama
+            visible = policy.can_see_detail(row.lokasi_id)
+            stok.append(StokLokasi(
                 lokasi=LokasiRef.model_validate(row.lokasi), jumlah=row.jumlah,
-                stok_minimum=row.stok_minimum, rak=row.rak, status_stok=row.status_stok,
-                nilai=(
-                    row.jumlah * produk.harga_beli if policy.can_see_detail(row.lokasi_id) else None
-                ),
-            )
-            for row in sorted(rows, key=lambda row: row.lokasi.kode)
-        ]
+                stok_minimum=row.stok_minimum, rak=row.rak if visible else None,
+                status_stok=row.status_stok,
+                nilai=row.jumlah * produk.harga_beli if visible else None,
+            ))
         dalam_perjalanan = self.db.scalar(
             select(func.coalesce(func.sum(PengirimanDetail.jumlah_dikirim), 0))
             .join(Pengiriman, Pengiriman.id == PengirimanDetail.pengiriman_id)
